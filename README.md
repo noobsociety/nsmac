@@ -1,0 +1,2 @@
+# dotcursor
+Cursor IDE dotfiles
