@@ -33,7 +33,7 @@ Each agent runs in an isolated instance with its own context window; the transcr
 Safe lifecycle patterns for managing context across collab sessions:
 
 - **After each Discussion contribution:** run `/compact` before issuing your next collab command. Audit and Discussion are captured in the transcript; per-turn compaction keeps the instance lean for the next command without losing any discovery record.
-- **After each Handoff contribution:** run `/compact` before preparing the subagent. The Handoff deliverable shape (write scope, validation commands, subagent constraints) is not yet specified as structured state; it will be defined in a follow-on collab.
+- **After each Handoff turn:** run `/compact` before preparing the subagent. The v1 Handoff deliverable shape (`writeScope`, `validationCommands`) is defined in [`_functions/collab/_handoff-shape.md`](_functions/collab/_handoff-shape.md).
 - **After close:** run `/clear` only at the `close → init` boundary, before starting a new collab. `/clear` is a full session reset — it is not appropriate inside an open collab.
 - **On Completion:** spawn and use the subagent if prepared during Handoff; run `/compact` if not.
 - **Subagents:** preparation occurs at Handoff (write scope, validation commands, spawn constraints); spawning occurs at Completion under `/collab run plan`. The parent agent declares write scope, reviews returned paths, runs validation, and records the result. Subagents are never turn authors and must not write to the registry or transcript independently.

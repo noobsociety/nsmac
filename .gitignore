@@ -22,6 +22,8 @@
 !REPOSITORY.md
 !_CURSOR.md
 !README.md
+!.github/
+!.github/**
 !_core/
 !_core/**
 !_functions/

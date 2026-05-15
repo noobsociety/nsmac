@@ -12,6 +12,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from tools.collab.registry import (  # noqa: E402
+    ALLOWED_COMPLETION_SUBSTATES,
     AUTO_ADVANCE_EXEMPT_PHASES,
     CONVERGENT_REVIEWER_PHASES,
     DEFAULT_REVIEWER_OPTIONAL_PHASES,
@@ -35,7 +36,7 @@ def speak_rule(phase: str) -> str:
     if phase == 'Discussion':
         return 'open discussion turns'
     if phase == 'Completion':
-        return 'execution records only'
+        return 'execution records, then reviewer seal when configured'
     return 'phase-specific'
 
 
@@ -72,6 +73,12 @@ def glossary_rows() -> list[str]:
             'Current lifecycle phase. Valid values are imported from `PHASES`.',
         ),
         (
+            'completion.subState',
+            'Reviewer-backed Completion sub-state: '
+            + ', '.join(f'`{item}`' for item in sorted(ALLOWED_COMPLETION_SUBSTATES))
+            + '.',
+        ),
+        (
             'turnOrder',
             'Ordered speaker cycle for ordinary roles; reviewer roles are excluded in convergent reviewer mode.',
         ),
@@ -94,6 +101,14 @@ def glossary_rows() -> list[str]:
         (
             'execution.<role>',
             'Completion metadata for each executing role: status, date, validation result, and touched paths.',
+        ),
+        (
+            'verification.rounds',
+            'Registry-counted reviewer/executor paired events in `Completion.verification`.',
+        ),
+        (
+            'verificationSeal',
+            'Reviewer seal object that binds observed registry revision, execution entries, validation scopes, and touched paths.',
         ),
         (
             'activeCollabId',

@@ -35,6 +35,14 @@ Add a test only when a source behavior requires executable proof; prefer shell-l
 
 `tools/cursor/audit.sh` is the shell-layer owning gate for adapter routing, `_CURSOR.md` discovery, and runtime ignore rules; no Markdown harness is required for these behaviors.
 
+`tests/run.sh` is the single entry point for the full test suite and is owned by three runtimes:
+
+- **GitHub Actions** — external runnable owner; the workflow calls `tests/run.sh` on push and pull request to `main`.
+- **Local pre-commit and pre-push hooks** — installed by `tools/cursor/install-git-hooks.sh`; both hooks invoke `./tests/run.sh`.
+- **Local manual invocation** — direct shell call; no harness or installer required.
+
+`tools/cursor/audit.sh` admits `.github/**` as tracked source. This boundary covers workflow files, CODEOWNERS, dependabot config, issue templates, and PR templates — not workflow files alone.
+
 Neither layer may be reduced without updating this statement to name the resulting ownership per layer.
 
 **Test removal criteria:** Before any test file under `tests/` is removed, its inventory row must satisfy all of:

@@ -27,7 +27,7 @@ The following named classes are excluded from the 250-word count. Each class is 
 
 | Class | Shape | Scope |
 |---|---|---|
-| `action-plan-checklist` | Flat checklist lines beginning with `- [ ]` or `- [x]` and `**<role>:**` | Any Action Plan phase contribution |
+| `action-plan-checklist` | Flat checklist lines matching the canonical shape in `_invariants.md` Invariant #9 (regex and pre-pass order defined there) | Any Action Plan phase contribution |
 | `conclusion-ratification` | Flat one-line-per-item ratification entries; no inline prose or sub-bullets | Conclusion phase contributions only |
 | `moderator-verbatim` | Content passed via `--verbatim` or the moderator role with a `<message>` argument | Moderator-role contributions only |
 | `effort-override-line` | The single `EFFORT OVERRIDE: <level> — <category>: <signal>` declaration line | Any phase; exactly one line |

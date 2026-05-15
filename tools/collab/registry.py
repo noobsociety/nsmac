@@ -5,6 +5,7 @@ import argparse
 import base64
 import datetime as dt
 import fcntl
+import fnmatch
 import json
 import os
 import re
@@ -36,6 +37,16 @@ FORCE_ONLY_FIELDS = {'active-phase'}
 ALLOWED_STATUSES = {'open', 'closed', 'archived'}
 ALLOWED_EXECUTION_STATUSES = {'in_progress', 'completed', 'failed'}
 ALLOWED_VALIDATION_SCOPES = {'scoped', 'full', 'deferred'}
+ALLOWED_COMPLETION_SUBSTATES = {'execution', 'verification'}
+ALLOWED_CAP_EXITS = {'reopen-action-plan', 'reopen-handoff', 'archive'}
+DEFAULT_VERIFICATION_CAP = 3
+HANDOFF_SCHEMA_VERSION = 1
+VERIFICATION_SEAL_SCHEMA_VERSION = 1
+MAX_HANDOFF_SCOPE_COUNT = 32
+MAX_HANDOFF_SCOPE_LENGTH = 200
+MAX_VALIDATION_COMMANDS = 16
+MAX_VALIDATION_COMMAND_ARGS = 16
+MAX_VALIDATION_ARG_LENGTH = 200
 ALLOWED_REVIEWER_MODES = {'last-in-convergent-phases'}
 DEFAULT_REVIEWER_MODE = 'last-in-convergent-phases'
 DEFAULT_REVIEWER_OPTIONAL_PHASES = ['Discussion']
@@ -81,6 +92,7 @@ TIMESTAMP_RE = re.compile(r'^<p><em>(?P<timestamp>.+)</em></p>$')
 ACTION_CHECKLIST_RE = re.compile(
     r'^\s*-\s+\[(?P<mark>[ xX])\]\s+\*\*(?P<role>[A-Za-z0-9_-]+):\*\*(?P<text>.*)$'
 )
+ACTION_PLAN_SHAPE_RE = re.compile(r'^- \[[ x]\] \*\*[a-z]+:\*\*')
 ACTION_PLAN_EXEMPT_RE = re.compile(r'^\s*-\s+\[[ xX]\]\s+\*\*[A-Za-z0-9_-]+:\*\*')
 UNLABELED_ACTION_CHECKBOX_RE = re.compile(r'^\s*-\s+\[ \]\s+(?!\*\*[A-Za-z0-9_-]+:\*\*)\S')
 EFFORT_OVERRIDE_RE = re.compile(
@@ -91,6 +103,10 @@ EFFORT_OVERRIDE_RE = re.compile(
 EFFORT_OVERRIDE_COMMENT_RE = re.compile(
     r'^<!-- collab:effort-override b64:(?P<payload>[A-Za-z0-9_-]+={0,2}) -->$'
 )
+STRUCTURED_HANDOFF_HEADING_RE = re.compile(r'^\s*\*\*(?P<field>writeScope|validationCommands):?\*\*:?\s*(?P<rest>.*)$')
+CODE_SPAN_RE = re.compile(r'`([^`]+)`')
+SHELL_PATTERN_RE = re.compile(r'[;&|<>`$\\\r\n]')
+GLOB_PATTERN_RE = re.compile(r'[*?\[]')
 MANDATORY_EFFORT_OVERRIDE_TURNS = {
     ('Audit', 'pa'),
     ('Conclusion', 'pa'),
@@ -108,6 +124,7 @@ OLD_ENTRY_KEYS = {
     'transcript_path',
     'turn_order',
 }
+ACTION_PLAN_SHAPE_EXAMPLE = '- [ ] **tw:** Update the route doc.'
 
 
 def die(message: str) -> None:
@@ -545,6 +562,136 @@ def completed_execution_unchecked_items(entry: dict, transcript: str) -> list[di
     return violations
 
 
+def handoff_abort(field: str, value: object) -> None:
+    if isinstance(value, str):
+        rendered = value
+    else:
+        rendered = json.dumps(value, sort_keys=True)
+    die(f'ABORT: {field} contains disallowed pattern: {rendered}')
+
+
+def normalize_handoff_scope(raw: str) -> str:
+    if not isinstance(raw, str) or not raw.strip():
+        handoff_abort('writeScope', raw)
+    value = raw.strip().rstrip('/')
+    if not value:
+        handoff_abort('writeScope', raw)
+    if len(value) > MAX_HANDOFF_SCOPE_LENGTH:
+        handoff_abort('writeScope', value)
+    if Path(value).is_absolute():
+        handoff_abort('writeScope', raw)
+    if value in {'*', '**'} or value.startswith('../') or '/../' in value or value.endswith('/..'):
+        handoff_abort('writeScope', raw)
+    normalized = PurePosixPath(Path(value).as_posix()).as_posix()
+    if normalized in {'', '.', '..'}:
+        handoff_abort('writeScope', raw)
+    parts = PurePosixPath(normalized).parts
+    if not parts or any(part in {'', '.', '..'} for part in parts):
+        handoff_abort('writeScope', raw)
+    if parts[0] in {'*', '**'}:
+        handoff_abort('writeScope', raw)
+    return normalized
+
+
+def validate_handoff_write_scope(value: object) -> list[str]:
+    if not isinstance(value, list) or not value:
+        handoff_abort('writeScope', value)
+    if len(value) > MAX_HANDOFF_SCOPE_COUNT:
+        handoff_abort('writeScope', value)
+    scopes = [normalize_handoff_scope(item) for item in value]
+    if len(scopes) != len(set(scopes)):
+        handoff_abort('writeScope', value)
+    return scopes
+
+
+def validation_command_abort(value: object) -> None:
+    handoff_abort('validationCommands', value)
+
+
+def normalize_validation_command_path(raw: str) -> str:
+    if not isinstance(raw, str) or not raw.strip():
+        validation_command_abort(raw)
+    value = raw.strip()
+    if len(value) > MAX_VALIDATION_ARG_LENGTH:
+        validation_command_abort(value)
+    if SHELL_PATTERN_RE.search(value):
+        validation_command_abort(value)
+    if not value.startswith('./'):
+        validation_command_abort(value)
+    if Path(value).is_absolute():
+        validation_command_abort(value)
+    normalized = PurePosixPath(Path(value).as_posix()).as_posix()
+    if normalized.startswith('../') or '/../' in normalized or normalized.endswith('/..'):
+        validation_command_abort(value)
+    if normalized in {'.', './'}:
+        validation_command_abort(value)
+    command_path = PurePosixPath(value[2:]).as_posix()
+    if not command_path or command_path in {'.', '..'}:
+        validation_command_abort(value)
+    return f'./{command_path}'
+
+
+def normalize_validation_arg(raw: str) -> str:
+    if not isinstance(raw, str) or not raw.strip():
+        validation_command_abort(raw)
+    value = raw.strip()
+    if len(value) > MAX_VALIDATION_ARG_LENGTH:
+        validation_command_abort(value)
+    if SHELL_PATTERN_RE.search(value):
+        validation_command_abort(value)
+    if Path(value).is_absolute():
+        validation_command_abort(value)
+    if value.startswith('../') or '/../' in value or value.endswith('/..'):
+        validation_command_abort(value)
+    return value
+
+
+def normalize_validation_argv(value: object) -> list[str]:
+    if not isinstance(value, list) or not value:
+        validation_command_abort(value)
+    if len(value) > MAX_VALIDATION_COMMAND_ARGS:
+        validation_command_abort(value)
+    command = normalize_validation_command_path(value[0])
+    return [command, *[normalize_validation_arg(item) for item in value[1:]]]
+
+
+def normalize_validation_command_entry(value: object) -> list[str]:
+    if isinstance(value, dict):
+        extra_keys = set(value) - {'argv'}
+        if extra_keys or 'argv' not in value:
+            validation_command_abort(value)
+        return normalize_validation_argv(value['argv'])
+    return normalize_validation_argv(value)
+
+
+def validate_handoff_validation_commands(value: object) -> list[list[str]]:
+    if not isinstance(value, list) or not value:
+        validation_command_abort(value)
+    if len(value) > MAX_VALIDATION_COMMANDS:
+        validation_command_abort(value)
+    if all(isinstance(item, str) for item in value):
+        return [normalize_validation_argv(value)]
+    return [normalize_validation_command_entry(item) for item in value]
+
+
+def validate_handoff_state(value: object, source: str) -> dict:
+    if not isinstance(value, dict):
+        die(f'{source}: handoff state must be an object')
+    schema_version = value.get('schemaVersion')
+    if schema_version != HANDOFF_SCHEMA_VERSION:
+        die(f'{source}: handoff schemaVersion must be {HANDOFF_SCHEMA_VERSION}')
+    write_scope = validate_handoff_write_scope(value.get('writeScope'))
+    validation_commands = validate_handoff_validation_commands(value.get('validationCommands'))
+    body = value.get('body')
+    if body is not None and not isinstance(body, str):
+        die(f'{source}: handoff body must be a string when present')
+    normalized = dict(value)
+    normalized['schemaVersion'] = HANDOFF_SCHEMA_VERSION
+    normalized['writeScope'] = write_scope
+    normalized['validationCommands'] = validation_commands
+    return normalized
+
+
 def reviewer_role(entry: dict) -> str | None:
     value = entry.get('reviewerRole')
     if isinstance(value, str) and value.strip():
@@ -581,6 +728,106 @@ def active_reviewer_role(entry: dict) -> str | None:
     if reviewer and has_participant(entry, reviewer):
         return reviewer
     return None
+
+
+def reviewer_backed(entry: dict) -> bool:
+    return reviewer_role(entry) is not None
+
+
+def completion_state(entry: dict) -> dict:
+    completion = entry.setdefault('completion', {})
+    if not isinstance(completion, dict):
+        die('registry: completion must be an object when present')
+    substate = completion.get('subState')
+    if substate is None:
+        substate = 'execution'
+        completion['subState'] = substate
+    if substate not in ALLOWED_COMPLETION_SUBSTATES:
+        die(f'registry: completion.subState must be one of {sorted(ALLOWED_COMPLETION_SUBSTATES)}')
+    return completion
+
+
+def verification_state(entry: dict) -> dict:
+    verification = entry.setdefault('verification', {})
+    if not isinstance(verification, dict):
+        die('registry: verification must be an object when present')
+    rounds = verification.get('rounds', 0)
+    cap = verification.get('cap', DEFAULT_VERIFICATION_CAP)
+    if not isinstance(rounds, int) or rounds < 0:
+        die('registry: verification.rounds must be a non-negative integer when present')
+    if not isinstance(cap, int) or cap < 1:
+        die('registry: verification.cap must be a positive integer when present')
+    verification['rounds'] = rounds
+    verification['cap'] = cap
+    return verification
+
+
+def initialize_completion_state(entry: dict, substate: str = 'execution', reset_rounds: bool = False) -> None:
+    if not reviewer_backed(entry):
+        return
+    if substate not in ALLOWED_COMPLETION_SUBSTATES:
+        die(f'completion subState must be one of {sorted(ALLOWED_COMPLETION_SUBSTATES)}')
+    completion = completion_state(entry)
+    completion['subState'] = substate
+    verification = verification_state(entry)
+    if reset_rounds:
+        verification['rounds'] = 0
+    verification.setdefault('cap', DEFAULT_VERIFICATION_CAP)
+
+
+def execution_identity(role: str, date: str) -> str:
+    suffix = re.sub(r'[^0-9A-Za-z]+', '-', date).strip('-').lower()
+    return f'{role}-{suffix or "execution"}'
+
+
+def active_execution_entries(entry: dict) -> list[dict]:
+    rows: list[dict] = []
+    for role, state in sorted(entry.get('execution', {}).items()):
+        if not isinstance(state, dict):
+            continue
+        rows.append({
+            'role': role,
+            'entryId': state.get('entryId') or execution_identity(role, state.get('date', 'execution')),
+            'status': state.get('status'),
+            'date': state.get('date'),
+            'validationResult': state.get('validationResult'),
+            'validationScope': state.get('validationScope'),
+            'touchedPaths': list(state.get('touchedPaths', [])),
+        })
+    return rows
+
+
+def execution_signature(entry: dict) -> str:
+    entries = active_execution_entries(entry)
+    encoded = json.dumps(entries, sort_keys=True, separators=(',', ':'))
+    return base64.urlsafe_b64encode(encoded.encode()).decode().rstrip('=')
+
+
+def validation_scopes_for_execution(entry: dict) -> list[str]:
+    scopes: list[str] = []
+    for state in entry.get('execution', {}).values():
+        scope = state.get('validationScope') if isinstance(state, dict) else None
+        if isinstance(scope, str) and scope not in scopes:
+            scopes.append(scope)
+    return scopes
+
+
+def touched_paths_for_execution(entry: dict) -> list[str]:
+    touched: list[str] = []
+    for state in entry.get('execution', {}).values():
+        if not isinstance(state, dict):
+            continue
+        for item in state.get('touchedPaths', []):
+            if isinstance(item, str) and item not in touched:
+                touched.append(item)
+    return touched
+
+
+def invalidate_verification_seal(entry: dict, reason: str) -> None:
+    seal = entry.get('verificationSeal')
+    if isinstance(seal, dict):
+        seal['stale'] = True
+        seal['staleReason'] = reason
 
 
 def pending_reviewer_role(entry: dict) -> str | None:
@@ -889,7 +1136,72 @@ def validate_registry(data: dict, path: Path | None = None) -> None:
                 die(f'{source}: execution touchedPaths must be a list when present')
             if any(not isinstance(item, str) or not item.strip() for item in touched_paths):
                 die(f'{source}: execution touchedPaths must contain non-empty strings')
+            entry_id = state.get('entryId')
+            if entry_id is not None and (not isinstance(entry_id, str) or not entry_id.strip()):
+                die(f'{source}: execution entryId must be a non-empty string when present')
 
+        completion = entry.get('completion')
+        if completion is not None:
+            if not isinstance(completion, dict):
+                die(f'{source}: completion must be an object when present')
+            substate = completion.get('subState')
+            if substate is not None and substate not in ALLOWED_COMPLETION_SUBSTATES:
+                die(f'{source}: completion.subState must be one of {sorted(ALLOWED_COMPLETION_SUBSTATES)}')
+
+        verification = entry.get('verification')
+        if verification is not None:
+            if not isinstance(verification, dict):
+                die(f'{source}: verification must be an object when present')
+            rounds = verification.get('rounds', 0)
+            cap = verification.get('cap', DEFAULT_VERIFICATION_CAP)
+            if not isinstance(rounds, int) or rounds < 0:
+                die(f'{source}: verification.rounds must be a non-negative integer when present')
+            if not isinstance(cap, int) or cap < 1:
+                die(f'{source}: verification.cap must be a positive integer when present')
+
+        verification_seal = entry.get('verificationSeal')
+        if verification_seal is not None:
+            if not isinstance(verification_seal, dict):
+                die(f'{source}: verificationSeal must be an object when present')
+            if verification_seal.get('schemaVersion') != VERIFICATION_SEAL_SCHEMA_VERSION:
+                die(f'{source}: verificationSeal.schemaVersion must be {VERIFICATION_SEAL_SCHEMA_VERSION}')
+            observed = verification_seal.get('observedRevision')
+            if not isinstance(observed, int) or observed < 0:
+                die(f'{source}: verificationSeal.observedRevision must be a non-negative integer')
+            sealed_at = verification_seal.get('sealedAt')
+            sealed_by = verification_seal.get('sealedBy')
+            if not isinstance(sealed_at, str) or not sealed_at.strip():
+                die(f'{source}: verificationSeal.sealedAt must be a non-empty string')
+            if not isinstance(sealed_by, str) or not sealed_by.strip():
+                die(f'{source}: verificationSeal.sealedBy must be a non-empty string')
+            if not isinstance(verification_seal.get('executionEntries'), list):
+                die(f'{source}: verificationSeal.executionEntries must be a list')
+            if not isinstance(verification_seal.get('validationScopes'), list):
+                die(f'{source}: verificationSeal.validationScopes must be a list')
+            if not isinstance(verification_seal.get('touchedPaths'), list):
+                die(f'{source}: verificationSeal.touchedPaths must be a list')
+            stale = verification_seal.get('stale')
+            if stale is not None and not isinstance(stale, bool):
+                die(f'{source}: verificationSeal.stale must be a boolean when present')
+            cap_exit = verification_seal.get('capExit')
+            if cap_exit is not None and cap_exit not in ALLOWED_CAP_EXITS:
+                die(f'{source}: verificationSeal.capExit must be one of {sorted(ALLOWED_CAP_EXITS)}')
+
+        handoff = entry.get('handoff')
+        if handoff is not None:
+            if not isinstance(handoff, dict):
+                die(f'{source}: handoff must be an object when present')
+            if handoff.get('schemaVersion') != HANDOFF_SCHEMA_VERSION:
+                die(f'{source}: handoff schemaVersion must be {HANDOFF_SCHEMA_VERSION}')
+            handoff_roles = handoff.get('roles')
+            if not isinstance(handoff_roles, dict):
+                die(f'{source}: handoff roles must be an object when present')
+            for role, state in handoff_roles.items():
+                if not isinstance(role, str) or not role.strip():
+                    die(f'{source}: handoff role keys must be non-empty strings')
+                if role not in participant_role_keys:
+                    die(f'{source}: handoff role must already be a participant: {role}')
+                validate_handoff_state(state, f'{source}: handoff.{role}')
 
         if collab_id in collab_map:
             die(f'{source}: duplicate collab id: {collab_id}')
@@ -1069,6 +1381,15 @@ def transition_notice(from_phase: str, to_phase: str) -> dict | None:
             'notice': 'compact',
             'transition': transition,
             'message': 'Run /compact before continuing to Conclusion.',
+        }
+    if transition == 'Conclusion->Action Plan':
+        return {
+            'notice': 'action-plan-shape',
+            'transition': transition,
+            'message': (
+                'Action Plan entries must follow _invariants.md Invariant #9: '
+                r'^- \[[ x]\] \*\*[a-z]+:\*\*.'
+            ),
         }
     if transition == 'Handoff->Completion':
         return {
@@ -1375,6 +1696,8 @@ def apply_speak_lifecycle_to_entry(entry: dict, contributors: list[str]) -> bool
     entry['activePhase'] = next_phase
     if next_phase in MOD_EXCLUDED_PHASES:
         remove_moderator_from_turn_order(entry, order)
+    if next_phase == 'Completion':
+        initialize_completion_state(entry, 'execution', reset_rounds=True)
     return True
 
 
@@ -1392,7 +1715,13 @@ def close_eligible_after_execution(entry: dict, assigned_roles: list[str]) -> bo
     if not roles:
         return False
     execution = entry.get('execution', {})
-    return all(execution.get(role, {}).get('status') == 'completed' for role in roles)
+    completed = all(execution.get(role, {}).get('status') == 'completed' for role in roles)
+    if not completed:
+        return False
+    if reviewer_backed(entry):
+        seal = entry.get('verificationSeal')
+        return isinstance(seal, dict) and not seal.get('stale')
+    return True
 
 
 def next_line_after_execution(entry: dict, assigned_roles: list[str]) -> str:
@@ -1404,6 +1733,8 @@ def next_line_after_execution(entry: dict, assigned_roles: list[str]) -> str:
             continue
         if execution.get(assigned_role, {}).get('status') != 'completed':
             return f'NEXT: Run /collab run plan for role {assigned_role}.'
+    if reviewer_backed(entry):
+        return f'NEXT: Run /collab seal verification for role {reviewer_role(entry)}.'
     return next_line_for_state(entry)
 
 
@@ -1622,6 +1953,12 @@ def path_is_within(path: str, scope: str) -> bool:
     return path == scope or path.startswith(f'{scope}/')
 
 
+def scope_matches_declared(scope: str, declared: str) -> bool:
+    if GLOB_PATTERN_RE.search(declared):
+        return fnmatch.fnmatchcase(scope, declared)
+    return path_is_within(scope, declared)
+
+
 def assert_disjoint_scopes(scopes: list[str]) -> None:
     if not scopes:
         die('execute-spawn requires at least one --scope')
@@ -1653,11 +1990,60 @@ def execute_spawn(
         die('execute-spawn requires --scope')
     normalized_scope = normalize_scope_path(scope, 'scope')
     normalized_siblings = [normalize_scope_path(item, 'sibling-scope') for item in sibling_scopes]
-    assert_disjoint_scopes([normalized_scope, *normalized_siblings])
+    normalized_scopes = [normalized_scope, *normalized_siblings]
+    handoff_state = handoff_state_for_role(entry, role)
+    if handoff_state is not None:
+        declared_scopes = handoff_state['writeScope']
+        for declared_scope in normalized_scopes:
+            if not any(scope_matches_declared(declared_scope, declared) for declared in declared_scopes):
+                die(f'execute-spawn scope outside declared writeScope: {declared_scope}')
+    assert_disjoint_scopes(normalized_scopes)
     normalized_returned = [normalize_scope_path(item, 'returned-path') for item in returned_paths]
     for returned_path in normalized_returned:
         if not path_is_within(returned_path, normalized_scope):
             die(f'returned path outside assigned scope: {returned_path}')
+    print('ok')
+    return 0
+
+
+def transcript_repair(
+    path: Path,
+    target: str,
+    touch_execution_evidence: bool,
+    caller_role: str | None = None,
+) -> int:
+    with registry_lock(path):
+        data = load_registry(path)
+        entry = resolve_collab(data, target)
+        assert_caller_role(entry, caller_role, 'set')
+        if touch_execution_evidence:
+            invalidate_verification_seal(entry, 'transcript repair touched execution evidence')
+        save_registry(path, data)
+    print('ok')
+    return 0
+
+
+def out_of_scope_patch(
+    path: Path,
+    target: str,
+    role: str,
+    patch_path: str,
+    caller_role: str | None = None,
+) -> int:
+    with registry_lock(path):
+        data = load_registry(path)
+        entry = resolve_collab(data, target)
+        assert_caller_role(entry, caller_role, 'execution', role)
+        if not has_participant(entry, role):
+            die(f'execution role must already be a participant: {role}')
+        normalized_path = normalize_scope_path(patch_path, 'path')
+        handoff_state = handoff_state_for_role(entry, role)
+        if handoff_state is None:
+            die(f'handoff writeScope missing for role: {role}')
+        if any(scope_matches_declared(normalized_path, declared) for declared in handoff_state['writeScope']):
+            die(f'out-of-scope patch path is inside declared writeScope: {normalized_path}')
+        invalidate_verification_seal(entry, f'out-of-scope patch outside declared writeScope: {normalized_path}')
+        save_registry(path, data)
     print('ok')
     return 0
 
@@ -1765,6 +2151,50 @@ def action_plan_label_advisory(content: str, phase: str) -> str | None:
     )
 
 
+def is_markdown_heading(line: str) -> bool:
+    return bool(re.match(r'^\s{0,3}#{1,6}(?:\s|$)', line))
+
+
+def action_plan_shape_abort(line_number: int, line: str) -> None:
+    die(
+        f"ABORT: line {line_number} does not match Action Plan shape '- [ ] **<role>:** ...' "
+        f"(Invariant #9, _invariants.md). Offending line: '{line}'. "
+        f"Example: '{ACTION_PLAN_SHAPE_EXAMPLE}'"
+    )
+
+
+def validate_action_plan_shape(content: str, phase: str) -> None:
+    if phase != 'Action Plan':
+        return
+    saw_assignment = False
+    in_html_comment = False
+    for line_number, line in enumerate(content.splitlines(), start=1):
+        stripped = line.strip()
+        if in_html_comment:
+            if '-->' in stripped:
+                in_html_comment = False
+            continue
+        if stripped.startswith('<!--'):
+            if '-->' not in stripped[stripped.find('<!--') + 4:]:
+                in_html_comment = True
+            continue
+        if not stripped:
+            continue
+        if line_number == 1 and EFFORT_OVERRIDE_RE.match(stripped):
+            continue
+        if is_markdown_heading(line):
+            continue
+        if ACTION_PLAN_SHAPE_RE.match(line):
+            saw_assignment = True
+            continue
+        action_plan_shape_abort(line_number, line)
+    if not saw_assignment:
+        die(
+            'ABORT: Action Plan body contains no assignment lines after exempt content is removed '
+            f"(Invariant #9, _invariants.md). Example: '{ACTION_PLAN_SHAPE_EXAMPLE}'"
+        )
+
+
 def validate_effort_override(content: str, phase: str, role: str, moderator_role: str) -> None:
     if role == moderator_role:
         return
@@ -1857,6 +2287,188 @@ def render_content_for_transcript(content: str) -> list[str]:
             rendered.append(effort_override_metadata_comment(stripped))
         else:
             rendered.append(line)
+    return rendered
+
+
+def handoff_field_sections(content: str) -> dict[str, list[str]]:
+    sections: dict[str, list[str]] = {}
+    current: str | None = None
+    for line in content.splitlines():
+        stripped = line.strip()
+        if EFFORT_OVERRIDE_RE.match(stripped) or EFFORT_OVERRIDE_COMMENT_RE.match(stripped):
+            continue
+        match = STRUCTURED_HANDOFF_HEADING_RE.match(line)
+        if match:
+            current = match.group('field')
+            sections.setdefault(current, [])
+            rest = match.group('rest').strip()
+            if rest:
+                sections[current].append(rest)
+            continue
+        if current is not None:
+            if stripped.startswith('**') and stripped.endswith('**') and len(stripped) > 4:
+                current = None
+                continue
+            sections[current].append(line)
+    return sections
+
+
+def parse_json_fragment(raw: str, field: str) -> object:
+    value = raw.strip()
+    if value.startswith('`') and value.endswith('`') and len(value) >= 2:
+        value = value[1:-1].strip()
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError:
+        handoff_abort(field, value)
+
+
+def parse_write_scope_section(lines: list[str]) -> list[str]:
+    if not lines:
+        handoff_abort('writeScope', [])
+    joined = '\n'.join(line.strip() for line in lines if line.strip()).strip()
+    if joined.startswith('`[') or joined.startswith('['):
+        parsed = parse_json_fragment(joined, 'writeScope')
+        return validate_handoff_write_scope(parsed)
+    scopes: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        spans = CODE_SPAN_RE.findall(line)
+        if spans:
+            scopes.append(spans[0])
+            continue
+        bullet = re.match(r'^[-*]\s+(\S+)', stripped)
+        if bullet:
+            scopes.append(bullet.group(1))
+    return validate_handoff_write_scope(scopes)
+
+
+def parse_validation_commands_section(lines: list[str]) -> list[list[str]]:
+    if not lines:
+        validation_command_abort([])
+    fragments: list[object] = []
+    inline = ' '.join(line.strip() for line in lines if line.strip()).strip()
+    if inline.startswith('`') or inline.startswith('[') or inline.startswith('{') or (
+        inline.startswith('"') and inline.endswith('"')
+    ):
+        parsed = parse_json_fragment(inline, 'validationCommands')
+        return validate_handoff_validation_commands(parsed)
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        spans = CODE_SPAN_RE.findall(line)
+        if spans:
+            for span in spans:
+                fragments.append(parse_json_fragment(span, 'validationCommands'))
+            continue
+        bullet = re.match(r'^[-*]\s+(.+)$', stripped)
+        if bullet:
+            fragments.append(parse_json_fragment(bullet.group(1), 'validationCommands'))
+    if not fragments:
+        validation_command_abort(inline)
+    if len(fragments) == 1:
+        return validate_handoff_validation_commands(fragments[0])
+    return validate_handoff_validation_commands(fragments)
+
+
+def parse_handoff_content(content: str) -> dict:
+    sections = handoff_field_sections(content)
+    if 'writeScope' not in sections:
+        handoff_abort('writeScope', 'missing')
+    if 'validationCommands' not in sections:
+        handoff_abort('validationCommands', 'missing')
+    state = {
+        'schemaVersion': HANDOFF_SCHEMA_VERSION,
+        'writeScope': parse_write_scope_section(sections['writeScope']),
+        'validationCommands': parse_validation_commands_section(sections['validationCommands']),
+        'body': '\n'.join(render_content_for_transcript(content)).rstrip('\n'),
+    }
+    return validate_handoff_state(state, 'handoff')
+
+
+def set_handoff_state(entry: dict, role: str, state: dict) -> None:
+    handoff = entry.setdefault('handoff', {'schemaVersion': HANDOFF_SCHEMA_VERSION, 'roles': {}})
+    handoff['schemaVersion'] = HANDOFF_SCHEMA_VERSION
+    roles = handoff.setdefault('roles', {})
+    if not isinstance(roles, dict):
+        die('handoff roles must be an object')
+    roles[role] = validate_handoff_state(state, f'handoff.{role}')
+
+
+def handoff_state_for_role(entry: dict, role: str) -> dict | None:
+    handoff = entry.get('handoff')
+    if not isinstance(handoff, dict):
+        return None
+    roles = handoff.get('roles')
+    if not isinstance(roles, dict):
+        return None
+    state = roles.get(role)
+    if not isinstance(state, dict):
+        return None
+    return validate_handoff_state(state, f'handoff.{role}')
+
+
+def render_handoff_mirror_lines(body_lines: list[str], entry: dict) -> list[str]:
+    handoff = entry.get('handoff')
+    if not isinstance(handoff, dict):
+        return body_lines
+    roles = handoff.get('roles')
+    if not isinstance(roles, dict) or not roles:
+        return body_lines
+    try:
+        start, end = section_bounds(body_lines, '## Handoff')
+    except SystemExit:
+        return body_lines
+    rendered = list(body_lines)
+    index = start + 1
+    while index < end:
+        if not DETAILS_OPEN_RE.match(rendered[index].strip()):
+            index += 1
+            continue
+        block_start = index
+        depth = 1
+        block_end: int | None = None
+        cursor = index + 1
+        while cursor < end:
+            stripped = rendered[cursor].strip()
+            if DETAILS_OPEN_RE.match(stripped):
+                depth += 1
+            elif DETAILS_CLOSE_RE.match(stripped):
+                depth -= 1
+                if depth == 0:
+                    block_end = cursor + 1
+                    break
+            cursor += 1
+        if block_end is None:
+            die('transcript details block not closed in phase: Handoff')
+        role = summary_role(rendered[block_start + 1]) if block_start + 1 < block_end else None
+        state = roles.get(role) if role else None
+        if isinstance(state, dict):
+            validated = validate_handoff_state(state, f'handoff.{role}')
+            body = validated.get('body')
+            if isinstance(body, str) and body.strip():
+                marker_index: int | None = None
+                for offset in range(block_start, block_end):
+                    if rendered[offset].strip() == CONTENT_ONLY_GUARD:
+                        marker_index = offset
+                        break
+                if marker_index is None:
+                    die('contribution content marker missing')
+                replacement = (
+                    rendered[:marker_index + 1]
+                    + ['']
+                    + body.splitlines()
+                    + ['']
+                    + rendered[block_end - 1:block_end]
+                )
+                delta = len(replacement) - block_end
+                rendered = replacement + rendered[block_end:]
+                end += delta
+                block_end += delta
+        index = block_end
     return rendered
 
 
@@ -1995,7 +2607,9 @@ def render_speak(
         if role == current_entry['moderatorRole'] and not verbatim:
             content = polish_moderator_content(content)
         validate_effort_override(content, phase, role, current_entry['moderatorRole'])
+        validate_action_plan_shape(content, phase)
         enforce_contribution_budget(content, phase, role, current_entry['moderatorRole'], verbatim)
+        handoff_state = parse_handoff_content(content) if phase == 'Handoff' else None
 
         lines = transcript.splitlines()
         counter = next_anchor_counter(lines, phase, role)
@@ -2004,6 +2618,8 @@ def render_speak(
 
         next_data = deepcopy(data)
         next_entry = resolve_collab(next_data, target)
+        if handoff_state is not None:
+            set_handoff_state(next_entry, role, handoff_state)
         rendered_text = '\n'.join(rendered_lines) + '\n'
         rendered_state = speak_state_for_entry(next_entry, rendered_text)
         advanced, notice = apply_speak_lifecycle_with_notice(next_entry, rendered_state['contributors'])
@@ -2208,6 +2824,7 @@ def render_re_speak(
         if not transcript_path.exists():
             die(f'transcript missing: {transcript_path}')
         transcript = transcript_path.read_text()
+        validate_action_plan_shape(content, entry['activePhase'])
         reviewer_notice = reviewer_notice_for_rewrite(entry, transcript, role)
         rendered = replace_latest_contribution(
             transcript,
@@ -2244,11 +2861,15 @@ def advance_phase(
             entry['activePhase'] = PHASES[index + 1]
             if entry['activePhase'] in MOD_EXCLUDED_PHASES:
                 remove_moderator_from_turn_order(entry)
+            if entry['activePhase'] == 'Completion':
+                initialize_completion_state(entry, 'execution', reset_rounds=True)
         else:
             if index == 0:
                 die('no previous phase')
             entry['activePhase'] = PHASES[index - 1]
             normalize_turn_order_for_phase(entry, entry['activePhase'])
+            if entry['activePhase'] != 'Completion':
+                invalidate_verification_seal(entry, f'restored to {entry["activePhase"]}')
 
         notice = transition_notice(from_phase, entry['activePhase'])
         transcript_path = Path(entry['transcriptPath'])
@@ -2298,6 +2919,8 @@ def record_execution(
             die(f'execution role must already be a participant: {role}')
         if role == entry['moderatorRole']:
             die('execution role must not be the moderator')
+        if reviewer_backed(entry) and reviewer_state(entry)['state'] != 'active':
+            die(f'execution blocked: reviewer role is not active: {reviewer_role(entry)}')
         for assigned_role in assigned_roles:
             if not has_participant(entry, assigned_role):
                 die(f'assigned role must already be a participant: {assigned_role}')
@@ -2311,15 +2934,35 @@ def record_execution(
                 )
 
         execution_state = {'status': status, 'date': date}
+        execution_state['entryId'] = execution_identity(role, date)
         if validation_result:
             execution_state['validationResult'] = validation_result
         if validation_scope:
             execution_state['validationScope'] = validation_scope
         if touched_paths:
             execution_state['touchedPaths'] = touched_paths
+        previous_signature = execution_signature(entry)
         entry.setdefault('execution', {})[role] = execution_state
+        if reviewer_backed(entry) and previous_signature != execution_signature(entry):
+            invalidate_verification_seal(entry, f'execution changed for {role}')
         closed = False
-        if auto_close and close_eligible_after_execution(entry, assigned_roles):
+        if reviewer_backed(entry) and entry['activePhase'] == 'Completion':
+            if close_eligible_after_execution(entry, assigned_roles):
+                if auto_close:
+                    entry['status'] = 'closed'
+                    closed = True
+                    if data.get('activeCollabId') == entry['id']:
+                        data['activeCollabId'] = None
+            else:
+                if all(
+                    entry.get('execution', {}).get(assigned_role, {}).get('status') == 'completed'
+                    for assigned_role in assigned_roles
+                    if assigned_role != entry['moderatorRole']
+                ):
+                    initialize_completion_state(entry, 'verification', reset_rounds=True)
+                else:
+                    initialize_completion_state(entry, 'execution')
+        elif auto_close and close_eligible_after_execution(entry, assigned_roles):
             entry['status'] = 'closed'
             closed = True
             if data.get('activeCollabId') == entry['id']:
@@ -2350,10 +2993,15 @@ def rendered_status_table(entry: dict) -> str:
     reviewer = reviewer_role(entry) or '\u2014'
     turn_order_values = effective_turn_order(entry)
     turn_order = ', '.join(turn_order_values) if turn_order_values else '\u2014'
+    active_phase = entry['activePhase']
+    if active_phase == 'Completion' and reviewer_backed(entry):
+        completion = entry.get('completion')
+        if isinstance(completion, dict) and completion.get('subState') in ALLOWED_COMPLETION_SUBSTATES:
+            active_phase = f"Completion.{completion['subState']}"
     return '\n'.join([
         '| Status | Active phase | Turn order | Reviewer |',
         '|--------|--------------|------------|----------|',
-        f"| {entry['status']} | {entry['activePhase']} | {turn_order} | {reviewer} |",
+        f"| {entry['status']} | {active_phase} | {turn_order} | {reviewer} |",
     ])
 
 
@@ -2581,10 +3229,10 @@ def render_managed_header_text(transcript: str, entry: dict, roles_dir: Path) ->
     if bounds is None:
         bounds = legacy_header_bounds(lines)
     start, end = bounds
-    body_lines = lines[end:]
+    body_lines = render_handoff_mirror_lines(lines[end:], entry)
     timestamp = header_timestamp_from_lines(lines[start:end])
     replacement = rendered_managed_header(lines[0], entry, roles_dir, timestamp, body_lines).splitlines()
-    changed = lines[start:end] != replacement[1:]
+    changed = lines[start:end] != replacement[1:] or lines[end:] != body_lines
     rendered = lines[:1] + replacement[1:] + body_lines
     return '\n'.join(rendered) + '\n', changed
 
@@ -2815,6 +3463,256 @@ def default_close_summary(entry: dict) -> str:
         '',
         f'Validation result: passed for recorded role execution; touched paths: {touched_text}.',
     ])
+
+
+def next_completion_history_number(transcript: str) -> int:
+    try:
+        lines = phase_section(transcript, 'Completion')
+    except SystemExit as exc:
+        if str(exc) == 'transcript phase missing: Completion':
+            return 1
+        raise
+    highest = 0
+    for line in lines:
+        match = re.match(r'^\s*(\d+)\.\s+\*\*[^*]+:\*\*', line)
+        if match:
+            highest = max(highest, int(match.group(1)))
+    return highest + 1
+
+
+def append_completion_history_line(transcript: str, line: str) -> str:
+    lines = transcript.splitlines()
+    start, end = section_bounds(lines, '## Completion')
+    insert_at = end
+    if insert_at > start and lines[insert_at - 1] != '':
+        line_block = ['', line]
+    else:
+        line_block = [line]
+    return '\n'.join(lines[:insert_at] + line_block + lines[insert_at:]) + '\n'
+
+
+def summary_date_from_iso(timestamp: str) -> str:
+    match = re.match(r'^(\d{4}-\d{2}-\d{2})T', timestamp)
+    if match:
+        return match.group(1)
+    return summary_date_from_timestamp(timestamp)
+
+
+def seal_snapshot(entry: dict, observed_revision: int, role: str, cap_exit: str | None = None) -> dict:
+    seal = {
+        'schemaVersion': VERIFICATION_SEAL_SCHEMA_VERSION,
+        'observedRevision': observed_revision,
+        'executionEntries': active_execution_entries(entry),
+        'validationScopes': validation_scopes_for_execution(entry),
+        'touchedPaths': touched_paths_for_execution(entry),
+        'sealedAt': dt.datetime.now().astimezone().isoformat(timespec='seconds'),
+        'sealedBy': role,
+        'executionSignature': execution_signature(entry),
+        'stale': False,
+    }
+    if cap_exit:
+        seal['capExit'] = cap_exit
+    return seal
+
+
+def verification_substate(entry: dict) -> str:
+    if not reviewer_backed(entry):
+        return 'none'
+    completion = entry.get('completion')
+    if isinstance(completion, dict) and completion.get('subState') in ALLOWED_COMPLETION_SUBSTATES:
+        return completion['subState']
+    return 'execution'
+
+
+def all_execution_completed(entry: dict) -> bool:
+    execution = entry.get('execution', {})
+    roles = [role for role in effective_turn_order(entry) if role != entry['moderatorRole']]
+    if not roles:
+        return False
+    return all(execution.get(role, {}).get('status') == 'completed' for role in roles)
+
+
+def seal_state(path: Path, target: str, role: str | None = None, resume: bool = False) -> int:
+    with registry_lock(path):
+        data = load_registry(path)
+        entry = resolve_collab(data, target)
+        if entry['status'] in {'closed', 'archived'}:
+            die('record is closed')
+        if entry['activePhase'] != 'Completion':
+            die('/collab seal verification is valid only in the Completion phase')
+        if reviewer_backed(entry):
+            initialize_completion_state(entry, verification_substate(entry))
+        if reviewer_backed(entry) and all_execution_completed(entry):
+            completion = completion_state(entry)
+            if completion['subState'] == 'execution':
+                completion['subState'] = 'verification'
+                verification_state(entry)['rounds'] = 0
+        verification = verification_state(entry) if reviewer_backed(entry) else {'rounds': 0, 'cap': DEFAULT_VERIFICATION_CAP}
+        if reviewer_backed(entry) and verification_substate(entry) == 'verification' and all_execution_completed(entry):
+            signature = execution_signature(entry)
+            if verification.get('pairedExecutionSignature') != signature:
+                verification['rounds'] = verification.get('rounds', 0) + 1
+                verification['pairedExecutionSignature'] = signature
+        save_registry(path, data)
+        data = load_registry(path)
+        entry = resolve_collab(data, target)
+
+    seal = entry.get('verificationSeal')
+    result = {
+        'target': entry['id'],
+        'activePhase': entry['activePhase'],
+        'registryRevision': registry_revision(data),
+        'reviewerRole': reviewer_role(entry),
+        'reviewerState': reviewer_state(entry),
+        'verificationSubState': verification_substate(entry),
+        'verificationRounds': verification_state(entry).get('rounds', 0) if reviewer_backed(entry) else 0,
+        'verificationCap': verification_state(entry).get('cap', DEFAULT_VERIFICATION_CAP) if reviewer_backed(entry) else DEFAULT_VERIFICATION_CAP,
+        'executionEntries': active_execution_entries(entry),
+        'validationScopes': validation_scopes_for_execution(entry),
+        'touchedPaths': touched_paths_for_execution(entry),
+        'sealStale': bool(isinstance(seal, dict) and seal.get('stale')),
+        'freshRegistryRead': True,
+    }
+    if role:
+        result['roleAgentId'] = participant_agent_id(entry, role)
+        result['readyToSeal'] = role == reviewer_role(entry) and result['verificationSubState'] == 'verification'
+    if resume:
+        result['resume'] = f'tools/collab/registry.py seal-state --resume {entry["id"]} {role or reviewer_role(entry) or "<role>"}'
+    print(json.dumps(result, sort_keys=True))
+    return 0
+
+
+def apply_cap_exit(entry: dict, data: dict, cap_exit: str | None) -> dict | None:
+    if cap_exit is None:
+        entry['status'] = 'closed'
+        if data.get('activeCollabId') == entry['id']:
+            data['activeCollabId'] = None
+        return terminal_notice('closed')
+    if cap_exit == 'archive':
+        entry['status'] = 'archived'
+        entry['archived'] = True
+        if data.get('activeCollabId') == entry['id']:
+            data['activeCollabId'] = None
+        return terminal_notice('archived')
+    if cap_exit == 'reopen-action-plan':
+        entry['activePhase'] = 'Action Plan'
+        normalize_turn_order_for_phase(entry, 'Action Plan')
+        initialize_completion_state(entry, 'execution', reset_rounds=True)
+        return {'notice': 'reopen', 'transition': 'Completion.verification->Action Plan', 'message': 'Verification cap exit reopened Action Plan.'}
+    if cap_exit == 'reopen-handoff':
+        entry['activePhase'] = 'Handoff'
+        normalize_turn_order_for_phase(entry, 'Handoff')
+        initialize_completion_state(entry, 'execution', reset_rounds=True)
+        return {'notice': 'reopen', 'transition': 'Completion.verification->Handoff', 'message': 'Verification cap exit reopened Handoff.'}
+    die(f'invalid cap-exit value {cap_exit}; must be one of: reopen-action-plan, reopen-handoff, archive')
+
+
+def render_seal(
+    path: Path,
+    target: str,
+    role: str,
+    observed_revision: int,
+    cap_exit: str | None = None,
+    emit_json: bool = False,
+    caller_role: str | None = None,
+) -> int:
+    if cap_exit is not None and cap_exit not in ALLOWED_CAP_EXITS:
+        die(f'invalid cap-exit value {cap_exit}; must be one of: reopen-action-plan, reopen-handoff, archive')
+    with registry_lock(path):
+        data = load_registry(path)
+        entry = resolve_collab(data, target)
+        assert_caller_role(entry, caller_role, 'seal-render', role)
+        if entry['status'] in {'closed', 'archived'}:
+            die('record is closed')
+        if entry['activePhase'] != 'Completion':
+            die('/collab seal verification is valid only in the Completion phase')
+        live_revision = registry_revision(data)
+        if observed_revision != live_revision:
+            die(
+                f'stale registry revision: observed {observed_revision}, live {live_revision}\n'
+                f'RESUME: tools/collab/registry.py seal-state --resume {entry["id"]} {role}'
+            )
+        reviewer = reviewer_role(entry)
+        if reviewer is None:
+            die('verification seal requires an active reviewer role')
+        if reviewer_state(entry)['state'] != 'active':
+            die(f'reviewer role is not a registered participant; run /collab join --role {reviewer} first')
+        if role != reviewer:
+            die(f'seal must be authored by the reviewer role; current role: {role}; expected: {reviewer}')
+        if verification_substate(entry) != 'verification':
+            die(f'Completion.verification sub-state is not active; current sub-state: {verification_substate(entry)}')
+        verification = verification_state(entry)
+        rounds = verification.get('rounds', 0)
+        cap = verification.get('cap', DEFAULT_VERIFICATION_CAP)
+        if rounds == 0:
+            die('zero verification rounds; at least one reviewer-executor paired event is required before sealing')
+        if cap_exit is None and rounds >= cap:
+            die(
+                'round cap reached; reissue with --cap-exit reopen-action-plan, '
+                '--cap-exit reopen-handoff, or --cap-exit archive'
+            )
+        if not all_execution_completed(entry):
+            die('verification seal requires all execution entries to be completed')
+        seal = seal_snapshot(entry, observed_revision, role, cap_exit)
+        entry['verificationSeal'] = seal
+        notice = apply_cap_exit(entry, data, cap_exit)
+
+        transcript_path = Path(entry['transcriptPath'])
+        if not transcript_path.exists():
+            die(f'transcript missing: {transcript_path}')
+        transcript = transcript_path.read_text()
+        number = next_completion_history_number(transcript)
+        scope_label = 'cap-exit' if cap_exit else 'seal'
+        seal_line = (
+            f"{number}. **{role}:** sealed {format_timestamp()} — verification passed; "
+            f"{scope_label}; {len(seal['touchedPaths'])} paths."
+        )
+        rendered = append_completion_history_line(transcript, seal_line)
+        rendered, header_changed = render_managed_header_text(rendered, entry, DEFAULT_ROLES_DIR)
+        if entry['status'] == 'closed' and completion_summary_empty(rendered):
+            rendered = append_completion_summary(rendered, default_close_summary(entry), summary_date_from_iso(seal['sealedAt']))
+        print_header_overwrite(header_changed)
+        commit_registry_and_transcript(path, data, transcript_path, rendered)
+    print_post_action_advisories(entry, role, 'Completion', notice, next_line_for_state(entry))
+    print(entry['status'])
+    print_notice_diagnostic(notice, emit_json)
+    return 0
+
+
+def reopen_collab(
+    path: Path,
+    target: str,
+    phase_token: str,
+    caller_role: str | None = None,
+) -> int:
+    if phase_token == 'action-plan':
+        phase = 'Action Plan'
+    elif phase_token == 'handoff':
+        phase = 'Handoff'
+    else:
+        die('reopen phase must be one of: action-plan, handoff')
+    with registry_lock(path):
+        data = load_registry(path)
+        entry = resolve_collab(data, target)
+        assert_caller_role(entry, caller_role, 'set')
+        if entry['status'] == 'archived':
+            die('record is archived')
+        entry['status'] = 'open'
+        entry['archived'] = False
+        entry['activePhase'] = phase
+        data['activeCollabId'] = entry['id']
+        normalize_turn_order_for_phase(entry, phase)
+        initialize_completion_state(entry, 'execution', reset_rounds=True)
+        invalidate_verification_seal(entry, f'reopened {phase}')
+        transcript_path = Path(entry['transcriptPath'])
+        if not transcript_path.exists():
+            die(f'transcript missing: {transcript_path}')
+        rendered, header_changed = render_managed_header_text(transcript_path.read_text(), entry, DEFAULT_ROLES_DIR)
+        print_header_overwrite(header_changed)
+        commit_registry_and_transcript(path, data, transcript_path, rendered)
+    print_post_action_advisories(entry, None, None, None, next_line_for_state(entry))
+    print(entry['id'])
+    return 0
 
 
 def render_status(path: Path, target: str) -> int:
@@ -3157,6 +4055,13 @@ def close_collab(
                 f"{item['role']}={item['uncheckedCount']}" for item in violations
             )
             die(f'close blocked: completed execution has unchecked assigned Action Plan item(s): {details}')
+        if reviewer_backed(entry) and entry['activePhase'] == 'Completion':
+            seal = entry.get('verificationSeal')
+            if not isinstance(seal, dict):
+                die('close blocked: reviewer-backed Completion requires verificationSeal')
+            if seal.get('stale'):
+                reason = seal.get('staleReason') or 'unknown'
+                die(f'close blocked: verificationSeal is stale: {reason}')
         entry['status'] = 'closed'
         if data.get('activeCollabId') == entry['id']:
             data['activeCollabId'] = None
@@ -3318,6 +4223,16 @@ def reviewer_state_command(path: Path, target: str) -> int:
     return 0
 
 
+def handoff_state_command(path: Path, target: str, role: str) -> int:
+    data = load_registry(path)
+    entry = resolve_collab(data, target)
+    if not has_participant(entry, role):
+        die(f'handoff role must already be a participant: {role}')
+    state = handoff_state_for_role(entry, role) or {}
+    print(json.dumps(state, sort_keys=True))
+    return 0
+
+
 def timestamp_command() -> int:
     print(format_timestamp())
     return 0
@@ -3366,6 +4281,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     reviewer_state_parser = subparsers.add_parser('reviewer-state')
     reviewer_state_parser.add_argument('target')
+
+    handoff_state_parser = subparsers.add_parser('handoff-state')
+    handoff_state_parser.add_argument('target')
+    handoff_state_parser.add_argument('role')
 
     activate_parser = subparsers.add_parser('activate')
     activate_parser.add_argument('target')
@@ -3469,6 +4388,35 @@ def build_parser() -> argparse.ArgumentParser:
     execute_spawn_parser.add_argument('--sibling-scope', action='append', default=[])
     execute_spawn_parser.add_argument('--returned-path', action='append', default=[])
 
+    transcript_repair_parser = subparsers.add_parser('transcript-repair')
+    transcript_repair_parser.add_argument('target')
+    transcript_repair_parser.add_argument('--touch-execution-evidence', action='store_true')
+    transcript_repair_parser.add_argument('--caller-role')
+
+    out_of_scope_patch_parser = subparsers.add_parser('out-of-scope-patch')
+    out_of_scope_patch_parser.add_argument('target')
+    out_of_scope_patch_parser.add_argument('role')
+    out_of_scope_patch_parser.add_argument('--path', required=True)
+    out_of_scope_patch_parser.add_argument('--caller-role')
+
+    seal_state_parser = subparsers.add_parser('seal-state')
+    seal_state_parser.add_argument('target')
+    seal_state_parser.add_argument('role', nargs='?')
+    seal_state_parser.add_argument('--resume', action='store_true')
+
+    seal_render_parser = subparsers.add_parser('seal-render')
+    seal_render_parser.add_argument('target')
+    seal_render_parser.add_argument('role')
+    seal_render_parser.add_argument('--observed-revision', type=int, required=True)
+    seal_render_parser.add_argument('--cap-exit')
+    seal_render_parser.add_argument('--json', action='store_true')
+    seal_render_parser.add_argument('--caller-role')
+
+    reopen_parser = subparsers.add_parser('reopen')
+    reopen_parser.add_argument('target')
+    reopen_parser.add_argument('phase', choices=['action-plan', 'handoff'])
+    reopen_parser.add_argument('--caller-role')
+
     re_summarize_parser = subparsers.add_parser('rewrite-summary')
     re_summarize_parser.add_argument('target')
     re_summarize_parser.add_argument('--summary-file', required=True)
@@ -3534,6 +4482,8 @@ def main(argv: list[str]) -> int:
         return summary_role_command(args.line)
     if args.command == 'reviewer-state':
         return reviewer_state_command(path, args.target)
+    if args.command == 'handoff-state':
+        return handoff_state_command(path, args.target, args.role)
     if args.command == 'activate':
         return activate_collab(path, args.target)
     if args.command == 'init':
@@ -3596,6 +4546,24 @@ def main(argv: list[str]) -> int:
         )
     if args.command == 'execute-spawn':
         return execute_spawn(path, args.target, args.role, args.scope, args.sibling_scope, args.returned_path)
+    if args.command == 'transcript-repair':
+        return transcript_repair(path, args.target, args.touch_execution_evidence, args.caller_role)
+    if args.command == 'out-of-scope-patch':
+        return out_of_scope_patch(path, args.target, args.role, args.path, args.caller_role)
+    if args.command == 'seal-state':
+        return seal_state(path, args.target, args.role, args.resume)
+    if args.command == 'seal-render':
+        return render_seal(
+            path,
+            args.target,
+            args.role,
+            args.observed_revision,
+            args.cap_exit,
+            args.json,
+            args.caller_role,
+        )
+    if args.command == 'reopen':
+        return reopen_collab(path, args.target, args.phase, args.caller_role)
     if args.command == 'rewrite-summary':
         return re_summarize_collab(path, args.target, Path(args.summary_file), args.date)
     if args.command == 'close':

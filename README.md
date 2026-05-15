@@ -39,6 +39,10 @@ Cursor reads `~/.cursor/rules/*.mdc` at startup. `auto.mdc` is `alwaysApply: tru
 
 Files under `_generated/` are produced by scripts in `tools/cursor/`. Edit the source files or templates, then re-run the relevant sync script — do not edit `_generated/` directly.
 
+## Setup
+
+Run `tools/cursor/install-git-hooks.sh` to install pre-commit and pre-push hooks that run the full test suite before history moves. Pass `--no-verify` to `git commit` or `git push` to skip the hooks. Force-push blocking and deletion blocking on `main` are manual GitHub repository settings, not a source patch.
+
 ## Done signal
 
 Run `tools/cursor/audit.sh` to verify the framework surface. The audit exits 0 when:

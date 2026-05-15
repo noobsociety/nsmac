@@ -7,10 +7,12 @@ trap 'rm -rf "$TMPDIR"' EXIT
 
 cd "$TMPDIR"
 
+RUN_DATE="$(date +%Y-%m-%d)"
+
 "$ROOT/tools/collab/registry.py" init --agent-id codex --reviewer pa "Pending Reviewer Gate" >/dev/null
 
 set +e
-output="$("$ROOT/tools/collab/registry.py" speak-state 2026-05-14-pending-reviewer-gate mod 2>&1)"
+output="$("$ROOT/tools/collab/registry.py" speak-state "${RUN_DATE}-pending-reviewer-gate" mod 2>&1)"
 status=$?
 set -e
 

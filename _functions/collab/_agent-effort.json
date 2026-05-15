@@ -13,14 +13,16 @@
     "Conclusion":  { "mod": "low",    "tw": "medium", "pe": "medium", "pa": "xhigh"  },
     "Action Plan": { "mod": "low",    "tw": "medium", "pe": "high",   "pa": null     },
     "Handoff":     { "mod": "low",    "tw": "high",   "pe": "xhigh",  "pa": null     },
-    "Completion":  { "mod": "low",    "tw": "high",   "pe": "high",   "pa": "xhigh"  }
+    "Completion":  { "mod": "low",    "tw": "high",   "pe": "high",   "pa": "xhigh"  },
+    "Completion.verification": { "mod": "low", "tw": "high", "pe": "high", "pa": "xhigh" }
   },
   "notes": {
     "pa": {
       "Discussion":  "optional tail turn; admitted via reviewerOptionalPhases at high effort",
       "Action Plan": "not on roster by default; admitted as optional reviewer at xhigh when Action Plan is included in reviewerOptionalPhases via /collab set reviewer-optional-phases",
       "Handoff":     "not on roster by default; admitted as optional reviewer at xhigh when Handoff is included in reviewerOptionalPhases via /collab set reviewer-optional-phases",
-      "Completion":  "convergent reviewer gate; xhigh is required, not advisory"
+      "Completion":  "convergent reviewer gate; xhigh is required, not advisory; covers Completion.execution sub-state",
+      "Completion.verification": "reviewer seal pass; xhigh is required; mandatory-declaration turn; one bad judgment stales the seal and blocks close"
     }
   }
 }

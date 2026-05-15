@@ -42,7 +42,8 @@ This matrix is illustrative. The helper's `EFFORT:` advisory output is the runti
 | Conclusion | low | medium | medium | xhigh |
 | Action Plan | low | medium | high | — |
 | Handoff | low | high | xhigh | — |
-| Completion | low | high | high | xhigh *(reviewer gate)* |
+| Completion | low | high | high | xhigh *(reviewer gate; execution sub-state)* |
+| Completion.verification | low | high | high | xhigh *(reviewer seal; mandatory-declaration turn)* |
 
 **`—`** means the role is not on the turn-order roster for that phase by default. Optional admission is available via `reviewerOptionalPhases` in the registry (defaults to `["Discussion"]`; extended via `/collab set reviewer-optional-phases`); when admitted to a non-Discussion phase, the effort level is `xhigh`. Implemented by `reviewer_optional_phases` in `tools/collab/registry.py`.
 
@@ -69,6 +70,7 @@ The output is advisory. No gate blocks you from speaking at a lower effort level
 The following phase-role combinations require an explicit `EFFORT OVERRIDE: <level>` or `EFFORT OVERRIDE: matrix` line regardless of the chosen effort level:
 
 - `Audit-pa`, `Conclusion-pa`, `Completion-pa` — convergent-gate and reviewer-pass turns
+- `Completion.verification-pa` — reviewer seal turn; one bad judgment stales the seal and blocks close
 - `Handoff-tw`, `Handoff-pe` — implementation-bearing turns at the Handoff-to-Completion boundary
 
 `EFFORT OVERRIDE: matrix` is the explicit "considered and did not escalate" form. It satisfies the mandatory-declaration requirement without claiming elevated effort.

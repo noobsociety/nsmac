@@ -7,12 +7,14 @@ trap 'rm -rf "$TMPDIR"' EXIT
 
 cd "$TMPDIR"
 
+RUN_DATE="$(date +%Y-%m-%d)"
+
 "$ROOT/tools/collab/registry.py" init --agent-id codex "Execute Spawn Scope" >/dev/null
-"$ROOT/tools/collab/registry.py" join-participants 2026-05-14-execute-spawn-scope pe --agent-id codex >/dev/null
-"$ROOT/tools/collab/registry.py" set 2026-05-14-execute-spawn-scope active-phase Completion --force --caller-role mod >/dev/null
+"$ROOT/tools/collab/registry.py" join-participants "${RUN_DATE}-execute-spawn-scope" pe --agent-id codex >/dev/null
+"$ROOT/tools/collab/registry.py" set "${RUN_DATE}-execute-spawn-scope" active-phase Completion --force --caller-role mod >/dev/null
 
 set +e
-output="$("$ROOT/tools/collab/registry.py" execute-spawn 2026-05-14-execute-spawn-scope pe --scope tests --returned-path _tests/outside.md 2>&1)"
+output="$("$ROOT/tools/collab/registry.py" execute-spawn "${RUN_DATE}-execute-spawn-scope" pe --scope tests --returned-path _tests/outside.md 2>&1)"
 status=$?
 set -e
 

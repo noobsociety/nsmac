@@ -7,11 +7,13 @@ trap 'rm -rf "$TMPDIR"' EXIT
 
 cd "$TMPDIR"
 
+RUN_DATE="$(date +%Y-%m-%d)"
+
 "$ROOT/tools/collab/registry.py" init --agent-id codex "Stale Speak Render" >/dev/null
 printf 'Moderator note.\n' >content.md
 
 set +e
-output="$("$ROOT/tools/collab/registry.py" speak-render 2026-05-14-stale-speak-render mod --content-file content.md --observed-revision 0 2>&1)"
+output="$("$ROOT/tools/collab/registry.py" speak-render "${RUN_DATE}-stale-speak-render" mod --content-file content.md --observed-revision 0 2>&1)"
 status=$?
 set -e
 

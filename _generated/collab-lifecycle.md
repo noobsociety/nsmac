@@ -13,19 +13,22 @@ This reference orients agents to the registry-backed collab lifecycle. The phase
 | Conclusion | one contribution per required role | no | yes | required last in convergent reviewer mode |
 | Action Plan | one contribution per required role | no | yes | none |
 | Handoff | one contribution per required role | no | yes | none |
-| Completion | execution records only | yes | yes | none |
+| Completion | execution records, then reviewer seal when configured | yes | yes | none |
 
 ## Field Glossary
 
 | Field | Meaning |
 | --- | --- |
 | `activePhase` | Current lifecycle phase. Valid values are imported from `PHASES`. |
+| `completion.subState` | Reviewer-backed Completion sub-state: `execution`, `verification`. |
 | `turnOrder` | Ordered speaker cycle for ordinary roles; reviewer roles are excluded in convergent reviewer mode. |
 | `moderatorRole` | Participant that starts the collab and is removed from later implementation phases. |
 | `reviewerRole` | Optional reviewer that speaks last in convergent phases when configured. |
 | `reviewerMode` | Reviewer behavior mode; current helper behavior supports last-in-convergent-phases. |
 | `reviewerOptionalPhases` | Phases where the reviewer may speak without blocking the ordinary expected speaker. |
 | `execution.<role>` | Completion metadata for each executing role: status, date, validation result, and touched paths. |
+| `verification.rounds` | Registry-counted reviewer/executor paired events in `Completion.verification`. |
+| `verificationSeal` | Reviewer seal object that binds observed registry revision, execution entries, validation scopes, and touched paths. |
 | `activeCollabId` | Registry pointer for the selected open collaboration record. |
 
 ## Source Of Truth
