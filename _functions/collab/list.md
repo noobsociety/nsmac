@@ -39,5 +39,5 @@ Project: dotcursor · a13dba4ca8714205b217dca31da96eee
 
 ```cursor-arg
 dispatch: (collab list [--status <open|closed|archived>])
-param: name=--status; required=optional; placeholder=<open|closed|archived>; class=literal; values=open | closed | archived
+param: name=--status; required=optional; placeholder=<open|closed|archived>; class=literal; values=open | closed | archived; default=literal:all
 ```

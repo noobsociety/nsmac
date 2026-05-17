@@ -40,5 +40,11 @@ dispatch: (collab set <field> <value>)
 param: name=<field>; required=required; placeholder=<field>; class=literal; values=title | description | turn-order | reviewer | reviewer-optional-phases | active-phase
 param: name=<value>; required=required; placeholder=<value>; class=type; rule=field-specific replacement value
 param: name=<role>; required=required; placeholder=<role>; class=dynamic; source=tools/collab/registry.py roles
-param: name=--clear; required=optional; placeholder=--clear; class=literal; values=present
+param: name=--clear; required=optional; placeholder=--clear; class=literal; values=present; default=literal:false
+```
+
+```cursor-flag
+flag: force
+eligibility: eligible
+guard-class: recovery-only
 ```

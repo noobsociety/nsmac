@@ -11,7 +11,7 @@ Route multi-agent scaffold workflows through one public slash command.
 
 ## Steps
 
-1. Resolve `<install | patch | upgrade>` from the first token after `/agent`. If missing or invalid, **ABORT** naming the token received.
+1. Resolve `<install | patch | upgrade>` from the first token after `/agent`. If missing or invalid, **ABORT** naming the token received and emit the allowed route set: `install`, `patch`, `upgrade`.
 2. Load `../_functions/agent/<route>.md` from the Cursor config root.
 3. Execute that route with the remaining user input and attachments.
 

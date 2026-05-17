@@ -13,7 +13,7 @@
 
 ## Notes
 
-Defines the required output lines per collab helper command, advisory line ordering, and exit-code semantics. Authoritative for pe audits under item #5.
+Defines the required output lines per collab helper command, advisory line ordering, and exit-code semantics. Authoritative for platform-engineer role audits under item #5.
 
 ## Exit codes
 
@@ -95,6 +95,65 @@ Exit 0 always.
 ### `execute-spawn`
 
 Exit 0 when the declared scope does not conflict with sibling scopes. Exit 1 with conflict message naming the overlapping paths.
+
+### `participant-verify-state`
+
+Emits JSON object with fields: `target`, `activePhase`, `registryRevision`, `completionSubState`, `verificationReviewSubState`, `assignedRoles`, `nextRole`, `role`, `roleAgentId`, `roleState`, `readyToVerify`, `freshRegistryRead`. When the role is next, the helper persists `verification.participants[role].stage = "audit"` before emitting the JSON so the following `participant-verify-render` call has a registry-visible active lock. When `--resume` is supplied, also emits `resume`.
+
+Exit 0 on valid input. Exit 1 when the collab is closed, the phase is not `Completion`, participant verification is not the active sub-state, or the role is not assigned.
+
+### `participant-verify-render`
+
+Writes one atomic three-turn participant-verification sequence. Successful exit emits:
+
+1. `participant verification <completed|failed> for <role>`
+2. `NEXT: Run /collab participant verify for role <role>.` when another participant remains, otherwise `NEXT: Run /collab seal verification for role <reviewer>.`
+
+Exit 0 on success. Exit 1 when the observed revision is stale, no active participant-verification lock exists for the role, another participant role is next, the attempt cap is reached, or touched paths fall outside the role's declared `writeScope`.
+
+### `seal-state`
+
+Emits JSON object with fields: `target`, `activePhase`, `registryRevision`, `reviewerRole`, `reviewerState`, `verificationSubState`, `completionSubState`, `verificationReviewSubState`, `verificationRounds`, `verificationCap`, `executionEntries`, `validationScopes`, `touchedPaths`, `participantVerification`, `participantVerificationRoles`, `participantVerificationParticipants`, `nextParticipantVerificationRole`, `sealStale`, `verdict`, `freshRegistryRead`. When a `<role>` argument is provided, also emits `roleAgentId`, `readyToSeal`, and `readyToAssess`. When `--resume` is supplied, also emits `resume`.
+
+Exit 0 on valid input. Exit 1 when the collab is closed, the phase is not `Completion`, or the target is unresolvable.
+
+### `seal-render`
+
+Two modes share the subcommand: bare seal (no verdict flags) and assessment verdict (with `--outcome` and optional verdict fields). The modes are mutually exclusive; `--cap-exit` and verdict flags cannot be combined.
+
+**Bare seal path** (no verdict flags; `verificationReviewSubState` must be `seal`):
+
+Post-write advisories in order:
+
+1. `NEXT: Run /collab seal verification for role <role> with --outcome <success|incomplete|failed>.`
+2. `EFFORT: <phase> · <role> · <level> · <scale phrase>`
+3. `EFFICIENCY:` (only when action crosses a lifecycle boundary)
+4. `<status>` — registry status after the write
+5. Phase-transition notice JSON when a cap-exit transitions the phase; assessment-transition notice `{"notice": "assessment", "transition": "Completion.verification.seal->Completion.verification.assessment", "message": "Verification seal recorded; reviewer assessment required."}` when no cap-exit is applied
+
+When `--cap-exit` is provided, the `NEXT:` line reflects the new state after the transition rather than prompting for an assessment verdict. For `--cap-exit follow-up-collab`, it requires `--restore-reason`, `--evidence`, and `--failure-category`, records them on `verificationSeal.followUp`, and emits `NEXT: Open a follow-up collab {"evidence":...,"failureCategory":...,"restoreReason":...}.`
+
+**Assessment verdict path** (with `--outcome`; `verificationReviewSubState` must be `assessment`):
+
+Post-write advisories in order:
+
+1. `NEXT: Moderator should run /collab reopen <phase-token> <target>.` — on `success`, reflects the closed state via `next_line_for_state`; on `incomplete` or `failed`, directs the moderator to run `/collab reopen <phase-token>` where `<phase-token>` is `action-plan` or `handoff` derived from `restoreTarget`.
+2. `EFFORT: <phase> · <role> · <level> · <scale phrase>`
+3. `EFFICIENCY:` (only when action crosses a lifecycle boundary)
+4. `<status>` — `closed` on `success`; otherwise unchanged
+5. Assessment notice JSON: `{"notice": "assessment", "outcome": "<outcome>", "restoreTarget": "<target>", "message": "Assessment verdict recorded; restore target is <target>."}`
+
+### `execution`
+
+Post-write advisories in order:
+
+1. `NEXT: <next role or state guidance>`
+2. `EFFORT: <phase> · <role> · <level> · <scale phrase>`
+3. `EFFICIENCY:` (only when action crosses a lifecycle boundary)
+4. `<status>` — registry status after the write
+5. Terminal notice JSON when auto-close triggers: `{"notice": "clear", "status": "closed", "message": "..."}`
+
+Exit 0 on success. Exit 1 when the collab is closed, the role is not a participant, unchecked assigned Action Plan items remain (for `completed` status), or touched paths fall outside the role's declared `writeScope`.
 
 ## Defect definition
 

@@ -15,6 +15,10 @@ TARGET="$RUN_DATE-seal-verification-closed-record"
 "$ROOT/tools/collab/registry.py" set "$TARGET" active-phase Completion --force --caller-role mod >/dev/null
 complete_execution "$TARGET"
 seal_target "$TARGET"
+"$ROOT/tools/collab/registry.py" seal-render "$TARGET" pa \
+  --observed-revision "$(assessment_revision "$TARGET")" \
+  --outcome success \
+  --caller-role pa >/dev/null
 
 set +e
 output="$("$ROOT/tools/collab/registry.py" seal-state "$TARGET" pa 2>&1)"

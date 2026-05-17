@@ -25,7 +25,7 @@ registry_path() {
 init_reviewer_target() {
   local title="$1"
   local slug="$2"
-  "$ROOT/tools/collab/registry.py" init --agent-id codex --reviewer pa "$title" >/dev/null
+  "$ROOT/tools/collab/registry.py" init --agent-id codex --reviewer pa --no-participant-verification "$title" >/dev/null
   "$ROOT/tools/collab/registry.py" join-participants "$RUN_DATE-$slug" pe --agent-id gpt >/dev/null
   "$ROOT/tools/collab/registry.py" join-participants "$RUN_DATE-$slug" pa --agent-id opus >/dev/null
   "$ROOT/tools/collab/registry.py" set "$RUN_DATE-$slug" turn-order pe --caller-role mod >/dev/null
@@ -46,9 +46,34 @@ seal_target() {
   shift || true
   local state
   local revision
+  python3 - "$target" "$(registry_path)" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+target, registry = sys.argv[1:3]
+path = Path(registry)
+data = json.loads(path.read_text())
+entry = next(item for item in data['collabs'] if item['id'] == target)
+entry.setdefault('verification', {})['cap'] = 2
+path.write_text(json.dumps(data, indent=2) + '\n')
+PY
   state="$("$ROOT/tools/collab/registry.py" seal-state "$target" pa)"
   revision="$(read_json_field registryRevision <<<"$state")"
   "$ROOT/tools/collab/registry.py" seal-render "$target" pa --observed-revision "$revision" --caller-role pa "$@" >/dev/null
+}
+
+start_assessment() {
+  local target="$1"
+  complete_execution "$target"
+  seal_target "$target"
+}
+
+assessment_revision() {
+  local target="$1"
+  local state
+  state="$("$ROOT/tools/collab/registry.py" seal-state "$target" pa)"
+  read_json_field registryRevision <<<"$state"
 }
 
 seed_handoff_scope() {

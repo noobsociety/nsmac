@@ -30,5 +30,5 @@ Soft-delete a collab by marking it archived so it is preserved on disk but exclu
 
 ```cursor-arg
 dispatch: (collab archive [<target>])
-param: name=<target>; required=optional; placeholder=<target>; class=dynamic; rule=collab slug, id, or #N; defaults to active collab
+param: name=<target>; required=optional; placeholder=<target>; class=dynamic; rule=collab slug, id, or #N; defaults to active collab; default=derived:active-collab
 ```

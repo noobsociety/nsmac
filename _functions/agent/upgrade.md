@@ -56,7 +56,7 @@ Apply current scaffold templates to an already-installed multi-agent scaffold in
 
 ```cursor-arg
 dispatch: (agent upgrade [--force])
-param: name=--force; required=optional; placeholder=--force; class=literal; values=present
+param: name=--force; required=optional; placeholder=--force; class=literal; values=present; default=literal:false
 ```
 
 ```cursor-flag

@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 ./tools/cursor/audit.sh
+./tools/cursor/audit-role-prose.sh
 
 while IFS= read -r test_script; do
   [[ -n "$test_script" ]] || continue

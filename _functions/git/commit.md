@@ -12,7 +12,7 @@ Split the working tree into atomic commits, or squash an inclusive `FROM..TO` ra
 ## Steps
 
 1. Load [shared-git-commits.mdc](../../_mdc/shared/shared-git-commits.mdc). If it is not directly readable, **ABORT** per **`auto-context-gate.mdc`**.
-2. Resolve mode from the first argument: `atomic` → **Atomic path**; `squash` → **Squash path**. **ABORT** if the mode keyword is missing. For `squash`, accept either no extra args (auto mode) or both `<from>` and `<to>` (range mode); **ABORT** if exactly one SHA is provided.
+2. Resolve mode from the first argument: `atomic` → **Atomic path**; `squash` → **Squash path**. If the mode keyword is missing or invalid, **ABORT** and emit the allowed value set: `atomic | squash`. For `squash`, accept either no extra args (auto mode) or both `<from>` and `<to>` (range mode); **ABORT** if exactly one SHA is provided and emit the range shape `squash <from> <to>`.
 3. Execute the chosen path in **Notes** end to end. Do not skip safety checks there.
 4. Keep chat output for subjects aligned with **`shared-git-commits.mdc`** **Output contract**. On the **Squash path**, a multi-line message with `- ` body bullets is permitted per that rule and this playbook.
 
@@ -20,6 +20,7 @@ Split the working tree into atomic commits, or squash an inclusive `FROM..TO` ra
 
 - **Route (atomic vs squash).** Determined by the required mode arg. Carry **`FROM`**, **`TO`**, file subsets, or subjects from the message into the path.
 - **Parameters:** `<atomic | squash>` — mode keyword (required): `atomic` splits the working tree. `squash` supports auto mode (no SHAs) and range mode (`<from> <to>` both required). See **Stage signatures** below.
+- **Missing mode help:** A bare `/git commit` invocation aborts before any git command and emits `<atomic | squash>`.
 - **Stage signatures:** `/git commit atomic` — no extra arguments; splits the working tree. `/git commit squash` — no extra arguments; auto mode, builds from current working-tree changes. `/git commit squash <from> <to>` — both `<from>` and `<to>` required; range mode collapses `FROM..TO`; **ABORT** if exactly one SHA is provided.
 - **Dependencies:** Subjects and squash body lines follow **`shared-git-commits.mdc`** **Format** and **Compliance**. Summary and each squash bullet line stay ≤72 characters including `type(scope): `. Squash bodies use Markdown `- ` bullets; that exception does not change Conventional Commit subject rules.
 - **Scope:** Applies on **`/git commit`** and when natural language clearly means atomic-only or squash-only work.

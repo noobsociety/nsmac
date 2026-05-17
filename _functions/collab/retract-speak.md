@@ -29,5 +29,5 @@ Retract the current role's latest contribution in the active phase while preserv
 
 ```cursor-arg
 dispatch: (collab retract speak [--reason <text>])
-param: name=--reason; required=optional; placeholder=<text>; class=type; rule=free text
+param: name=--reason; required=optional; placeholder=<text>; class=type; rule=free text; default=literal:unspecified
 ```

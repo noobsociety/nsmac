@@ -73,10 +73,12 @@ When absent: omit `reviewerRole`, `reviewerMode`, and `reviewerOptionalPhases` f
 
 ### Strict-flag set
 
-The init helper accepts exactly one required flag and two optional flags:
+The init helper accepts exactly one required flag and four optional flags:
 
 - Required: `--agent-id <agentId>`
 - Optional: `--reviewer <role>`
+- Optional: `--participant-verification` (boolean; no value)
+- Optional: `--verification-cap <N>` (positive integer; requires `--participant-verification`)
 - Optional: `--preview` (boolean; no value)
 
 All other flag-shaped tokens (any token beginning with `--`) must be rejected before any file write with: `unknown flag: <token>`.

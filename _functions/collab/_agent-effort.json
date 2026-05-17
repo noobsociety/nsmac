@@ -14,7 +14,8 @@
     "Action Plan": { "mod": "low",    "tw": "medium", "pe": "high",   "pa": null     },
     "Handoff":     { "mod": "low",    "tw": "high",   "pe": "xhigh",  "pa": null     },
     "Completion":  { "mod": "low",    "tw": "high",   "pe": "high",   "pa": "xhigh"  },
-    "Completion.verification": { "mod": "low", "tw": "high", "pe": "high", "pa": "xhigh" }
+    "Completion.verification": { "mod": "low", "tw": "high", "pe": "high", "pa": "xhigh" },
+    "Completion.verification.participant": { "mod": "low", "tw": "xhigh", "pe": "xhigh", "pa": null }
   },
   "notes": {
     "pa": {
@@ -22,7 +23,8 @@
       "Action Plan": "not on roster by default; admitted as optional reviewer at xhigh when Action Plan is included in reviewerOptionalPhases via /collab set reviewer-optional-phases",
       "Handoff":     "not on roster by default; admitted as optional reviewer at xhigh when Handoff is included in reviewerOptionalPhases via /collab set reviewer-optional-phases",
       "Completion":  "convergent reviewer gate; xhigh is required, not advisory; covers Completion.execution sub-state",
-      "Completion.verification": "reviewer seal pass; xhigh is required; mandatory-declaration turn; one bad judgment stales the seal and blocks close"
+      "Completion.verification": "reviewer seal pass; xhigh is required; mandatory-declaration turn; one bad judgment stales the seal and blocks close",
+      "Completion.verification.participant": "not on roster for participant verification; reviewer gate and seal occur after all assigned participants complete their verification sequences"
     }
   }
 }

@@ -21,6 +21,18 @@ Do not reproduce the following as literal text in prose paragraphs of `.md` and 
 - **Role key values** — the literal strings that identify registered roles (e.g., the strings that serve as role identifiers in `cursor/_roles/*.json`). These are configuration-owned; prose must not enumerate them inline.
 - **Agent or model identifier values** — the literal strings naming an agent or model. These are configuration-owned; prose must not enumerate them inline.
 
+### Replacement mapping
+
+When prose would otherwise reference a role by its key, use these function-bound phrases:
+
+| Role key | Prose replacement | Rationale |
+|---|---|---|
+| `mod` | "the moderator role" | Bound to function; key is implementation detail |
+| `pa` | "reviewer" | Bound to `reviewerRole` in the registry; `displayName` is staffing metadata that does not survive rotation |
+| `tw` | "the technical-writer role" | Bound to function; key is implementation detail |
+| `pe` | "the platform-engineer role" | Bound to function; key is implementation detail |
+| multiple roles collectively | "participants" | Neutral collective that does not enumerate keys |
+
 ### Behavior-binding references
 
 A reference that names a single value to bind behavior — for example, a conditional that tests the executing role to apply a specific rule — is in scope. The canonical source for role keys is `cursor/_roles/*.json`; prose that would otherwise hard-code an identifier should reference the role's defining property or use a neutral description instead.
@@ -38,6 +50,7 @@ Prose paragraphs only: body text in steps, notes, descriptions, and explanatory 
 - Flag names (e.g., `--role`, `--reviewer`, `--turn-order`)
 - Placeholders (e.g., `<role>`, `<key>`, `<agent>`)
 - Tables, summary labels, and metadata sections whose authority is the rendering context (registry state, scaffold output)
+- Attribution and provenance context — role keys or model identifiers used as audit anchors in historical or authorship notes (e.g., collab caveats declaring which role authored a recommendation, quarterly-rotation provenance declarations). Attribution is a forensic anchor, not a configuration reference.
 
 ## Examples
 

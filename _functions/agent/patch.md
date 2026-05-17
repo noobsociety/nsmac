@@ -47,7 +47,7 @@ Patch `REPOSITORY.md` in the current repository with repo-specific multi-agent m
 
 ```cursor-arg
 dispatch: (agent patch [--force])
-param: name=--force; required=optional; placeholder=--force; class=literal; values=present
+param: name=--force; required=optional; placeholder=--force; class=literal; values=present; default=literal:false
 ```
 
 ```cursor-flag

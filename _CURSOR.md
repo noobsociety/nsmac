@@ -42,7 +42,7 @@ Safe lifecycle patterns for managing context across collab sessions:
 
 > Audit (speak) → Discussion (speak) → `/compact` → Conclusion (speak) → Action Plan (speak) → Handoff (speak) → `/compact` → prepare subagent → Completion (execute) → use subagent → `/clear`
 >
-> `mod` exits after Discussion, then `/clear`. `pa` exits after Conclusion, then `/clear`. Their absence from subsequent phases is by design, not omission.
+> The moderator role exits after Discussion, then `/clear`. The reviewer exits after Conclusion, then `/clear`. Their absence from subsequent phases is by design, not omission.
 
 ## Cursor entry points
 

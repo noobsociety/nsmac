@@ -47,7 +47,7 @@ Install the multi-agent scaffold into the current repository from `~/.cursor/_te
 
 ```cursor-arg
 dispatch: (agent install [--force])
-param: name=--force; required=optional; placeholder=--force; class=literal; values=present
+param: name=--force; required=optional; placeholder=--force; class=literal; values=present; default=literal:false
 ```
 
 ```cursor-flag

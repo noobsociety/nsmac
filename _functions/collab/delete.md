@@ -39,5 +39,5 @@ Permanently remove a collab record from the registry and disk. This operation is
 
 ```cursor-arg
 dispatch: (collab delete [<target>])
-param: name=<target>; required=optional; placeholder=<target>; class=dynamic; rule=collab slug, id, or #N; defaults to active collab
+param: name=<target>; required=optional; placeholder=<target>; class=dynamic; rule=collab slug, id, or #N; defaults to active collab; default=derived:active-collab
 ```

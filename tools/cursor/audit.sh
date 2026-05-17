@@ -209,6 +209,7 @@ check_generated_freshness() {
   python3 tools/cursor/command-reference.py --check || failures=$((failures + 1))
   tools/collab/lifecycle-doc.py --check || failures=$((failures + 1))
   tools/cursor/coverage-gate.sh || failures=$((failures + 1))
+  tools/cursor/audit-role-prose.sh || failures=$((failures + 1))
 }
 
 check_generated_boundary() {
@@ -300,6 +301,42 @@ PY
   ((status == 0)) || failures=$((failures + 1))
 }
 
+check_cursor_arg_defaults() {
+  python3 - <<'PY'
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+failures: list[str] = []
+
+for path in sorted(Path('_functions').rglob('*.md')):
+    for number, line in enumerate(path.read_text().splitlines(), start=1):
+        stripped = line.strip()
+        if not stripped.startswith('param: '):
+            continue
+        fields: dict[str, str] = {}
+        for part in stripped.removeprefix('param: ').split(';'):
+            if '=' not in part:
+                continue
+            key, value = part.strip().split('=', 1)
+            fields[key.strip()] = value.strip()
+        required = fields.get('required')
+        if required == 'optional' and 'default' not in fields:
+            failures.append(f'{path}:{number}: optional cursor-arg param missing default=')
+        if required == 'required' and 'default' in fields:
+            failures.append(f'{path}:{number}: required cursor-arg param must not declare default=')
+
+if failures:
+    for failure in failures:
+        print(f'FAIL: {failure}', file=sys.stderr)
+    sys.exit(1)
+print('OK: cursor-arg optional defaults are declared')
+PY
+  local status=$?
+  ((status == 0)) || failures=$((failures + 1))
+}
+
 check_required_surface
 check_adapters
 check_runtime_boundary
@@ -310,6 +347,7 @@ check_collab_registry_lock
 check_generated_freshness
 check_generated_boundary
 check_links
+check_cursor_arg_defaults
 
 if ((failures > 0)); then
   printf 'audit: failed with %d issue(s)\n' "$failures" >&2

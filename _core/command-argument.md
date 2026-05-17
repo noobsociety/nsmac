@@ -52,6 +52,7 @@ ineligibility-reason: Bypass would create state that other helpers assume cannot
 |-------------|-------------|
 | `hard-abort` | Route aborts unconditionally on conflict; `--force` redirects to the diff-then-gate path. |
 | `gated-overwrite` | Route already presents a destructive gate on conflict; `--force` computes the candidate patch before entering that gate. |
+| `recovery-only` | Route normally delegates mutation to lifecycle-specific routes; `--force` admits a narrowly documented metadata repair path. |
 
 ## Force Ineligibility Table
 
@@ -172,6 +173,63 @@ To add a verb to the closed destructive set:
 3. Document the new verb's operand-format convention in this file.
 
 Never add a verb at the route level without amending this file first.
+
+## `cursor-arg` Block Schema
+
+Every route that declares user-facing arguments must carry a fenced `cursor-arg` block. The block is machine-readable and validated by `tools/cursor/audit.sh`.
+
+**Required fields**
+
+| Field | Description |
+|-------|-------------|
+| `dispatch` | Full dispatch signature, mirroring the route signature in the Trigger section |
+| `param` | One line per parameter; see **`param` field** below |
+
+**`param` field**
+
+Each `param` line is a semicolon-delimited list of key-value pairs.
+
+Required keys:
+
+| Key | Allowed values | Description |
+|-----|----------------|-------------|
+| `name` | Flag or positional name | Flag names begin with `--`; positionals use angle-bracket form |
+| `required` | `required` or `optional` | Whether the parameter must be supplied by the caller |
+| `placeholder` | Literal token or `<placeholder>` | Example token shown in route signatures |
+| `class` | `type` or `dynamic` | `type` — a literal or enumerated value; `dynamic` — resolved at runtime from an external source |
+| `rule` | Prose or `<type> flag` | Short constraint description |
+
+Optional keys:
+
+| Key | Allowed values | Description |
+|-----|----------------|-------------|
+| `source` | Command path | Required when `class=dynamic`; identifies the helper that provides the allowed value set |
+| `requires` | Flag name | Declares a prerequisite flag; the parameter is only valid when the named flag is also present |
+| `default` | `literal:<v>`, `derived:<source>`, or `none` | Default behavior when the parameter is omitted; required on every `required=optional` row |
+
+**`default=` values**
+
+| Value | Meaning |
+|-------|---------|
+| `literal:<v>` | Omitting the parameter uses the literal value `<v>` |
+| `derived:<source>` | The default is computed at runtime from the named source (context variable, sibling flag, or inferred input) |
+| `none` | No default; omitting this parameter triggers the abort-with-contextual-help policy in [`_core/command-default.md`](command-default.md) |
+
+**Composition rules**
+
+- `required=required` rows must not carry a `default=` key.
+- `required=optional` rows must carry a `default=` key.
+- `class=dynamic` rows must carry a `source=` key.
+- `default=none` on a `required=optional` row means bare invocation of that parameter triggers the abort-with-contextual-help policy.
+
+**Example**
+
+````cursor-arg
+dispatch: (example cmd "<name>" [--target <role>] [--dry-run])
+param: name=<name>; required=required; placeholder=<name>; class=type; rule=title text
+param: name=--target; required=optional; placeholder=<role>; class=dynamic; source=tools/example/roles.py; default=none
+param: name=--dry-run; required=optional; placeholder=--dry-run; class=type; rule=boolean flag; default=literal:false
+````
 
 ## Negative-Test Category Table
 

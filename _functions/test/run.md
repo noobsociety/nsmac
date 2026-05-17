@@ -11,7 +11,7 @@ Run QA harnesses by target so maintainers can execute canonical test checklists 
 
 ## Steps
 
-1. Resolve `<commands | rules | _functions | _mdc | _core | _roles | _settings | repo | all>` from the first argument. If missing or invalid, **ABORT** naming the token received.
+1. Resolve `<commands | rules | _functions | _mdc | _core | _roles | _settings | repo | all>` from the first argument. If missing or invalid, **ABORT** naming the token received and emit the allowed target set: `commands`, `rules`, `_functions`, `_mdc`, `_core`, `_roles`, `_settings`, `repo`, `all`.
 2. Route by target:
    - `commands` → load and execute `~/.cursor/_tests/commands.md` full procedure and invariants.
    - `rules` → load and execute `~/.cursor/_tests/rules.md` full procedure and invariants.
@@ -30,6 +30,7 @@ Run QA harnesses by target so maintainers can execute canonical test checklists 
 
 - **Route:** `commands` | `rules` | `_functions` | `_mdc` | `_core` | `_roles` | `_settings` | `repo` | `all`.
 - **Parameters:** `<commands | rules | _functions | _mdc | _core | _roles | _settings | repo | all>` — required QA target selector.
+- **Missing target help:** A bare `/test` invocation aborts before any harness command and emits the allowed target set.
 - **Required authorities:** `~/.cursor/_tests/commands.md`, `~/.cursor/_tests/rules.md`, `~/.cursor/_tests/_functions.md`, `~/.cursor/_tests/_mdc.md`, `~/.cursor/_tests/_core.md`, `~/.cursor/_tests/_roles.md`, `~/.cursor/_tests/_settings.md`, and `REPOSITORY.md` at repo root.
 - **Dependencies:** If any required harness context is unreadable, **ABORT** per **`auto-context-gate.mdc`**.
 

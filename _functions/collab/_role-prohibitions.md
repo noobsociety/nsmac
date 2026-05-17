@@ -34,3 +34,8 @@ Reference inventory for role-local advisory prohibitions. This file is prose doc
 - `rewrite summary` — do not rewrite summary content beyond the requested correction.
 - `run plan` — do not execute non-collab work while acting as moderator.
 - `rewrite execution` — do not rewrite execution history to mask failed validation.
+
+## Reviewer mutating-command inventory
+
+- `seal verification` — do not mutate seal-block fields (`executionEntries`, `validationScopes`, `touchedPaths`, `observedRevision`) once `verification.subState == assessment`; only verdict fields (`outcome`, `restoreTarget`, `restoreReason`, `evidence`, `failureCategory`, `nullResult`) may be written during assessment. Once assessment is open, retroactive alteration of the seal block is prohibited; violations are rejected by the helper.
+- `seal verification` — do not author `evidence` content beyond read-only anchors (transcript ids, registry revision, committed paths, execution entry ids); implementation steps, command output, and replacement content belong to participants after restore.

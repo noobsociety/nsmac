@@ -66,7 +66,7 @@ Append one role-labeled contribution to the active phase of a moderated collabor
 
 ```cursor-arg
 dispatch: (collab speak [<message>] [--turn-order <key>...] [--verbatim])
-param: name=<message>; required=optional; placeholder=<message>; class=type; rule=free text
-param: name=--turn-order; required=optional; placeholder=<key>...; class=dynamic; rule=registered participant role keys in the active collab
-param: name=--verbatim; required=optional; placeholder=--verbatim; class=type; rule=boolean flag
+param: name=<message>; required=optional; placeholder=<message>; class=type; rule=free text; default=literal:empty
+param: name=--turn-order; required=optional; placeholder=<key>...; class=dynamic; rule=registered participant role keys in the active collab; default=literal:unchanged
+param: name=--verbatim; required=optional; placeholder=--verbatim; class=type; rule=boolean flag; default=literal:false
 ```

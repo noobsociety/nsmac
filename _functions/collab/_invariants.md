@@ -28,6 +28,8 @@ Anchor convention: each ABORT in `<route>.md` must carry a stable id anchor `<!-
 
 Maintainer check: `git grep -rn 'agent-honor-system' cursor/_functions/collab/` shows every agent-honor-system clause. Any undocumented ABORT that has neither a helper check nor this marker is a defect.
 
+Maintainer check: `git grep -rnP '(?<![A-Za-z0-9_])(mod|pa|pe|tw)(?![A-Za-z0-9_])' -- '*.md' '*.mdc'` is the broad review sweep for role-key prose drift. Every prose match must either be covered by the documented carve-outs in `tools/cursor/audit-role-prose.sh` or rewritten to function-bound prose.
+
 **2. Registry as source of truth; transcript as human ledger**
 
 The resolved registry (`$HOME/.collabs/<projectId>/registry.json` by default, or the explicit `--registry` path) is the authoritative source for command state. The transcript (`records/*.md` inside the resolved state root by default) mirrors selected metadata and captures human-readable context. Registry-only mutations — `/collab set`, `/collab unset`, moderator removal in `speak-lifecycle-live` — must remain reconcilable against transcript-readable state. No registry write may create state that cannot be explained or confirmed from the transcript.

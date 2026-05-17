@@ -13,12 +13,17 @@ Deterministic QA for shared role JSON sources projected to `~/.cursor/_roles/`.
 
 ## Required roster
 
+<!-- BEGIN GENERATED:REQUIRED_ROSTER -->
+<!-- shared-cmd-values exemption: registry-state mirror; role-key enumeration is generated output, not prose authorship. -->
+_Generated from `cursor/_roles/*.json`; do not edit this block by hand._
+
 Tracked role source files under `cursor/_roles/`:
 
 - `mod.json`
 - `pa.json`
 - `pe.json`
 - `tw.json`
+<!-- END GENERATED:REQUIRED_ROSTER -->
 
 ## Output
 

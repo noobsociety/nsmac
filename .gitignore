@@ -3,7 +3,6 @@
 # The leading `*` ignores everything in this local Cursor config directory.
 # Source is opted in below. Runtime and IDE-produced state stays ignored by
 # omission, including:
-#   .claude/        — local agent state; not source
 #   projects/       — local Cursor project state; not source
 #   extensions/     — local extension cache/state; not source
 #   ide_state.json  — local IDE state; not source

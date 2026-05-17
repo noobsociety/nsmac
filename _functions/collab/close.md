@@ -32,5 +32,5 @@ Mark a collaboration record closed so contribution and phase-advance routes stop
 
 ```cursor-arg
 dispatch: (collab close [--no-summary])
-param: name=--no-summary; required=optional; placeholder=--no-summary; class=literal; values=present
+param: name=--no-summary; required=optional; placeholder=--no-summary; class=literal; values=present; default=literal:false
 ```

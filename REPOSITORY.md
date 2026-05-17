@@ -18,7 +18,8 @@ Authority is strict and ordered:
 
 1. Repo-owned executable checks and scripts:
    - `./tests/run.sh` (runs `./tools/cursor/audit.sh` then every `tests/**/*.test.sh`)
-   - `./tools/cursor/audit.sh` (adapter routing, `_CURSOR.md` discovery, runtime ignore rules)
+   - `./tools/cursor/audit.sh` (adapter routing, `_CURSOR.md` discovery, runtime ignore rules, role-key prose drift guard)
+   - `./tools/cursor/audit-role-prose.sh` (role-key prose drift guard for Markdown and MDC prose surfaces)
    - `./tools/cursor/sync-commands-catalog.sh --check` (commands roster integrity)
    - `./tools/cursor/sync-framework-boundaries.sh` (framework boundary projections)
    - `./tools/cursor/sync-roles-roster.sh` (roles roster projection)
@@ -69,11 +70,14 @@ This repo projects the following root outputs, with deepest dependency chains an
 
 - `./tests/run.sh`
 
+`./tests/run.sh` includes `./tools/cursor/audit-role-prose.sh` through the repository audit path and as an explicit guard before the shell-test sweep.
+
 ### Runtime Mode (required if the repo projects runtime state)
 
 This repo projects runtime state under `~/.cursor/*` and generated mirrors under `_generated/`. Required validation:
 
 - `./tools/cursor/audit.sh`
+  - includes `./tools/cursor/audit-role-prose.sh`
 - `./tools/cursor/sync-commands-catalog.sh --check`
 - `./tools/cursor/sync-framework-boundaries.sh` (run and diff `_generated/` if a `--check` flag is not supported)
 - `./tools/cursor/sync-roles-roster.sh` (run and diff `_generated/` if a `--check` flag is not supported)
@@ -103,7 +107,17 @@ Primary collab state lives outside the repository at the user-scope collab state
 
 The `git clean -Xdf` data-loss risk that applied to repo-local `.collabs/` storage is retired: primary collab state is at `$HOME/.collabs/<projectId>/`, outside the repository tree.
 
-## 8) Reporting Contract
+## 8) No-Deprecation Principle
+
+Every contract surface in `~/.cursor` is authored as a fresh feature. There is no support for deprecation paths, legacy behavior, or backwards compatibility shims.
+
+**Rule:** When a contract changes, write the new contract from scratch. Do not frame the change as a patch, replacement, or upgrade of prior behavior. Do not retain old behavior alongside new behavior for migration purposes. Do not add `deprecated`, `legacy`, or compatibility notes to route prose, schema blocks, or helper interfaces.
+
+**Corollary:** Removal of a flag, parameter, token, or route is a contract rewrite, not a deprecation. The new contract is the complete specification; the old form simply does not exist.
+
+This principle applies to every layer: public routers (`commands/*.md`), private route functions (`_functions/**/*.md`), core invariants (`_core/*.md`), schema blocks (`cursor-flag`, `cursor-arg`, `cursor-gate`), and helper interfaces (`tools/collab/registry.py`, `tools/cursor/*`).
+
+## 9) Reporting Contract
 
 When work completes, report:
 

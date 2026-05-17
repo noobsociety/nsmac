@@ -52,7 +52,7 @@ Neither layer may be reduced without updating this statement to name the resulti
 - `TYPE` ∈ {`structure`, `prose-duplicate`}
 - For golden-file rows additionally: replacement checks land in the same batch, including a stable generate-and-compare check confirming the committed artifact does not drift from generator output
 
-**tw sign-off gate:** `CONTRACT` must name a specific surface for every deletion row before tw approves. Category labels such as "golden file" or "doc contract" are not acceptable `CONTRACT` values.
+**Technical-writer sign-off gate:** `CONTRACT` must name a specific surface for every deletion row before the technical-writer role approves. Category labels such as "golden file" or "doc contract" are not acceptable `CONTRACT` values.
 
 ## Output
 
