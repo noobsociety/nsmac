@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "command-advisory.schema.json",
+  "title": "Command Advisory Namespace",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["namespace", "advisories"],
+  "properties": {
+    "namespace": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "advisories": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/advisory"
+      }
+    }
+  },
+  "$defs": {
+    "advisory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["route", "rationale"],
+      "properties": {
+        "route": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "capabilityTier": {
+          "type": "string",
+          "minLength": 1
+        },
+        "effortTier": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "recommendation": {
+          "const": "not-applicable"
+        },
+        "concerns": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "runtimePolicyRef": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "oneOf": [
+        {
+          "required": ["capabilityTier", "effortTier"],
+          "not": {
+            "required": ["recommendation"]
+          }
+        },
+        {
+          "required": ["recommendation"],
+          "not": {
+            "anyOf": [
+              {
+                "required": ["capabilityTier"]
+              },
+              {
+                "required": ["effortTier"]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

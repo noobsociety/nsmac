@@ -56,7 +56,7 @@ assert entry['verification']['rounds'] == 0, entry['verification']
 assert 'pairedExecutionSignature' not in entry['verification'], entry['verification']
 assert 'verificationSeal' not in entry, entry
 assert 'verdict' not in entry, entry
-assert 'terminal' not in entry, entry
+assert entry['terminal'] == 'seal', entry
 assert 'terminalMode' not in entry, entry
 assert 'workflowModel' not in entry, entry
 assert '**pa:** sealed' not in transcript, transcript

@@ -1,0 +1,11 @@
+{
+  "namespace": "narrative",
+  "advisories": [
+    {
+      "route": "rewrite content",
+      "capabilityTier": "composition",
+      "effortTier": "high",
+      "rationale": "Staged prose rewrite with coherence and tone preservation."
+    }
+  ]
+}

@@ -46,6 +46,8 @@ Operational function playbooks may depend on router rules in `../rules/{auto,sha
 - **`/quality show notes`** — internal route; loaded only by `/quality tune`; do not invoke directly.
 - **`/test <commands | rules | _functions | _mdc | _core | _settings | repo | all>`** — run one QA harness target or all in sequence.
 
+**Advisory surface:** The system recommends but does not enforce; callers may invoke any route at any capability or effort level at their own discretion.
+
 **Related principal workflows:**
 
 | Route | Source of truth | Cross-stack |

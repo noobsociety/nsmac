@@ -1,0 +1,17 @@
+{
+  "low": {
+    "description": "Routing and moderation only; no synthesis or generation required."
+  },
+  "medium": {
+    "description": "Standard contribution; analysis and synthesis without deep implementation."
+  },
+  "high": {
+    "description": "Implementation-bearing or convergence-critical; sustained reasoning required."
+  },
+  "xhigh": {
+    "description": "Convergent gate or reviewer pass; one bad judgment propagates; elevate before speaking."
+  },
+  "max": {
+    "description": "Reserved for explicit escalation; not assigned by default."
+  }
+}

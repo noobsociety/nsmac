@@ -25,6 +25,8 @@
 !.github/**
 !_core/
 !_core/**
+!_data/
+!_data/**
 !_functions/
 !_functions/**
 !_generated/

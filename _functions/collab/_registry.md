@@ -34,6 +34,8 @@ Reference document for the resolved collab `registry.json` schema and field owne
   | `slug` | string | User-facing handle. Format: lowercased, hyphen-separated words. Used in commands instead of file paths. |
   | `title` | string | Human-readable name from `init`. |
   | `description` | string | Brief description from `init`. |
+  | `createdAt` | string | ISO-8601 creation timestamp set by `init` for records created after the terminal selector contract. Records without `createdAt` predate this contract and are grandfathered without rewrite. |
+  | `terminal` | string | Workflow-model terminal selector: `seal|issue|none`. Set by `init` from `--terminal <seal|issue|none>` and defaulted to `seal` for new records. Records without `terminal` predate this contract and are grandfathered without rewrite. |
   | `status` | string | `open` \| `closed` \| `archived`. |
   | `activePhase` | string | Current phase: `Audit` \| `Discussion` \| `Conclusion` \| `Action Plan` \| `Handoff` \| `Completion`. `Completion` is further divided into `Completion.execution` (assigned roles run their Action Plan items) and `Completion.verification` (reviewer seals via `/collab seal verification`) for reviewer-backed collabs. |
   | `moderatorRole` | string | Key of the moderator participant. |
@@ -74,6 +76,8 @@ Reference document for the resolved collab `registry.json` schema and field owne
   | `participants` | `join`, `kick` |
   | `turnOrder` | `set` |
   | `reviewerRole`, `reviewerMode`, `reviewerOptionalPhases` | `set`, `unset`, `init`; helper validation |
+  | `createdAt` | `init` |
+  | `terminal` | `init` |
   | `title`, `description` | `set` |
   | `archived` | `archive` |
   | `execution.<role>` | `execute` |

@@ -68,9 +68,49 @@ def issue_bridge_prerequisite_gaps(cursor_root: Path, include_issue_route: bool 
     return gaps
 
 
+def workflow_model_selection_gaps(cursor_root: Path) -> list[str]:
+    gaps: list[str] = []
+    init_text = source_text(cursor_root / '_functions/collab/init.md')
+    registry_text = source_text(cursor_root / '_functions/collab/_registry.md')
+    helper_text = source_text(cursor_root / 'tools/collab/registry.py')
+
+    init_required = {
+        'init --terminal selector': '--terminal',
+        'init cursor-arg --terminal': 'param: name=--terminal',
+        'init terminal values': 'seal|issue|none',
+    }
+    for label, needle in init_required.items():
+        if needle not in init_text:
+            gaps.append(label)
+
+    registry_required = {
+        'registry terminal field': '`terminal`',
+        'registry terminal enum': 'seal|issue|none',
+    }
+    for label, needle in registry_required.items():
+        if needle not in registry_text:
+            gaps.append(label)
+
+    helper_required = {
+        'helper --terminal parser': '--terminal',
+        'helper terminal field persistence': "'terminal': terminal",
+        'helper terminal validation': 'ALLOWED_TERMINALS',
+    }
+    for label, needle in helper_required.items():
+        if needle not in helper_text:
+            gaps.append(label)
+    return gaps
+
+
 def validate_issue_bridge_block(cursor_root: Path, include_issue_route: bool = False) -> None:
     if not issue_bridge_declared(cursor_root):
         return
+    workflow_gaps = workflow_model_selection_gaps(cursor_root)
+    if workflow_gaps:
+        die(
+            'workflow-model selection blocked: missing --terminal prerequisite(s): '
+            f'{", ".join(workflow_gaps)}'
+        )
     gaps = issue_bridge_prerequisite_gaps(cursor_root, include_issue_route)
     if gaps:
         issue_clause = (

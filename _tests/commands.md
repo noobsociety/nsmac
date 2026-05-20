@@ -14,8 +14,9 @@ Deterministic QA for public slash routers in `~/.cursor/commands/*.md`.
 8. Validate public routers (`narrative.md`, `doc.md`, `git.md`, `quality.md`, `test.md`) resolve routes to grouped function paths.
 9. Validate catalog integrity: `commands.md` links every public command file.
 10. Validate catalog integrity: the generated roster block in `commands.md` matches filesystem state (`tools/cursor/sync-commands-catalog.sh --check`).
-11. Validate command links stay inside `commands/`, `_functions/`, `rules/`, `_mdc/`, and `_tests/`.
-12. Validate dependencies align with rule routers (`rules/auto.mdc`, `rules/shared.mdc`) and private rule bodies (`_mdc/auto/*.mdc`, `_mdc/shared/*.mdc`).
+11. Validate command advisory coverage and rendering: v0 advisory namespaces have exactly one effective default or explicit not-applicable marker per invocable route, role overrides are non-orphan and differentiated, aliases resolve through `_data/capability-aliases.json` and `_data/effort-tiers.json`, and caller-facing generated output does not leak runtime policy fields or concrete model identities.
+12. Validate command links stay inside `commands/`, `_functions/`, `rules/`, `_mdc/`, and `_tests/`.
+13. Validate dependencies align with rule routers (`rules/auto.mdc`, `rules/shared.mdc`) and private rule bodies (`_mdc/auto/*.mdc`, `_mdc/shared/*.mdc`).
 
 ## Required roster
 

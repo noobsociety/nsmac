@@ -1,6 +1,6 @@
 # /narrative rewrite content
 
-Run a staged narrative rewrite: audit drift in narrative content, align project rules against the global Cursor tree, and gate the result.
+Audit narrative content for drift, align project rules against the global Cursor tree, and gate the result with content-baseline scope enforcement.
 
 **Narrative content:** repository-authored text (`*.md`, `*.mdc`) that conveys meaning rather than executing behavior. Code comments, config values, and executable scripts are out of scope unless the runner opts in.
 
@@ -44,11 +44,11 @@ Run a staged narrative rewrite: audit drift in narrative content, align project 
 - **Phase output writes:** After a phase emits its structured artifact, write that artifact to `phaseOutputs[phase]` in the state file. `align` must read `phaseOutputs.audit` before producing output. `gate` must read both `phaseOutputs.audit` and `phaseOutputs.align` before producing output. Never rely on chat history or prose outside the state file for prior-phase handoff.
 - **`phaseOutputs` sections:** Each phase writes a structured artifact to `phaseOutputs[phase]`. Sections marked **persisted** are written to the state file and available to downstream phases; sections marked **display-only** are shown to the caller but carry no cross-phase machine-readable contract.
 
-  `audit` sections: `Drift themes` — persisted; `Style violations` — persisted; `Recommended scope` — persisted; `Files to edit` — persisted; `coveredConcerns` — persisted (enforced by concern coverage gate); `Output artifacts` — display-only; `Next phase` — display-only.
+  `audit` sections: `Drift themes` — persisted; `Style violations` — persisted; `Recommended scope` — persisted; `Files to edit` — persisted (deprecated; retained for migration compatibility); `auditScopeBaseline` — persisted; `coveredConcerns` — persisted (enforced by concern coverage gate); `Output artifacts` — display-only; `Next phase` — display-only.
 
   `align` sections: `Aligned` — persisted; `Mismatched` — persisted; `Missing locally` — persisted; `Missing globally` — persisted; `coveredConcerns` — persisted (enforced by concern coverage gate); `Next phase` — display-only.
 
-  `gate` sections: `Handoff verification` — display-only; `Source validation` — display-only; `Result` — display-only; `Failures or blockers` — display-only; `coveredConcerns` — display-only.
+  `gate` sections: `Handoff verification` — display-only; `Scope check` — display-only; `Source validation` — display-only; `Result` — display-only; `Failures or blockers` — display-only; `coveredConcerns` — display-only; `Next action` — display-only.
 - **Concern coverage hard gate:** Each phase artifact must include `coveredConcerns`. Verify that `coveredConcerns` is a superset of `concernRequirements[phase]` and that the artifact has non-empty content for every claimed concern. On a miss, emit the full artifact and name missing concern keys. For `audit` and `align`, **ABORT** after emitting the artifact; for `gate`, report `Result: fail`.
 - **Discovering `validationCommands`:** In `audit`, resolve the invocation repo's validation surface with `tools/narrative/state.py audit --role <key>`: check `REPOSITORY.md` for documented commands first; if not found, detect from `package.json` scripts; if not found, detect executable scripts under `tools/`. Write the resolved list to the state file. Gate reads `validationCommands` from state; it does not use hardcoded commands.
 - **Audit surfaces:** Every narrative file under `~/.cursor/` is a valid audit surface: `_core/`, `_functions/`, `commands/`, `_tests/`, `rules/`, and `_mdc/`.
@@ -70,8 +70,11 @@ Style violations:
 Recommended scope:
 <full | path>
 
-Files to edit:
+Files to edit: (deprecated — use auditScopeBaseline; retained for migration compatibility)
 - <path>: <reason>
+
+auditScopeBaseline:
+- <path>: <blob-hash>
 
 coveredConcerns:
 - <concern key>
@@ -80,7 +83,7 @@ Next phase:
 Run `/narrative rewrite content align --role <key>` to check project rule alignment, then `/narrative rewrite content gate --role <key>`.
 ```
 
-- **Phase 2 — Align:** Do not edit files outside the alignment surface. Call `tools/narrative/state.py align --role <key>` before comparing files to write `roleBindings.align` and `concernRequirements.align` from the resolved role. Enumerate project-local `*.mdc` files and compare each against `~/.cursor/rules/`. Read `phaseOutputs.audit` from state before producing output; if missing or malformed, **ABORT** naming `phaseOutputs.audit`. Report mismatches — do not auto-resolve. Verify `coveredConcerns` and write the artifact to `phaseOutputs.align`; on coverage miss, emit the artifact, name missing keys, and **ABORT** before handing off. Emit:
+- **Phase 2 — Align:** Read-only phase — do not edit any files. Call `tools/narrative/state.py align --role <key>` before comparing files to write `roleBindings.align` and `concernRequirements.align` from the resolved role. Enumerate project-local `*.mdc` files and compare each against `~/.cursor/rules/`. Read `phaseOutputs.audit` from state before producing output; if missing or malformed, **ABORT** naming `phaseOutputs.audit`. Report mismatches — do not auto-resolve. Verify `coveredConcerns` and write the artifact to `phaseOutputs.align`; on coverage miss, emit the artifact, name missing keys, and **ABORT** before handing off. Emit:
 
 ```text
 ### Phase 2 — Align
@@ -104,7 +107,9 @@ Next phase:
 Run `/narrative rewrite content gate --role <key>`.
 ```
 
-- **Phase 3 — Gate:** Read `validationCommands` from state by calling `tools/narrative/state.py gate --role <key>`. Report only — do not attempt fixes. Also read `phaseOutputs.audit` and `phaseOutputs.align` from state. The helper updates `activeStage: gate` and writes `roleBindings.gate` and `concernRequirements.gate` from the resolved role before validation. Verify prior handoff shape and concern coverage before reporting pass. Write the gate artifact to `phaseOutputs.gate`. If current coverage misses required keys, emit the full artifact, name missing keys, and report `Result: fail`. If prior `phaseOutputs` entries are missing or malformed, report `Result: blocked`. Emit:
+- **Phase 3 — Gate:** Read `validationCommands` from state by calling `tools/narrative/state.py gate --role <key>`. Report only — do not attempt fixes. Also read `phaseOutputs.audit` and `phaseOutputs.align` from state. The helper updates `activeStage: gate` and writes `roleBindings.gate` and `concernRequirements.gate` from the resolved role before validation. Verify prior handoff shape and concern coverage before reporting pass. Write the gate artifact to `phaseOutputs.gate`. If current coverage misses required keys, emit the full artifact, name missing keys, and report `Result: fail`. If prior `phaseOutputs` entries are missing or malformed, report `Result: blocked`.
+
+  Gate additionally checks scope completion. For each in-repo path in `phaseOutputs.audit.auditScopeBaseline`, compare current content against the recorded hash: paths whose content is unchanged since audit fail with `unresolved-audit-scope`; paths that changed are satisfied; missing paths fail with `unresolved-audit-scope`. For `phaseOutputs.align.mismatched` entries, fail with `unresolved-align-mismatched` when the path is still mismatched. For `phaseOutputs.align.missingLocally` entries, fail with `unresolved-align-missing-locally` when the path was not created. Out-of-repo paths and legacy state files that record `filesToEdit` without `auditScopeBaseline` produce advisory notes only. Paths listed in the state file's `acknowledgedScope` array drop out of all blocking scope checks. Emit:
 
 ```text
 ### Phase 3 — Gate
@@ -117,6 +122,9 @@ Handoff verification:
 - audit concern coverage: <pass | fail — missing: <key>>
 - align concern coverage: <pass | fail — missing: <key>>
 
+Scope check:
+- <path>: <unchanged — blocking | changed — pass | missing-locally — blocking | acknowledged — skipped | out-of-repo — advisory | legacy — advisory>
+
 Source validation:
 - `<command>`: <pass | fail | not run>
 
@@ -124,10 +132,16 @@ Result:
 <pass | fail | blocked>
 
 Failures or blockers:
-- <command/path>: <reason>
+- unresolved-audit-scope: <path>
+- unresolved-align-mismatched: <path>
+- unresolved-align-missing-locally: <path>
+- <command>: <fail reason>
 
 coveredConcerns:
 - <concern key>
+
+Next action:
+<act on recommended scope | archive state | rerun gate after edits>
 ```
 
 - **Stop points:** Stop after each phase. Do not feed unresolved contract guesses into gate. The next-phase instructions in each output block are the only data that should cross phase boundaries.

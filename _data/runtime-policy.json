@@ -1,0 +1,8 @@
+{
+  "capabilityTierToFamily": {
+    "reasoning": "opus",
+    "composition": "sonnet",
+    "execution": "sonnet",
+    "transformation": "haiku"
+  }
+}

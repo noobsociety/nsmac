@@ -30,6 +30,7 @@ Authority is strict and ordered:
 ## 4) Mutation Protocol and Ownership
 
 - Must edit tracked source only.
+- `.revamps/` — runtime narrative-gate state; not source; add to `.gitignore`.
 <!-- TODO(patch): define repo-specific ownership boundaries, generated outputs, and files that must not be edited directly -->
 
 ## 5) Validation Modes

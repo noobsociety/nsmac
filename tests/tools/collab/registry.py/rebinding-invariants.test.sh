@@ -114,6 +114,31 @@ def write(rel: str, text: str) -> None:
 write('_functions/collab/export-issues.md', '# /collab export-issues\n')
 write('commands/collab.md', '# /collab\n')
 write('commands/commands.md', '# /commands\n')
+write(
+    '_functions/collab/init.md',
+    '\n'.join([
+        '# /collab init',
+        'Use --terminal seal|issue|none.',
+        '```cursor-arg',
+        'param: name=--terminal; values=seal|issue|none; default=seal',
+        '```',
+    ]),
+)
+write(
+    '_functions/collab/_registry.md',
+    '\n'.join([
+        '# /collab registry',
+        '| `terminal` | string | Workflow-model terminal selector: seal|issue|none. |',
+    ]),
+)
+write(
+    'tools/collab/registry.py',
+    '\n'.join([
+        "ALLOWED_TERMINALS = {'seal', 'issue', 'none'}",
+        "if token == '--terminal': pass",
+        "entry = {'terminal': terminal}",
+    ]),
+)
 
 try:
     module.validate_issue_bridge_block(tmp)

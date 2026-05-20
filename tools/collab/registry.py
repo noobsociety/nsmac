@@ -56,6 +56,8 @@ ACTIVE_PARTICIPANT_VERIFICATION_STAGES = {'audit', 'remediation', 'final-audit'}
 ALLOWED_VERDICT_OUTCOMES = {'success', 'incomplete', 'failed'}
 ALLOWED_VERDICT_RESTORE_TARGETS = {'Action Plan', 'Handoff'}
 ALLOWED_CAP_EXITS = {'reopen-action-plan', 'reopen-handoff', 'follow-up-collab', 'archive'}
+ALLOWED_TERMINALS = {'seal', 'issue', 'none'}
+DEFAULT_TERMINAL = 'seal'
 DEFAULT_VERIFICATION_CAP = 3
 DISALLOWED_VERSION_FIELD = 'schema' + 'Version'
 MAX_HANDOFF_SCOPE_COUNT = 32
@@ -277,10 +279,12 @@ def next_sequence(data: dict) -> int:
     return max(sequences, default=0) + 1
 
 
-def parse_init_tokens(tokens: list[str]) -> tuple[str, str, str | None, bool, bool]:
+def parse_init_tokens(tokens: list[str]) -> tuple[str, str, str | None, bool, bool, str]:
     name_tokens: list[str] = []
     agent_id: str | None = None
     reviewer: str | None = None
+    terminal = DEFAULT_TERMINAL
+    terminal_seen = False
     open_requested = False
     participant_verification = True
     index = 0
@@ -302,6 +306,16 @@ def parse_init_tokens(tokens: list[str]) -> tuple[str, str, str | None, bool, bo
             reviewer = tokens[index]
             if not ROLE_KEY_RE.match(reviewer):
                 die('--reviewer requires a role key')
+        elif token == '--terminal':
+            if terminal_seen:
+                die('duplicate flag: --terminal')
+            terminal_seen = True
+            index += 1
+            if index >= len(tokens) or tokens[index].startswith('--'):
+                die('--terminal requires one of: issue, none, seal')
+            terminal = tokens[index]
+            if terminal not in ALLOWED_TERMINALS:
+                die('--terminal requires one of: issue, none, seal')
         elif token == '--preview':
             if open_requested:
                 die('duplicate flag: --preview')
@@ -320,7 +334,7 @@ def parse_init_tokens(tokens: list[str]) -> tuple[str, str, str | None, bool, bo
     if not raw_title:
         die('<name> is required')
     title = normalize_title(raw_title)
-    return title, normalize_join_agent_id(agent_id), reviewer, open_requested, participant_verification
+    return title, normalize_join_agent_id(agent_id), reviewer, open_requested, participant_verification, terminal
 
 
 def summary_role(line: str) -> str | None:
@@ -1458,6 +1472,8 @@ def validate_registry(data: dict, path: Path | None = None) -> None:
         slug = entry.get('slug')
         title = entry.get('title')
         description = entry.get('description')
+        created_at = entry.get('createdAt')
+        terminal = entry.get('terminal')
         status = entry.get('status')
         activePhase = entry.get('activePhase')
         moderatorRole = entry.get('moderatorRole')
@@ -1490,6 +1506,12 @@ def validate_registry(data: dict, path: Path | None = None) -> None:
             die(f'{source}: collab status must be one of {sorted(ALLOWED_STATUSES)}')
         if activePhase not in PHASES:
             die(f'{source}: collab activePhase must be one of {PHASES}')
+        if created_at is not None and (not isinstance(created_at, str) or not created_at.strip()):
+            die(f'{source}: collab createdAt must be a non-empty string when present')
+        if terminal is not None and terminal not in ALLOWED_TERMINALS:
+            die(f'{source}: collab terminal must be one of {sorted(ALLOWED_TERMINALS)} when present')
+        if terminal is None and created_at is not None:
+            die(f'{source}: collab terminal must be one of {sorted(ALLOWED_TERMINALS)}')
         if not isinstance(entry.get('archived'), bool):
             die(f'{source}: collab archived must be a boolean')
         if sequence is not None:
@@ -1996,21 +2018,9 @@ def completion_summary_empty(transcript: str) -> bool:
         if str(exc) == 'transcript phase missing: Completion':
             return True
         raise
-    saw_execution_history = False
     for line in lines:
-        stripped = line.strip()
-        if not stripped or stripped == CONTENT_ONLY_GUARD:
-            continue
-        if SUMMARY_HEADING_RE.match(stripped):
+        if SUMMARY_HEADING_RE.match(line.strip()):
             return False
-        if stripped == '**Execution history**':
-            saw_execution_history = True
-            continue
-        if saw_execution_history and re.match(r'^\d+\.\s+\*\*[^*]+:\*\*\s+', stripped):
-            continue
-        if stripped.startswith('<') and stripped.endswith('>'):
-            continue
-        return False
     return True
 
 
@@ -5219,7 +5229,7 @@ def init_collab(
     roles_dir: Path,
     opener: Callable[[str], bool] = webbrowser.open_new_tab,
 ) -> int:
-    title, agent_id, reviewer, open_requested, participant_verification = parse_init_tokens(tokens)
+    title, agent_id, reviewer, open_requested, participant_verification, terminal = parse_init_tokens(tokens)
     with registry_lock(path):
         data = load_registry_or_bootstrap(path)
         date = dt.date.today().isoformat()
@@ -5248,6 +5258,8 @@ def init_collab(
             'slug': slug,
             'title': title,
             'description': f'Moderated discussion of {title}.',
+            'createdAt': dt.datetime.now().astimezone().isoformat(timespec='seconds'),
+            'terminal': terminal,
             'status': 'open',
             'activePhase': 'Audit',
             'moderatorRole': 'mod',
@@ -5727,11 +5739,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     init_parser = subparsers.add_parser(
         'init',
-        usage='%(prog)s --agent-id <agentId> [--reviewer <role>] [--no-participant-verification] [--preview] <name>',
+        usage=(
+            '%(prog)s --agent-id <agentId> [--reviewer <role>] '
+            '[--terminal <seal|issue|none>] [--no-participant-verification] [--preview] <name>'
+        ),
         description='Create a registry-backed collab record.',
     )
     init_parser.add_argument('--agent-id', action='append')
     init_parser.add_argument('--reviewer', action='append')
+    init_parser.add_argument('--terminal', action='append')
     init_parser.add_argument('--no-participant-verification', dest='participant_verification', action='store_false', default=True)
     init_parser.add_argument('--preview', action='store_true')
     init_parser.add_argument('name', nargs='*')
@@ -5984,6 +6000,8 @@ def main(argv: list[str]) -> int:
             tokens.extend(['--agent-id', agent_id])
         for reviewer in args.reviewer or []:
             tokens.extend(['--reviewer', reviewer])
+        for terminal in args.terminal or []:
+            tokens.extend(['--terminal', terminal])
         if not args.participant_verification:
             tokens.append('--no-participant-verification')
         if args.preview:

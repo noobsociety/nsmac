@@ -29,7 +29,7 @@ is_source_path() {
   case "$1" in
     .gitignore|.collab.json|CLAUDE.md|AGENTS.md|_CURSOR.md|README.md|REPOSITORY.md) return 0 ;;
     .github/*) return 0 ;;
-    _core/*|_functions/*|_generated/*|_mdc/*|_roles/*|_templates/*|_tests/*|commands/*|rules/*|tests/*|tools/*) return 0 ;;
+    _core/*|_data/*|_functions/*|_generated/*|_mdc/*|_roles/*|_templates/*|_tests/*|commands/*|rules/*|tests/*|tools/*) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -206,6 +206,7 @@ check_generated_freshness() {
   tools/cursor/sync-commands-catalog.sh --check || failures=$((failures + 1))
   tools/cursor/sync-framework-boundaries.sh --check || failures=$((failures + 1))
   tools/cursor/sync-roles-roster.sh --check || failures=$((failures + 1))
+  python3 tools/cursor/command-advisories.py --check || failures=$((failures + 1))
   python3 tools/cursor/command-reference.py --check || failures=$((failures + 1))
   tools/collab/lifecycle-doc.py --check || failures=$((failures + 1))
   tools/cursor/coverage-gate.sh || failures=$((failures + 1))

@@ -1,0 +1,14 @@
+{
+  "reasoning": {
+    "description": "Routes that produce verdicts, assessments, or structured judgments where task accuracy and restore cost are high."
+  },
+  "composition": {
+    "description": "Routes that generate or draft structured new content such as documents, plans, summaries, or reference material."
+  },
+  "execution": {
+    "description": "Routes that implement or apply changes to existing artifacts, including code, configuration, data, or generated output."
+  },
+  "transformation": {
+    "description": "Routes that rewrite, convert, or normalize existing content while preserving its original substance and intent."
+  }
+}

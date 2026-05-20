@@ -26,6 +26,7 @@ Authority is strict and ordered:
 2. Repo-owned source files and policy documents:
    - Root adapters: `_CURSOR.md`, `CLAUDE.md`, `AGENTS.md`, `REPOSITORY.md`, `README.md`, `.gitignore`, `.collab.json`
    - Public routers and routes: `commands/*.md`, `_functions/<namespace>/*.md`
+   - Command advisory source data: `_data/*.json`, `_data/advisories/*.json`, and `_data/command-advisory.schema.json`
    - Shared invariants and standards: `_core/*.md`
    - Rule routers and private bodies: `rules/{auto,shared}.mdc`, `_mdc/{auto,shared}/*.mdc`
    - Scaffold templates: `_templates/{CLAUDE,AGENTS,REPOSITORY}.md`
@@ -44,7 +45,7 @@ Authority is strict and ordered:
 This repo projects the following root outputs, with deepest dependency chains and validation:
 
 - **Adapter routing surface** — `_CURSOR.md`, `CLAUDE.md`, `AGENTS.md` route into `commands/commands.md` → `commands/<ns>.md` → `_functions/<ns>/<route>.md`, with cross-references into `_core/*.md` and `rules/{auto,shared}.mdc` → `_mdc/**/*.mdc`. Validated by `./tools/cursor/audit.sh` and the Markdown harness via `/test commands`, `/test _functions`, `/test rules`, `/test _mdc`, `/test _core`.
-- **Generated mirrors** — `_generated/collab-lifecycle.md`, `_generated/command-reference.md`, `_generated/content-invariants.tsv` are derived from `_functions/collab/*` and `commands/*` sources. Validated by `/test _generated` and regenerated through `tools/collab/lifecycle-doc.py`, `tools/cursor/command-reference.py`, and `tools/cursor/sync-framework-boundaries.sh`.
+- **Generated mirrors** — `_generated/collab-lifecycle.md`, `_generated/command-reference.md`, `_generated/content-invariants.tsv` are derived from `_functions/collab/*`, `commands/*`, and `_data/advisories/*.json` sources. Validated by `/test _generated` and regenerated through `tools/collab/lifecycle-doc.py`, `tools/cursor/command-reference.py`, and `tools/cursor/sync-framework-boundaries.sh`.
 - **Commands roster block** — the `BEGIN GENERATED:COMMANDS_ROSTER` block in `commands/commands.md` is derived from filesystem state under `commands/` and `_functions/`. Validated by `./tools/cursor/sync-commands-catalog.sh --check`.
 - **Scaffold templates for downstream repos** — `_templates/{CLAUDE,AGENTS,REPOSITORY}.md` are copied into target repos by `/agent install` and patched in place by `/agent patch`. Validated by the install/patch routes' own scaffold-local checks and by `tests/tools/agent/agent-routes-contract.test.sh`.
 - **QA harness surface** — `_tests/*.md` and `tests/**/*.test.sh` are the executable proof layer. Validated by `/test all` and `./tests/run.sh`.
@@ -62,6 +63,7 @@ This repo projects the following root outputs, with deepest dependency chains an
   - `rules/{auto,shared}.mdc` are stubs that resolve into `_mdc/{auto,shared}/*.mdc` for full rule bodies.
   - `_templates/*` is the only source for scaffold files installed by `/agent install`; the installed copies in target repos are not edited by this repo's routes except via `/agent patch` and `/agent upgrade`.
   - `_tests/*.md` owns Markdown-layer harness policy; `tests/**/*.test.sh` owns shell-executable harness; neither layer may be reduced without updating `_tests/_tests.md`.
+  - `_data/capability-aliases.json`, `_data/effort-tiers.json`, and `_data/runtime-policy.json` own the command-advisory vocabulary and runtime mapping. `_data/advisories/*.json` owns per-namespace caller recommendations. `tools/cursor/command-advisories.py` validates advisory coverage, alias freshness, role overrides, and caller-facing leakage.
   - `tools/cursor/*` and `tools/collab/*` are the only mutators of `_generated/*` and the roster block.
 
 ## 5) Validation Modes
