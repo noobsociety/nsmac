@@ -6,7 +6,7 @@ Move the active phase back by one step in a collaboration record when the modera
 
 **Slash:** `/collab restore`
 **Signature:** `/collab restore`
-**Prose dispatch:** `(collab restore)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab restore)` — prose routing hint; not a terminal command.
 **Search phrases:** collab prev, previous collaboration phase, rollback collab phase
 
 ## Steps

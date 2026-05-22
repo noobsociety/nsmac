@@ -6,7 +6,7 @@ Patch `REPOSITORY.md` in the current repository with repo-specific multi-agent m
 
 **Slash:** `/agent patch`
 **Signature:** `/agent patch [--force]`
-**Prose dispatch:** `(agent patch [--force])` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(agent patch [--force])` — prose routing hint; not a terminal command.
 **Search phrases:** agent patch, patch repository, fill agent placeholders
 
 ## Steps

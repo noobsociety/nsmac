@@ -6,7 +6,7 @@ Classify a Markdown document as good, bad, or ugly, then rewrite until it meets 
 
 **Slash:** `/doc assess`
 **Signature:** `/doc assess <path>`
-**Prose dispatch:** `(doc assess <path>)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(doc assess <path>)` — prose routing hint; not a terminal command.
 **Search phrases:** `assess`, `assess document`, `good bad ugly`, `doc-assess`, `assess doc`
 
 ## Steps

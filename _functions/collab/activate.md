@@ -6,7 +6,7 @@ Select the active collab in the registry so subsequent routes do not need an exp
 
 **Slash:** `/collab activate`
 **Signature:** `/collab activate <record>`
-**Prose dispatch:** `(collab activate ...)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab activate ...)` — prose routing hint; not a terminal command.
 **Search phrases:** collab use, select active collab, switch active collaboration
 
 ## Steps

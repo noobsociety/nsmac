@@ -34,7 +34,7 @@ Each entry is a glob string matching one or more repository paths. Entries must 
 
 **validationCommands format and trust boundary**
 
-Each entry is an argv array: `["./tools/cursor/audit.sh"]`, `["./tests/run.sh"]`, or `["./some-test.sh", "--flag"]`. Complex validation logic lives in repo-source scripts; `validationCommands` invokes those scripts. Registry content carries bounded invocations only; the scripts carry the logic and are subject to normal code review.
+Each entry is an argv array: `["./tools/command-system/audit.sh"]`, `["./tests/run.sh"]`, or `["./some-test.sh", "--flag"]`. Complex validation logic lives in repo-source scripts; `validationCommands` invokes those scripts. Registry content carries bounded invocations only; the scripts carry the logic and are subject to normal code review.
 
 Rejection message format: `ABORT: validationCommands contains disallowed pattern: <value>`. The exact rejected value is named. Rejection triggers: shell metacharacters, shell-string form (instead of argv array), unsafe or absolute paths, empty command arrays, and overlong entries.
 

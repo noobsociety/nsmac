@@ -6,7 +6,7 @@ Document the gate policy that decides when a collaboration needs a reviewer judg
 
 **Slash:** `/collab show policy`
 **Signature:** `/collab show policy`
-**Prose dispatch:** `(collab show policy)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab show policy)` — prose routing hint; not a terminal command.
 **Search phrases:** collab gate policy, reviewer, gate-blocked state, available roles
 
 ## Steps
@@ -55,7 +55,7 @@ When an Action Plan item resolves a Drift deferral, the same completion path mus
 - **Reviewer-prose drift vs seal object:** A reviewer may write "looks good" in a Discussion or Conclusion contribution and later issue a seal that records different `touchedPaths` or `validationScopes` than the prose implied. No route breaks; the audit trail is internally inconsistent. The seal is the machine-readable record; reviewer prose is explanatory context only.
 - **Reviewer-prose staleness:** The reviewer block in transcript headers is hand-written. A pending reviewer that joins late, or a reviewer block that is never updated, bakes inaccurate state into the audit trail. No route breaks; the record is simply wrong.
 - **Moderator-input transience:** Audit inputs cited as local paths become unresolvable when the file moves or the machine changes. The transcript remains parseable but its evidence base is gone. See **Provenance** above.
-- **Honor-system / helper drift:** A route stays marked `agent-honor-system` while the underlying helper begins enforcing the same abort path. The P9 coverage gate (`tools/cursor/coverage-gate.sh`) detects missing tests for helper-enforced paths but does not detect routes whose `agent-honor-system` marker is no longer accurate — the inverse drift remains invisible until a manual audit.
+- **Honor-system / helper drift:** A route stays marked `agent-honor-system` while the underlying helper begins enforcing the same abort path. The P9 coverage gate (`tools/command-system/coverage-gate.sh`) detects missing tests for helper-enforced paths but does not detect routes whose `agent-honor-system` marker is no longer accurate — the inverse drift remains invisible until a manual audit.
 
 **Resolved structural items (provenance retained):**
 

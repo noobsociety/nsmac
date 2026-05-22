@@ -6,7 +6,7 @@
 #   projects/       — local project state; not source
 #   extensions/     — local extension cache/state; not source
 #   ide_state.json  — local IDE state; not source
-#   skills-cursor/  — generated skill payload; not source
+#   /  — generated skill payload; not source
 #   plugins/        — local plugin cache; not source
 #   skills/         — personal skill payload; not source
 #   plans/          — local planning scratch; not source

@@ -6,7 +6,7 @@ Install the multi-agent scaffold into the current repository from `~/.cursor/_te
 
 **Slash:** `/agent install`
 **Signature:** `/agent install [--force]`
-**Prose dispatch:** `(agent install [--force])` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(agent install [--force])` — prose routing hint; not a terminal command.
 **Search phrases:** agent install, bootstrap multi-agent setup, install agent scaffold
 
 ## Steps
@@ -30,17 +30,17 @@ Install the multi-agent scaffold into the current repository from `~/.cursor/_te
 6. Copy `~/.cursor/_templates/CLAUDE.md` to `<repo-root>/CLAUDE.md`.
 7. Copy `~/.cursor/_templates/AGENTS.md` to `<repo-root>/AGENTS.md`.
 8. Copy `~/.cursor/_templates/REPOSITORY.md` to `<repo-root>/REPOSITORY.md`. These copy steps apply `the candidate patch` without recomputation or re-read of source.
-9. Validate scaffold-local install state: confirm `CLAUDE.md`, `AGENTS.md`, and `REPOSITORY.md` exist in the repo root, confirm `CLAUDE.md` routes to `AGENTS.md`, confirm `AGENTS.md` references `~/.cursor/commands/commands.md`, confirm `AGENTS.md` contains the canonical routing-only prose dispatch sentence (the line beginning `To invoke a global Cursor command, resolve any routing-only prose dispatch hint`), confirm `AGENTS.md` contains the `<!-- scaffolded-at: <ISO-date> -->` marker line, confirm no installed scaffold file contains unresolved `<!-- TODO(install): ... -->` markers, confirm `REPOSITORY.md` still contains unresolved `<!-- TODO(patch): ... -->` placeholders, and confirm every Markdown link in the installed `AGENTS.md` whose target does not begin with `~` or `http` resolves as a file path relative to the repo root; if any link does not resolve, **ABORT** naming the unresolvable path.
+9. Validate scaffold-local install state: confirm `CLAUDE.md`, `AGENTS.md`, and `REPOSITORY.md` exist in the repo root, confirm `CLAUDE.md` routes to `AGENTS.md`, confirm `AGENTS.md` references `~/.commands/commands.md`, confirm `AGENTS.md` contains the canonical routing-only prose dispatch sentence (the line beginning `To invoke a global command, resolve any routing-only prose dispatch hint`), confirm `AGENTS.md` contains the `<!-- scaffolded-at: <ISO-date> -->` marker line, confirm no installed scaffold file contains unresolved `<!-- TODO(install): ... -->` markers, confirm `REPOSITORY.md` still contains unresolved `<!-- TODO(patch): ... -->` placeholders, and confirm every Markdown link in the installed `AGENTS.md` whose target does not begin with `~` or `http` resolves as a file path relative to the repo root; if any link does not resolve, **ABORT** naming the unresolvable path.
 10. Report the three files written and list any unresolved `<!-- TODO(patch): ... -->` placeholders remaining in `REPOSITORY.md`.
 
 ## Notes
 
-- **Precondition:** The global Cursor command surface (`~/.cursor/`) must be reachable before this route is invoked. In environments without it on the command path, invoke explicitly (e.g., `~/.cursor/...`) on first use. The requirement is reachability; the invocation form depends on the agent surface.
+- **Precondition:** The global command surface (`~/.cursor/`) must be reachable before this route is invoked. In environments without it on the command path, invoke explicitly (e.g., `~/.cursor/...`) on first use. The requirement is reachability; the invocation form depends on the agent surface.
 - **Invocation context:** Run this command from the target repository root defined in [_run-root.md](_run-root.md). A checkout developed in place at `~/.cursor` is a valid target repository root.
 - **Placeholder standard:** `AGENTS.md` and `CLAUDE.md` use `<!-- TODO(install): <description> -->` markers resolved during install candidate-patch computation. `REPOSITORY.md` uses `<!-- TODO(patch): <description> -->` markers resolved by `/agent patch`.
 - **Parameters:** `--force` — optional pre-positional flag. Default target is the repo root where the command runs.
 - **Examples:** `/agent install`, `/agent install --force`.
-- **Validation:** The install workflow uses scaffold-local checks only: file presence, `CLAUDE.md` → `AGENTS.md` routing, the `AGENTS.md` reference to `~/.cursor/commands/commands.md`, the `AGENTS.md` prose dispatch sentence, no unresolved `TODO(install)` markers, and unresolved `REPOSITORY.md` `TODO(patch)` placeholders.
+- **Validation:** The install workflow uses scaffold-local checks only: file presence, `CLAUDE.md` → `AGENTS.md` routing, the `AGENTS.md` reference to `~/.commands/commands.md`, the `AGENTS.md` prose dispatch sentence, no unresolved `TODO(install)` markers, and unresolved `REPOSITORY.md` `TODO(patch)` placeholders.
 - **Force flag:** `--force` is eligible only for existing scaffold-file conflicts. It does not bypass missing-template, repository-root, validation, or permission failures.
 - **Scaffold marker:** The `<!-- scaffolded-at: ... -->` marker line is present in `~/.cursor/_templates/AGENTS.md` and copied verbatim to the installed `AGENTS.md`. This marker is used by `/agent upgrade` to detect when an upgrade is needed.
 - **Next step:** Run `/agent patch` to fill `<!-- TODO(patch): ... -->` placeholders in `REPOSITORY.md` with repo-specific mutation protocol and ownership rules.

@@ -19,7 +19,7 @@ MD
 
 clean="$TMPDIR/clean"
 make_repo "$clean"
-"$ROOT/tools/cursor/sync-context-gate.sh" --check --root "$clean" >"$TMPDIR/clean.out"
+"$ROOT/tools/command-system/sync-context-gate.sh" --check --root "$clean" >"$TMPDIR/clean.out"
 
 if ! grep -Fq "OK: context-gate canonical source" "$TMPDIR/clean.out"; then
   printf 'FAIL: expected clean context fixture to pass\n' >&2
@@ -33,7 +33,7 @@ mkdir -p "$dirty/_mdc/auto"
 printf 'retired\n' >"$dirty/_mdc/auto/auto-context-gate.mdc"
 
 set +e
-"$ROOT/tools/cursor/sync-context-gate.sh" --check --root "$dirty" >"$TMPDIR/dirty.out" 2>&1
+"$ROOT/tools/command-system/sync-context-gate.sh" --check --root "$dirty" >"$TMPDIR/dirty.out" 2>&1
 status=$?
 set -e
 

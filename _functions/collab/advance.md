@@ -6,7 +6,7 @@ Open the next moderator-selected phase in a collaboration record and update the 
 
 **Slash:** `/collab advance`
 **Signature:** `/collab advance`
-**Prose dispatch:** `(collab advance)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab advance)` — prose routing hint; not a terminal command.
 **Search phrases:** collab next, next collaboration phase, advance collab record
 
 ## Steps

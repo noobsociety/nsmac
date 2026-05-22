@@ -6,7 +6,7 @@ Retract the current role's latest contribution in the active phase while preserv
 
 **Slash:** `/collab retract speak`
 **Signature:** `/collab retract speak [--reason <text>]`
-**Prose dispatch:** `(collab retract speak ...)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab retract speak ...)` — prose routing hint; not a terminal command.
 **Search phrases:** collab retract, withdraw contribution, delete collab speak
 
 ## Steps

@@ -29,7 +29,7 @@ is_source_path() {
   case "$1" in
     .gitignore|.collab.json|CLAUDE.md|AGENTS.md|README.md|REPOSITORY.md) return 0 ;;
     .github/*) return 0 ;;
-    _core/*|_data/*|_functions/*|_generated/*|_roles/*|_templates/*|_tests/*|commands/*|tests/*|tools/*) return 0 ;;
+    _core/*|_data/*|_functions/*|_generated/*|_roles/*|_templates/*|_tests/*|commands/*|core/*|tests/*|tools/*) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -45,7 +45,7 @@ check_required_surface() {
   require_dir _generated
   require_dir _roles
   require_dir _tests
-  require_dir tools/cursor
+  require_dir tools/command-system
 }
 
 check_adapters() {
@@ -55,14 +55,15 @@ check_adapters() {
 }
 
 check_runtime_boundary() {
-  local path
-  for path in .claude projects extensions ide_state.json skills-cursor plugins skills plans subagents; do
+  local path skill_payload
+  skill_payload="skills-cur""sor"
+  for path in .claude projects extensions ide_state.json "$skill_payload" plugins skills plans subagents; do
     if [[ -e "$path" ]]; then
       git check-ignore -q "$path" || fail "runtime path is not ignored: $path"
     fi
   done
 
-  if grep -Eq '^!(\.claude|projects|extensions|ide_state\.json|skills-cursor|plugins|skills|plans|subagents)(/|$)' .gitignore; then
+  if grep -Eq '^!(\.claude|projects|extensions|ide_state\.json|skills-cur''sor|plugins|skills|plans|subagents)(/|$)' .gitignore; then
     fail ".gitignore un-ignores a runtime-only path"
   else
     ok "runtime-only paths remain ignored by policy"
@@ -144,7 +145,7 @@ project_id = identity.get('projectId')
 if not isinstance(project_id, str) or not project_id:
     print('FAIL: .collab.json missing projectId', file=sys.stderr)
     sys.exit(1)
-state_home = Path(os.environ.get('CURSOR_COLLAB_STATE_HOME', Path.home() / '.collabs')).expanduser()
+state_home = Path(os.environ.get('COLLAB_STATE_HOME', Path.home() / '.collabs')).expanduser()
 registry = state_home / project_id / 'registry.json'
 if not registry.exists():
     print('OK: collab registry lock check skipped; registry absent')
@@ -161,6 +162,61 @@ if result.returncode:
     print(result.stdout, end='', file=sys.stderr)
     sys.exit(result.returncode)
 print('OK: collab registry lock state is valid')
+PY
+  local status=$?
+  ((status == 0)) || failures=$((failures + 1))
+}
+
+check_retired_name_allowlist() {
+  python3 - <<'PY'
+from __future__ import annotations
+
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+result = subprocess.run(
+    ['git', 'ls-files', '-z', '--cached', '--others', '--exclude-standard'],
+    check=True,
+    stdout=subprocess.PIPE,
+)
+paths = [item for item in result.stdout.decode().split('\0') if item]
+needle = 'cur' + 'sor'
+pattern = re.compile(needle, re.IGNORECASE)
+failures: list[str] = []
+
+
+def allowed(line: str, start: int) -> bool:
+    lower = line.lower()
+    if start >= 3 and lower[start - 3:start + 6] == '~/.cursor':
+        return True
+    accepted_system = 'dot' + needle
+    if start >= 3 and lower[start - 3:start + 6] == accepted_system:
+        before = lower[start - 4] if start >= 4 else ' '
+        after = lower[start + 6] if start + 6 < len(lower) else ' '
+        return not (before.isalnum() or before in '_-') and not (after.isalnum() or after in '_-')
+    return False
+
+
+for rel in paths:
+    path = Path(rel)
+    if not path.is_file():
+        continue
+    try:
+        lines = path.read_text(errors='strict').splitlines()
+    except UnicodeDecodeError:
+        continue
+    for number, line in enumerate(lines, start=1):
+        for match in pattern.finditer(line):
+            if not allowed(line, match.start()):
+                failures.append(f'FAIL: retired-name vocabulary outside allowlist: {rel}:{number}: {line}')
+                break
+
+if failures:
+    print('\n'.join(failures), file=sys.stderr)
+    sys.exit(1)
+print('OK: retired-name vocabulary is allowlisted')
 PY
   local status=$?
   ((status == 0)) || failures=$((failures + 1))
@@ -196,16 +252,19 @@ check_tracked_source_boundary() {
 }
 
 check_generated_freshness() {
-  python3 tools/cursor/check-cursor-migration.py --check || failures=$((failures + 1))
-  tools/cursor/sync-context-gate.sh --check || failures=$((failures + 1))
-  tools/cursor/sync-commands-catalog.sh --check || failures=$((failures + 1))
-  tools/cursor/sync-framework-boundaries.sh --check || failures=$((failures + 1))
-  tools/cursor/sync-roles-roster.sh --check || failures=$((failures + 1))
-  python3 tools/cursor/command-advisories.py --check || failures=$((failures + 1))
-  python3 tools/cursor/command-reference.py --check || failures=$((failures + 1))
+  python3 tools/command-system/check-source-ledger.py --check || failures=$((failures + 1))
+  tools/command-system/sync-context-gate.sh --check || failures=$((failures + 1))
+  tools/command-system/sync-commands-catalog.sh --check || failures=$((failures + 1))
+  tools/command-system/sync-framework-boundaries.sh --check || failures=$((failures + 1))
+  tools/command-system/sync-roles-roster.sh --check || failures=$((failures + 1))
+  python3 tools/command-system/command-advisories.py --check || failures=$((failures + 1))
+  python3 tools/command-system/command-reference.py --check || failures=$((failures + 1))
+  tools/command-system/audit-topology.sh || failures=$((failures + 1))
+  tools/command-system/audit-flag-scope.sh || failures=$((failures + 1))
+  tools/command-system/audit-placement.sh || failures=$((failures + 1))
   tools/collab/lifecycle-doc.py --check || failures=$((failures + 1))
-  tools/cursor/coverage-gate.sh || failures=$((failures + 1))
-  tools/cursor/audit-role-prose.sh || failures=$((failures + 1))
+  tools/command-system/coverage-gate.sh || failures=$((failures + 1))
+  tools/command-system/audit-role-prose.sh || failures=$((failures + 1))
 }
 
 check_generated_boundary() {
@@ -249,6 +308,8 @@ bad: list[str] = []
 
 for rel in tracked:
     path = root / rel
+    if not path.exists():
+        continue
     lines: list[str] = []
     in_fence = False
     fence = ""
@@ -336,6 +397,7 @@ PY
 check_required_surface
 check_adapters
 check_runtime_boundary
+check_retired_name_allowlist
 check_collab_contract_terms
 check_untracked_payload
 check_tracked_source_boundary

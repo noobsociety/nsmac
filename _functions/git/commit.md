@@ -6,7 +6,7 @@ Split the working tree into atomic commits, or squash an inclusive `FROM..TO` ra
 
 **Slash:** `/git commit`
 **Signature:** `/git commit <atomic | squash>`
-**Prose dispatch:** `(git commit <atomic | squash>)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(git commit <atomic | squash>)` — prose routing hint; not a terminal command.
 **Search phrases:** `atomic commits`, `split into atomic commits`, `commit by logical change`, `squash commits`, `squash these commits`, `combine commits`
 
 ## Steps

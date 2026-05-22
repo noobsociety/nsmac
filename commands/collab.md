@@ -6,14 +6,14 @@ Route moderated collaboration-record workflows through one public slash command.
 
 **Slash:** `/collab`
 **Signature:** `/collab <init | join | speak | retract speak | rewrite speak | advance | restore | set | unset | list | activate | open | reopen | close | remove participant | archive | delete | write summary | rewrite summary | run plan | rewrite execution | participant verify | show policy | show flags | show verdict | seal verification>`
-**Prose dispatch:** `(collab <init | join | speak | retract speak | rewrite speak | advance | restore | set | unset | list | activate | open | reopen | close | remove participant | archive | delete | write summary | rewrite summary | run plan | rewrite execution | participant verify | show policy | show flags | show verdict | seal verification>)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab <init | join | speak | retract speak | rewrite speak | advance | restore | set | unset | list | activate | open | reopen | close | remove participant | archive | delete | write summary | rewrite summary | run plan | rewrite execution | participant verify | show policy | show flags | show verdict | seal verification>)` — prose routing hint; not a terminal command.
 **Search phrases:** collab workflow, collaboration record, moderated agent discussion
 
 ## Steps
 
 <!-- abort: collab-invalid-route -->
 1. Resolve a route from the first token after `/collab`; routes with a target token (`retract speak`, `rewrite speak`, `remove participant`, `write summary`, `run plan`, `rewrite execution`, `participant verify`, `show policy`, `show flags`, `show verdict`, `seal verification`) consume the next token as part of the route selector. If missing or invalid, **ABORT** (agent-honor-system): name the token received and emit the route roster in **Route**.
-2. Load the mapped file under `../_functions/collab/` from the Cursor config root.
+2. Load the mapped file under `../_functions/collab/` from the command config root.
 3. Execute that route with the remaining user input and attachments.
 
 ## Notes

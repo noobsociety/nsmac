@@ -6,7 +6,7 @@ Reopen a closed collaboration record in the registry when additional discussion 
 
 **Slash:** `/collab open`
 **Signature:** `/collab open`
-**Prose dispatch:** `(collab open)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab open)` — prose routing hint; not a terminal command.
 **Search phrases:** collab open, reopen collab, reopen collaboration record
 
 ## Steps

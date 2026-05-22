@@ -6,8 +6,8 @@ Run QA harnesses by target so maintainers can execute canonical test checklists 
 
 **Slash:** `/test`
 **Signature:** `/test <commands | _functions | _core | _roles | _settings | repo | all>`
-**Prose dispatch:** `(test <commands | _functions | _core | _roles | _settings | repo | all>)` — for non-Cursor agents; not terminal-executable in Cursor.
-**Search phrases:** `run tests`, `cursor qa run`, `harness run`, `test target`
+**Prose dispatch:** `(test <commands | _functions | _core | _roles | _settings | repo | all>)` — prose routing hint; not a terminal command.
+**Search phrases:** `run tests`, `qa run`, `harness run`, `test target`
 
 ## Steps
 
@@ -21,7 +21,7 @@ Run QA harnesses by target so maintainers can execute canonical test checklists 
    - `repo` → load `REPOSITORY.md` at repository root. If missing, **ABORT** naming the expected path.
    - `all` → run `commands`, then `_functions`, then `_core`, then `_roles`, then `_settings`, then `repo` in that order.
 3. If any target fails, patch the governed files and rerun that target’s full harness procedure until pass or documented blockers.
-4. For target `repo` or `all`, run `./tools/cursor/audit.sh` and `./tests/run.sh`.
+4. For target `repo` or `all`, run `./tools/command-system/audit.sh` and `./tests/run.sh`.
 5. Return harness-required output blocks per executed targets plus a concise consolidated status.
 
 ## Notes

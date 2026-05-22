@@ -8,7 +8,7 @@ source "$SCRIPT_DIR/_verification_test_lib.sh"
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
 cd "$TMPDIR"
-export CURSOR_COLLAB_STATE_HOME="$TMPDIR/state-home"
+export COLLAB_STATE_HOME="$TMPDIR/state-home"
 
 "$ROOT/tools/collab/registry.py" init --agent-id codex --reviewer pa "Seal Verification Paired Round Records" >/dev/null
 TARGET="$RUN_DATE-seal-verification-paired-round-records"

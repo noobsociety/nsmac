@@ -6,7 +6,7 @@ Seal the `Completion.verification` sub-state after a reviewer pass, recording th
 
 **Slash:** `/collab seal verification`
 **Signature:** `/collab seal verification [--cap-exit <action>] [--outcome <outcome>] [--restore-target <target>] [--restore-reason <reason>] [--evidence <json>] [--failure-category <category>]`
-**Prose dispatch:** `(collab seal verification [--cap-exit <action>])` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab seal verification [--cap-exit <action>])` — prose routing hint; not a terminal command.
 **Search phrases:** collab seal, verification seal, reviewer seal, close verification loop, seal-with-cap, assessment verdict, verdict flags, --outcome, --restore-target, failureCategory
 
 ## Steps

@@ -8,7 +8,7 @@ source "$SCRIPT_DIR/_verification_test_lib.sh"
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
 cd "$TMPDIR"
-export CURSOR_COLLAB_STATE_HOME="$TMPDIR/state-home"
+export COLLAB_STATE_HOME="$TMPDIR/state-home"
 
 init_reviewer_target "Verification Reopen Rerun Flow" "verification-reopen-rerun-flow"
 TARGET="$RUN_DATE-verification-reopen-rerun-flow"
@@ -25,7 +25,7 @@ EFFORT OVERRIDE: high — implementation-density: test handoff setup
 `tools/collab/registry.py`
 
 **validationCommands**
-`[["./tools/cursor/audit.sh"]]`
+`[["./tools/command-system/audit.sh"]]`
 HANDOFF
 
 "$ROOT/tools/collab/registry.py" speak-render "$TARGET" pe \
@@ -85,7 +85,7 @@ Scope revised after verification found the route function file missing.
 `_functions/collab/reopen.md`
 
 **validationCommands**
-`[["./tools/cursor/audit.sh"],["./tests/run.sh"]]`
+`[["./tools/command-system/audit.sh"],["./tests/run.sh"]]`
 HANDOFF
 
 "$ROOT/tools/collab/registry.py" rewrite-speak-render "$TARGET" pe \
@@ -101,7 +101,7 @@ registry = Path(sys.argv[1])
 entry = next(item for item in json.loads(registry.read_text())['collabs'] if item['slug'] == 'verification-reopen-rerun-flow')
 state = entry['handoff']['roles']['pe']
 assert state['writeScope'] == ['tools/collab/registry.py', '_functions/collab/reopen.md']
-assert state['validationCommands'] == [['./tools/cursor/audit.sh'], ['./tests/run.sh']]
+assert state['validationCommands'] == [['./tools/command-system/audit.sh'], ['./tests/run.sh']]
 assert 'Scope revised after verification' in state['body']
 assert 'Previous revision,' in state['body']
 assert 'verdict' not in entry

@@ -17,7 +17,7 @@ Spec for `tools/collab/planned_routes.py` — the planned-route prerequisite gat
 
 ### Public entry
 
-`validate_planned_route_prerequisites(cursor_root: Path) -> None`
+`validate_planned_route_prerequisites(config_root: Path) -> None`
 
 Called by `tools/collab/registry.py` via `validate_registry()` at load time. Calls the issue-bridge gate with `include_issue_route=True`, meaning the `_functions/git/issue.md` route file is also checked as a prerequisite when the issue bridge is declared.
 

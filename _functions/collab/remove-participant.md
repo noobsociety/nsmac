@@ -6,7 +6,7 @@ Remove one participant from the registry roster and transcript metadata when the
 
 **Slash:** `/collab remove participant`
 **Signature:** `/collab remove participant <role>`
-**Prose dispatch:** `(collab remove participant ...)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab remove participant ...)` — prose routing hint; not a terminal command.
 **Search phrases:** collab kick, remove collab participant, drop collaboration role
 
 ## Steps

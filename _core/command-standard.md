@@ -1,6 +1,6 @@
 # Command standard
 
-The command standard defines how public slash files under `commands/` delegate to private function playbooks under `_functions/` in `CURSOR_CONFIG_ROOT`. Every playbook follows the [style guide](style-guide.md) and the **Command** (`.md`) template in [document standard](document-standard.md#command-md); this file owns the extended contract: public slash routing, private functions, heading order, catalog duties, link hygiene, harness exceptions, and layout rules. Signal, one-action-per-step discipline, and the **250-line** budget live in [context engineering](context-management.md).
+The command standard defines how public slash files under `commands/` delegate to private function playbooks under `_functions/` in `COMMAND_CONFIG_ROOT`. Every playbook follows the [style guide](style-guide.md) and the **Command** (`.md`) template in [document standard](document-standard.md#command-md); this file owns the extended contract: public slash routing, private functions, heading order, catalog duties, link hygiene, harness exceptions, and layout rules. Signal, one-action-per-step discipline, and the **250-line** budget live in [context engineering](context-management.md).
 
 Contract: [document-standard.md](document-standard.md#command-md), [style-guide.md](style-guide.md), [context-management.md](context-management.md)
 
@@ -14,7 +14,7 @@ Contract: [document-standard.md](document-standard.md#command-md), [style-guide.
 
 - Public slash files use `commands/{namespace}.md` and expose `/namespace`.
 - Private route functions use `_functions/{namespace}/{route}.md` and document the effective invocation as `/namespace route`.
-- Do not place route files under `commands/{namespace}/`; Cursor may expose them as standalone slashes such as `/assess`.
+- Do not place route files under `commands/{namespace}/`; the runtime may expose them as standalone slashes such as `/assess`.
 - One bounded workflow lives in each private function. Public namespace files only resolve the route and delegate remaining input.
 
 ## Document shape
@@ -37,7 +37,7 @@ The `## Trigger` block declares three labeled sections in this order: **Slash**,
 
 **Slash** — the only terminal-invocable form; matches exactly as written. Lead with `**Slash:** /<namespace>` for public namespace files or `**Slash:** /<namespace> <route>` for private functions. Required route choices and positional arguments are declared in the **Signature** line directly after **Slash**.
 
-**Prose dispatch** — the routing-only `(<namespace> <route> <arg>...)` notation for non-Cursor agents. These agents follow the bootstrap chain (`CLAUDE.md` / `AGENTS.md` -> `~/.cursor/commands/commands.md`) and then execute the corresponding slash command. It is not terminal-executable in Cursor; Cursor users invoke the slash form directly. Slash entries and prose-dispatch entries must still be unique across routes and must not appear under Search phrases. The `/test` router and `_functions/test/run.md` may mirror the same routed form because they describe one command surface and one implementation playbook, not two independently exposed routes.
+**Prose dispatch** — the routing-only `(<namespace> <route> <arg>...)` notation for routed agents. These agents follow the bootstrap chain (`CLAUDE.md` / `AGENTS.md` -> `~/.commands/commands.md`) and then execute the corresponding slash command. It is not terminal-executable; Slash users invoke the slash form directly. Slash entries and prose-dispatch entries must still be unique across routes and must not appear under Search phrases. The `/test` router and `_functions/test/run.md` may mirror the same routed form because they describe one command surface and one implementation playbook, not two independently exposed routes.
 
 **Search phrases** — discovery aids only; explicitly non-invocable; agents must not dispatch on a phrase match alone. For multi-mode functions, use a labeled group per mode: `**Search phrases (mode):**`.
 
@@ -94,13 +94,13 @@ Route {domain} workflows through one public slash so related commands stay group
 
 **Slash:** `/{namespace}`
 **Signature:** `/{namespace} <route-a | route-b>`
-**Prose dispatch:** `({namespace} route-a ...)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `({namespace} route-a ...)` — prose routing hint; not a terminal command.
 **Search phrases:** <natural-language alias>, <alias>
 
 ## Steps
 
 1. Resolve `<route>` from the first token after `/{namespace}`. If missing or invalid, **ABORT** naming the token received.
-2. Load `../_functions/{namespace}/<route>.md` from the Cursor config root.
+2. Load `../_functions/{namespace}/<route>.md` from the command config root.
 3. Execute that function with the remaining user input and attachments.
 
 ## Notes
@@ -120,7 +120,7 @@ One sentence — purpose of the route and when to use it.
 
 **Slash:** `/{namespace} {route}`
 **Signature:** `/{namespace} {route} <arg1>`
-**Prose dispatch:** `({namespace} {route} ...)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `({namespace} {route} ...)` — prose routing hint; not a terminal command.
 **Search phrases:** <natural-language alias>, <alias>
 
 ## Steps

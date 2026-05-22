@@ -6,7 +6,7 @@ Update collab metadata fields that do not already belong to a dedicated mutation
 
 **Slash:** `/collab set`
 **Signature:** `/collab set <field> <value>`; or `/collab set reviewer <role>` / `/collab set reviewer --clear` / `/collab set reviewer-optional-phases <phase>...`
-**Prose dispatch:** `(collab set ...)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab set ...)` — prose routing hint; not a terminal command.
 **Search phrases:** collab set, set collaboration metadata, update collab metadata
 
 ## Steps

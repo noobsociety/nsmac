@@ -26,7 +26,7 @@ The checked-in repo marker (`.collab.json`) binds a repository to its user-scope
 
 - **Identity properties:** `projectId` is opaque — tooling must not derive or infer it from path, basename, remote URL, or worktree location. The id follows git history: a renamed or forked repository carries the same id and resolves to the same state root. `projectId` is written once at initialization and never changed, even when `label` is updated or the repository is moved.
 
-- **State root:** The resolver maps `projectId` → `$HOME/.collabs/<projectId>/`. This user-scope collab state root is deliberately non-XDG because records are user-browsed, repo-independent operational state. The `$HOME` expansion happens at runtime; the absolute path is not stored in the repo. The resolver accepts a `CURSOR_COLLAB_STATE_HOME` environment variable that replaces `$HOME/.collabs/` as the base path; this is a test-isolation hook and is not a supported production configuration surface.
+- **State root:** The resolver maps `projectId` → `$HOME/.collabs/<projectId>/`. This user-scope collab state root is deliberately non-XDG because records are user-browsed, repo-independent operational state. The `$HOME` expansion happens at runtime; the absolute path is not stored in the repo. The resolver accepts a `COLLAB_STATE_HOME` environment variable that replaces `$HOME/.collabs/` as the base path; this is a test-isolation hook and is not a supported production configuration surface.
 
   | Path under state root | Description |
   | --- | --- |

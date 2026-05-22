@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-HOOKS_DIR="${CURSOR_GIT_HOOKS_DIR:-}"
+HOOKS_DIR="${COMMAND_SYSTEM_GIT_HOOKS_DIR:-}"
 
 if [[ -z "$HOOKS_DIR" ]]; then
   HOOKS_DIR="$(git -C "$ROOT" rev-parse --git-path hooks)"

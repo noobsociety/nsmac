@@ -6,7 +6,7 @@ Create or update `CHANGELOG.md`, `NEWS.md`, `HISTORY.md`, `RELEASE_NOTES.md`, an
 
 **Slash:** `/doc write changelog`
 **Signature:** `/doc write changelog <atomic | squash>`
-**Prose dispatch:** `(doc write changelog <atomic | squash>)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(doc write changelog <atomic | squash>)` — prose routing hint; not a terminal command.
 **Search phrases:** `changelog atomic`, `update changelog atomic`, `changelog squash`, `update changelog squash`
 
 ## Steps

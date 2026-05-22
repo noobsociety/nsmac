@@ -25,8 +25,8 @@ assert_fails_with() {
 
 cd "$ROOT"
 
-python3 tools/cursor/command-advisories.py --check >/dev/null
-python3 tools/cursor/command-reference.py --check >/dev/null
+python3 tools/command-system/command-advisories.py --check >/dev/null
+python3 tools/command-system/command-reference.py --check >/dev/null
 
 if ! grep -Fq '> **Recommended:** execution capability; high effort' _generated/command-reference.md; then
   printf 'FAIL: generated command reference does not render advisory lines\n' >&2
@@ -47,7 +47,7 @@ data["advisories"][0]["capabilityTier"] = "missing"
 path.write_text(json.dumps(data, indent=2) + "\n")
 PY
 assert_fails_with "unknown capabilityTier: missing" \
-  python3 tools/cursor/command-advisories.py --check --data-dir "$TMPDIR/unknown-alias"
+  python3 tools/command-system/command-advisories.py --check --data-dir "$TMPDIR/unknown-alias"
 
 cp -R _data "$TMPDIR/flat-override"
 python3 - "$TMPDIR/flat-override/advisories/collab.json" <<'PY'
@@ -65,7 +65,7 @@ for advisory in data["advisories"]:
 path.write_text(json.dumps(data, indent=2) + "\n")
 PY
 assert_fails_with "must differ from the route default capabilityTier or effortTier" \
-  python3 tools/cursor/command-advisories.py --check --data-dir "$TMPDIR/flat-override"
+  python3 tools/command-system/command-advisories.py --check --data-dir "$TMPDIR/flat-override"
 
 python3 - "$ROOT/_generated/command-reference.md" "$TMPDIR/leaky-command-reference.md" <<'PY'
 from __future__ import annotations
@@ -84,6 +84,6 @@ target.write_text(
 )
 PY
 assert_fails_with "runtimePolicyRef" \
-  python3 tools/cursor/command-advisories.py --check --artifact "$TMPDIR/leaky-command-reference.md"
+  python3 tools/command-system/command-advisories.py --check --artifact "$TMPDIR/leaky-command-reference.md"
 
 printf 'OK: command advisory validation enforces coverage, aliases, overrides, and render leakage\n'

@@ -6,7 +6,7 @@ TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
 
 cd "$TMPDIR"
-export CURSOR_COLLAB_STATE_HOME="$TMPDIR/state-home"
+export COLLAB_STATE_HOME="$TMPDIR/state-home"
 
 RUN_DATE="$(date +%Y-%m-%d)"
 TARGET="$RUN_DATE-version-field-rejection"
@@ -94,7 +94,7 @@ entry['handoff'] = {
         'pe': {
             field: 1,
             'writeScope': ['tools/collab/registry.py'],
-            'validationCommands': [['./tools/cursor/audit.sh']],
+            'validationCommands': [['./tools/command-system/audit.sh']],
         }
     }
 }

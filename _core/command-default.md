@@ -1,6 +1,6 @@
 # Command Default
 
-Surface-wide bare-input policy for cursor routes. Routes that declare `default=none` on a `required=optional` parameter row cite this file as the governing contract.
+Surface-wide bare-input policy for command routes. Routes that declare `default=none` on a `required=optional` parameter row cite this file as the governing contract.
 
 ## Trigger
 

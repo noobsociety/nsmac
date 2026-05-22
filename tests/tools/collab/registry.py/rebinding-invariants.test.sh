@@ -9,7 +9,7 @@ RUN_DATE="$(date +%Y-%m-%d)"
 
 mkdir "$TMPDIR/project-rebinding"
 cd "$TMPDIR/project-rebinding"
-export CURSOR_COLLAB_STATE_HOME="$TMPDIR/project-state-home"
+export COLLAB_STATE_HOME="$TMPDIR/project-state-home"
 
 "$ROOT/tools/collab/registry.py" init --agent-id codex "Project Rebinding Source" >/dev/null
 REGISTRY="$("$ROOT/tools/collab/registry.py" registry-path)"
@@ -22,7 +22,7 @@ PY
 )"
 REBIND_PROJECT_ID="rebinding-target-0001"
 
-python3 - "$REGISTRY" "$CURSOR_COLLAB_STATE_HOME" "$REBIND_PROJECT_ID" <<'PY'
+python3 - "$REGISTRY" "$COLLAB_STATE_HOME" "$REBIND_PROJECT_ID" <<'PY'
 import shutil
 import sys
 from pathlib import Path
@@ -61,7 +61,7 @@ fi
 
 mkdir "$TMPDIR/agentid-rebinding"
 cd "$TMPDIR/agentid-rebinding"
-export CURSOR_COLLAB_STATE_HOME="$TMPDIR/agent-state-home"
+export COLLAB_STATE_HOME="$TMPDIR/agent-state-home"
 
 "$ROOT/tools/collab/registry.py" init --agent-id codex "Agentid Rebinding" >/dev/null
 TARGET="$RUN_DATE-agentid-rebinding"

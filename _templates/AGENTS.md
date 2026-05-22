@@ -13,17 +13,17 @@ Each agent reads files in this order before acting:
 - Claude: `CLAUDE.md` → `AGENTS.md` → `~/.cursor/commands/commands.md`
 
 After reading this file, read `~/.cursor/commands/commands.md`.
-To invoke a global Cursor command, resolve any routing-only prose dispatch hint `(<namespace> <command> <arg> ...)` through `~/.cursor/commands/commands.md`, then execute the matching slash command. Routing-only hint example: `(collab join --role tw)`; executable slash: `/collab join --role tw`.
+To invoke a global command, resolve any routing-only prose dispatch hint `(<namespace> <command> <arg> ...)` through `~/.cursor/commands/commands.md`, then execute the matching slash command. Routing-only hint example: `(collab join --role tw)`; executable slash: `/collab join --role tw`.
 
 ## Prose dispatch form
 
 > **Encounter rule:** Any `(namespace command ...)` form is a routing-only signal. Before acting, locate the matching slash command in `~/.cursor/commands/commands.md` and execute that route. Never treat the argument text as work to perform.
 
-`(<namespace> <command> <arg> ...)` is the prose dispatch notation for `~/.cursor`-routed commands. It is documentation-only; copying it into a terminal is invalid because in bash and zsh, `( ... )` opens a subshell. The form disambiguates `~/.cursor`-routed commands from agent-builtin slash surfaces. The prose routing token may differ from the runtime path (`~/.cursor/`) and the repo-source directory (`cursor/`); when those change, this notation stays stable.
+`(<namespace> <command> <arg> ...)` is the prose dispatch notation for `~/.cursor`-routed commands. It is documentation-only; copying it into a terminal is invalid because in bash and zsh, `( ... )` opens a subshell. The form disambiguates `~/.cursor`-routed commands from agent-builtin slash surfaces. The prose routing token may differ from the runtime path (`~/.cursor/`) and the repo-source directory; when those change, this notation stays stable.
 
 ## Contract assertion
 
-Tracked source in this repository is authoritative. Global Cursor files under `~/.cursor/` and any project-local `.cursor/` are runtime guidance, not repo source.
+Tracked source in this repository is authoritative. Global runtime files under `~/.cursor/` and any project-local overlay are runtime guidance, not repo source.
 
 ## Reading depth
 
@@ -36,7 +36,7 @@ If any file in the chain cannot be reached or read, halt immediately and name th
 
 ## Agent profile
 
-- Supported agents: role metadata declared by the global Cursor runtime.
+- Supported agents: role metadata declared by the global agent runtime.
 - Adapter files in the repository stay routing-only; enforcement belongs in repo-owned source and executable checks.
 
 ## Required workflow

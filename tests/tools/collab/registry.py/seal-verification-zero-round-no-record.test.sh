@@ -8,7 +8,7 @@ source "$SCRIPT_DIR/_verification_test_lib.sh"
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
 cd "$TMPDIR"
-export CURSOR_COLLAB_STATE_HOME="$TMPDIR/state-home"
+export COLLAB_STATE_HOME="$TMPDIR/state-home"
 
 init_reviewer_target "Seal Verification Zero Round No Record" "seal-verification-zero-round-no-record"
 TARGET="$RUN_DATE-seal-verification-zero-round-no-record"

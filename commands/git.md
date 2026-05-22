@@ -6,13 +6,13 @@ Route Git and issue workflows through one namespace so source-control commands s
 
 **Slash:** `/git`
 **Signature:** `/git <commit | issue>`
-**Prose dispatch:** `(git <commit | issue>)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(git <commit | issue>)` — prose routing hint; not a terminal command.
 **Search phrases:** git workflow, issue workflow, source control workflow
 
 ## Steps
 
 1. Resolve `<route>` from the first token after `/git`. If missing or invalid, **ABORT** naming the token received and emit the allowed route set: `commit`, `issue`.
-2. Load `../_functions/git/<route>.md` from the Cursor config root.
+2. Load `../_functions/git/<route>.md` from the command config root.
 3. Execute that route with the remaining user input and attachments.
 
 ## Notes

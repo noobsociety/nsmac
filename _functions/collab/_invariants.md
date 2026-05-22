@@ -28,7 +28,7 @@ Anchor convention: each ABORT in `<route>.md` must carry a stable id anchor `<!-
 
 Maintainer check: `git grep -rn 'agent-honor-system' _functions/collab/` shows every agent-honor-system clause. Any undocumented ABORT that has neither a helper check nor this marker is a defect.
 
-Maintainer check: `git grep -rnP '(?<![A-Za-z0-9_])(mod|pa|pe|tw)(?![A-Za-z0-9_])' -- '*.md' '*rule file'` is the broad review sweep for role-key prose drift. Every prose match must either be covered by the documented carve-outs in `tools/cursor/audit-role-prose.sh` or rewritten to function-bound prose.
+Maintainer check: `git grep -rnP '(?<![A-Za-z0-9_])(mod|pa|pe|tw)(?![A-Za-z0-9_])' -- '*.md' '*rule file'` is the broad review sweep for role-key prose drift. Every prose match must either be covered by the documented carve-outs in `tools/command-system/audit-role-prose.sh` or rewritten to function-bound prose.
 
 **2. Registry as source of truth; transcript as human ledger**
 

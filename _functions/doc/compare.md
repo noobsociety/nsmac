@@ -6,7 +6,7 @@ Compare original versus refined Markdown for preservation of facts, headings, an
 
 **Slash:** `/doc compare`
 **Signature:** `/doc compare <path1> <path2>`
-**Prose dispatch:** `(doc compare <path1> <path2>)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(doc compare <path1> <path2>)` — prose routing hint; not a terminal command.
 **Search phrases:** `compare markdown`, `compare versions`, `compare two docs`, `preservation check`, `diff markdown`
 
 ## Steps

@@ -8,8 +8,8 @@ import sys
 from pathlib import Path
 
 
-DEFAULT_CURSOR_ROOT = Path(os.environ.get('CURSOR_CONFIG_ROOT', '.')).expanduser()
-DEFAULT_ROLES_DIR = DEFAULT_CURSOR_ROOT / '_roles'
+DEFAULT_CONFIG_ROOT = Path(os.environ.get('COMMAND_CONFIG_ROOT', '.')).expanduser()
+DEFAULT_ROLES_DIR = DEFAULT_CONFIG_ROOT / '_roles'
 
 
 def die(message: str) -> None:

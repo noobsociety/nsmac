@@ -6,7 +6,7 @@ Rewrite the most recent summary in-place within the Completion section of a coll
 
 **Slash:** `/collab rewrite summary`
 **Signature:** `/collab rewrite summary`
-**Prose dispatch:** `(collab rewrite summary)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab rewrite summary)` — prose routing hint; not a terminal command.
 **Search phrases:** collab rewrite-summary, rewrite collab summary, redo collab summarize
 
 ## Steps

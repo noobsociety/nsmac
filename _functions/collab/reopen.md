@@ -6,7 +6,7 @@ Restore a collaboration from a non-success `Completion.verification` verdict to 
 
 **Slash:** `/collab reopen`
 **Signature:** `/collab reopen <action-plan | handoff> [<target>]`
-**Prose dispatch:** `(collab reopen <action-plan | handoff> [<target>])` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab reopen <action-plan | handoff> [<target>])` — prose routing hint; not a terminal command.
 **Search phrases:** collab reopen verdict, restore failed seal, verification verdict restore
 
 ## Steps

@@ -6,7 +6,7 @@ Display the generated collab flag inventory from the spec-owned flag taxonomy.
 
 **Slash:** `/collab show flags`
 **Signature:** `/collab show flags`
-**Prose dispatch:** `(collab show flags)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab show flags)` — prose routing hint; not a terminal command.
 **Search phrases:** collab flags, flag inventory, collab command flags
 
 ## Steps

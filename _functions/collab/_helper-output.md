@@ -481,7 +481,7 @@ Maps each documented `## Abort families` module family to its implementing subco
 | `show-verdict` | `show-verdict` | `show_verdict()` |
 | `init` | `init` | `init_collab()`, `parse_init_tokens()` |
 | `contribution-budget` | `speak-render`, `rewrite-speak-render` | `enforce_contribution_budget()`, `read_budget_spec()` |
-| `command-default` | all commands | `load_registry()`, `resolve_cursor_root()` |
+| `command-default` | all commands | `load_registry()`, `resolve_config_root()` |
 | `participant-role-files` | all registry-loading commands | `validate_registry()`, `validate_participant_role_files()` |
 | `planned-route-gates` | `validate` | `validate_planned_route_prerequisites()` in `tools/collab/planned_routes.py` |
 

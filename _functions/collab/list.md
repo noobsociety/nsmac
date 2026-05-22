@@ -6,7 +6,7 @@ List the registry-backed collabs so the moderator can inspect status and active 
 
 **Slash:** `/collab list`
 **Signature:** `/collab list [--status <open|closed|archived>]`
-**Prose dispatch:** `(collab list ...)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab list ...)` — prose routing hint; not a terminal command.
 **Search phrases:** collab list, list collaborations, list collab records
 
 ## Steps

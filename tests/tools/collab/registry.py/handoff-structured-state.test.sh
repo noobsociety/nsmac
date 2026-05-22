@@ -6,7 +6,7 @@ TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
 
 cd "$TMPDIR"
-export CURSOR_COLLAB_STATE_HOME="$TMPDIR/state-home"
+export COLLAB_STATE_HOME="$TMPDIR/state-home"
 
 RUN_DATE="$(date +%Y-%m-%d)"
 TARGET="${RUN_DATE}-structured-handoff"
@@ -26,7 +26,7 @@ EFFORT OVERRIDE: matrix
 **writeScope:**
 - `tools/collab/registry.py`
 
-**validationCommands:** `./tools/cursor/audit.sh && ./tests/run.sh`
+**validationCommands:** `./tools/command-system/audit.sh && ./tests/run.sh`
 BAD
 
 set +e
@@ -39,7 +39,7 @@ if [[ "$bad_status" -eq 0 ]]; then
   exit 1
 fi
 
-if [[ "$bad_output" != *"ABORT: validationCommands contains disallowed pattern: ./tools/cursor/audit.sh && ./tests/run.sh"* ]]; then
+if [[ "$bad_output" != *"ABORT: validationCommands contains disallowed pattern: ./tools/command-system/audit.sh && ./tests/run.sh"* ]]; then
   printf 'FAIL: malformed Handoff rejection message mismatch\n%s\n' "$bad_output" >&2
   exit 1
 fi
@@ -66,7 +66,7 @@ EFFORT OVERRIDE: matrix
 - `tests/tools/collab/registry.py` _requires: #1_
 
 **validationCommands:**
-- `["./tools/cursor/audit.sh"]`
+- `["./tools/command-system/audit.sh"]`
 - `{"argv":["./tests/run.sh"]}`
 GOOD
 
@@ -83,12 +83,12 @@ state = entry['handoff']['roles']['pe']
 assert 'schema' + 'Version' not in entry['handoff']
 assert 'schema' + 'Version' not in state
 assert state['writeScope'] == ['tools/collab/registry.py', 'tests/tools/collab/registry.py']
-assert state['validationCommands'] == [['./tools/cursor/audit.sh'], ['./tests/run.sh']]
+assert state['validationCommands'] == [['./tools/command-system/audit.sh'], ['./tests/run.sh']]
 assert '_requires: #1_' in state['body']
 transcript = (registry.parent / entry['transcriptPath']).read_text()
 assert 'handoff-pe-1' in transcript
 assert '_requires: #1_' in transcript
-assert '["./tools/cursor/audit.sh"]' in transcript
+assert '["./tools/command-system/audit.sh"]' in transcript
 PY
 
 "$ROOT/tools/collab/registry.py" handoff-state "$TARGET" pe >handoff-state.json

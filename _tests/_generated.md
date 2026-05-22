@@ -1,6 +1,6 @@
-# QA — cursor _generated
+# QA — command _generated
 
-Deterministic QA for generated Cursor artifacts projected to `~/.cursor/_generated/`.
+Deterministic QA for generated runtime artifacts projected to `~/.cursor/_generated/`.
 
 ## Procedure
 

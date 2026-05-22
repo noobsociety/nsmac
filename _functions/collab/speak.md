@@ -6,7 +6,7 @@ Append one role-labeled contribution to the active phase of a moderated collabor
 
 **Slash:** `/collab speak`
 **Signature:** `/collab speak [<message>] [--turn-order <key>...] [--verbatim]`
-**Prose dispatch:** `(collab speak ...)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab speak ...)` — prose routing hint; not a terminal command.
 **Search phrases:** collab speak, contribute to collaboration, agent turn
 
 ## Steps

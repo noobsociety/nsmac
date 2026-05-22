@@ -6,7 +6,7 @@ Apply current scaffold templates to an already-installed multi-agent scaffold in
 
 **Slash:** `/agent upgrade`
 **Signature:** `/agent upgrade [--force]`
-**Prose dispatch:** `(agent upgrade [--force])` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(agent upgrade [--force])` — prose routing hint; not a terminal command.
 **Search phrases:** agent upgrade, upgrade multi-agent scaffold, upgrade scaffold templates
 
 ## Steps
@@ -19,7 +19,7 @@ Apply current scaffold templates to an already-installed multi-agent scaffold in
 6. Compare the two marker strings using lexicographic equality. If equal, compare every installed scaffold file against its corresponding template byte-for-byte. If the markers match and every file is identical to its template, report "scaffold is up to date" and exit.
 7. For `REPOSITORY.md`: compare the installed file against `~/.cursor/_templates/REPOSITORY.md`. If the proposed change overlaps any section that has been patched beyond the scaffold-owned header — that is, any content that is not a `<!-- TODO(patch): ... -->` placeholder — and `--force` is absent, record a targeted skip message for `REPOSITORY.md` and exclude it from the confirmation step. Proceed to evaluate the remaining files. When `--force` is supplied, keep `REPOSITORY.md` in the collected overwrite set and defer the decision to the diff and gate.
 8. For each of `AGENTS.md` and `CLAUDE.md` where the installed file differs from its template, and for `REPOSITORY.md` when it remains eligible after step 7, collect the file and compute a per-file changed-block summary: file name, before/after view of the changed sections, and a statement of what will be overwritten. Apply install-owned marker resolution to candidate content for `AGENTS.md` and `CLAUDE.md`; if any `TODO(install)` marker would survive in the candidate patch, **ABORT**: unresolved install placeholder.
-9. If `AGENTS.md` is in the collected overwrite set and the installed `AGENTS.md` contains a link to `cursor/commands/commands.md` in the Entry points section: check whether the target repo's `AGENTS.md` file satisfies both (a) the `<!-- scaffolded-at: ... -->` marker is present and (b) the target repo does not contain `_templates/AGENTS.md` at any tracked path. When both conditions are met, add to the candidate patch: remove the `cursor/commands/commands.md` entry from the Entry points list. Do not apply this rewrite unless both conditions are met. Skip this step silently when `AGENTS.md` is not in the collected set or when the link is absent.
+9. If `AGENTS.md` is in the collected overwrite set and the installed `AGENTS.md` contains a link to `commands/commands.md` in the Entry points section: check whether the target repo's `AGENTS.md` file satisfies both (a) the `<!-- scaffolded-at: ... -->` marker is present and (b) the target repo does not contain `_templates/AGENTS.md` at any tracked path. When both conditions are met, add to the candidate patch: remove the `commands/commands.md` entry from the Entry points list. Do not apply this rewrite unless both conditions are met. Skip this step silently when `AGENTS.md` is not in the collected set or when the link is absent.
 10. If no files remain after step 7 excludes `REPOSITORY.md` and no other file differs, report "scaffold is up to date" with a note that `REPOSITORY.md` was skipped due to patched-section overlap, and exit.
 11. When `--force` is supplied, compute `the candidate patch` for the collected overwrite set and render the diff from `the candidate patch`. Present each collected file with its changed-block summary. Gate the overwrite per `_core/command-argument.md`, using the repository path or name as the operand:
 
@@ -52,7 +52,7 @@ Apply current scaffold templates to an already-installed multi-agent scaffold in
 - **All-or-nothing write:** All confirmed files are written as a set. If any single write fails mid-set, the entire set is treated as failed; do not leave a partial upgrade.
 - **Marker-as-comment risk:** The `<!-- scaffolded-at: ... -->` marker is an HTML comment with no structural protection. If `AGENTS.md` is ever edited by a tool that rewrites the file body, the marker could be moved or removed. Today `/agent patch` does not edit `AGENTS.md`, so this is not a current failure mode — but if that changes, the marker becomes load-bearing surface that looks like a comment.
 - **Next step after upgrade:** If `REPOSITORY.md` was skipped due to patched-section overlap and a scaffold change to that file is important, apply the change manually.
-- **Upgrade rewrite rule for `cursor/commands/commands.md` link:** See step 9. Both conditions must be met for the rewrite to apply; otherwise the step is a no-op.
+- **Upgrade rewrite rule for `commands/commands.md` link:** See step 9. Both conditions must be met for the rewrite to apply; otherwise the step is a no-op.
 
 ```route-arg
 dispatch: (agent upgrade [--force])

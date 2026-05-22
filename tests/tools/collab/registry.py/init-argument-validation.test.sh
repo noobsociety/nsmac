@@ -6,7 +6,7 @@ TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
 
 cd "$TMPDIR"
-export CURSOR_COLLAB_STATE_HOME="$TMPDIR/state-home"
+export COLLAB_STATE_HOME="$TMPDIR/state-home"
 
 set +e
 missing_name_output="$("$ROOT/tools/collab/registry.py" init --agent-id codex 2>&1)"
@@ -77,7 +77,7 @@ if [[ "$default_output" != records/*default-seal.md* ]]; then
   exit 1
 fi
 
-python3 - "$CURSOR_COLLAB_STATE_HOME" <<'PY'
+python3 - "$COLLAB_STATE_HOME" <<'PY'
 import json
 import sys
 from pathlib import Path

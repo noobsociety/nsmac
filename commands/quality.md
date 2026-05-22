@@ -6,13 +6,13 @@ Route specialist quality workflows through one namespace so review commands stay
 
 **Slash:** `/quality`
 **Signature:** `/quality <assess interface | assess web | assess game | assess operations | tune | show notes>`
-**Prose dispatch:** `(quality <assess interface | assess web | assess game | assess operations | tune | show notes>)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(quality <assess interface | assess web | assess game | assess operations | tune | show notes>)` — prose routing hint; not a terminal command.
 **Search phrases:** evaluation workflow, principal review, rubric review
 
 ## Steps
 
 1. Resolve `<route>` from the first token after `/quality`; `assess` and `show` consume the next token as their target. If missing or invalid, **ABORT** naming the token received and emit the allowed route set in **Route**.
-2. Load the mapped file under `../_functions/quality/` from the Cursor config root.
+2. Load the mapped file under `../_functions/quality/` from the command config root.
 3. Execute that route with the remaining user input and attachments.
 
 ## Notes

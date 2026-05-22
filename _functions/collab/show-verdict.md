@@ -6,7 +6,7 @@ Display the recorded verification verdict metadata for a collaboration record.
 
 **Slash:** `/collab show verdict`
 **Signature:** `/collab show verdict [<target>]`
-**Prose dispatch:** `(collab show verdict [<target>])` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab show verdict [<target>])` — prose routing hint; not a terminal command.
 **Search phrases:** collab verdict, show verification verdict, closed collab verdict metadata
 
 ## Steps

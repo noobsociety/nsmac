@@ -159,7 +159,7 @@ Examples: `markdown-workflow.md`, `markdown-workflow.md`, `quality-learning.md`
 
 Pattern: `{namespace}.md` for public routers and `_functions/{namespace}/{route}.md` for private route playbooks.
 
-The public router name matches the related command family and rule group. Private function names stay route-shaped so Cursor does not expose them as standalone slashes.
+The public router name matches the related command family and rule group. Private function names stay route-shaped so the runtime does not expose them as standalone slashes.
 
 Examples: `_functions/git/commit.md`, `_functions/quality/assess-game.md`, `_functions/doc/write-readme.md`
 
@@ -177,7 +177,7 @@ Examples: `_functions/git/commit.md`, `_functions/quality/assess-game.md`, `_fun
 
 ### JSON data files
 
-Owned internal JSON data files use `camelCase` property names. This rule applies to all repository-owned JSON data files. Tool-governed config files — any JSON file whose keys are consumed or required by an external tool or runtime (Cursor settings, markdownlint config, VS Code keybindings) — keep the key names required by that tool.
+Owned internal JSON data files use `camelCase` property names. This rule applies to all repository-owned JSON data files. Tool-governed config files — any JSON file whose keys are consumed or required by an external tool or runtime (editor settings, markdownlint config, VS Code keybindings) — keep the key names required by that tool.
 
 Examples of owned internal JSON: `_roles/*.json` (`key`, `displayName`, `concerns`), `$HOME/.collabs/<projectId>/registry.json` (`activeCollabId`, `turnOrder`).
 

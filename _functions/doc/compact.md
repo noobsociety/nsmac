@@ -6,7 +6,7 @@ Compact a Markdown document while preserving all facts, structure, and constrain
 
 **Slash:** `/doc compact`
 **Signature:** `/doc compact <path>`
-**Prose dispatch:** `(doc compact <path>)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(doc compact <path>)` — prose routing hint; not a terminal command.
 **Search phrases:** `compact markdown`, `compare then compact`, `tighten markdown`, `shrink doc`
 
 ## Steps

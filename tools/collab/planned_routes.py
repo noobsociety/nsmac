@@ -14,19 +14,19 @@ def source_text(path: Path) -> str:
     return path.read_text()
 
 
-def issue_bridge_declared(cursor_root: Path) -> bool:
-    if (cursor_root / '_functions/collab/export-issues.md').exists():
+def issue_bridge_declared(config_root: Path) -> bool:
+    if (config_root / '_functions/collab/export-issues.md').exists():
         return True
     command_text = '\n'.join([
-        source_text(cursor_root / 'commands/collab.md'),
-        source_text(cursor_root / 'commands/commands.md'),
+        source_text(config_root / 'commands/collab.md'),
+        source_text(config_root / 'commands/commands.md'),
     ])
     return '/collab export-issues' in command_text or 'export issues' in command_text
 
 
-def issue_bridge_prerequisite_gaps(cursor_root: Path, include_issue_route: bool = False) -> list[str]:
+def issue_bridge_prerequisite_gaps(config_root: Path, include_issue_route: bool = False) -> list[str]:
     gaps: list[str] = []
-    helper_output = source_text(cursor_root / '_functions/collab/_helper-output.md')
+    helper_output = source_text(config_root / '_functions/collab/_helper-output.md')
     helper_required = {
         'helper-output abort families': '## Abort families',
         'full-body envelope rejection': 'Full-body envelope rejection',
@@ -41,7 +41,7 @@ def issue_bridge_prerequisite_gaps(cursor_root: Path, include_issue_route: bool 
         if expected not in haystack:
             gaps.append(label)
 
-    rebinding_test = cursor_root / 'tests/tools/collab/registry.py/rebinding-invariants.test.sh'
+    rebinding_test = config_root / 'tests/tools/collab/registry.py/rebinding-invariants.test.sh'
     rebinding_text = source_text(rebinding_test)
     rebinding_required = {
         'rebinding invariant test file': '#!/usr/bin/env bash',
@@ -54,7 +54,7 @@ def issue_bridge_prerequisite_gaps(cursor_root: Path, include_issue_route: bool 
             gaps.append(label)
 
     if include_issue_route:
-        issue_route = source_text(cursor_root / '_functions/git/issue.md')
+        issue_route = source_text(config_root / '_functions/git/issue.md')
         issue_route_required = {
             'issue output contract': 'Output contract',
             'issue caller-distinction': 'connector-backed',
@@ -68,11 +68,11 @@ def issue_bridge_prerequisite_gaps(cursor_root: Path, include_issue_route: bool 
     return gaps
 
 
-def workflow_model_selection_gaps(cursor_root: Path) -> list[str]:
+def workflow_model_selection_gaps(config_root: Path) -> list[str]:
     gaps: list[str] = []
-    init_text = source_text(cursor_root / '_functions/collab/init.md')
-    registry_text = source_text(cursor_root / '_functions/collab/_registry.md')
-    helper_text = source_text(cursor_root / 'tools/collab/registry.py')
+    init_text = source_text(config_root / '_functions/collab/init.md')
+    registry_text = source_text(config_root / '_functions/collab/_registry.md')
+    helper_text = source_text(config_root / 'tools/collab/registry.py')
 
     init_required = {
         'init --terminal selector': '--terminal',
@@ -102,16 +102,16 @@ def workflow_model_selection_gaps(cursor_root: Path) -> list[str]:
     return gaps
 
 
-def validate_issue_bridge_block(cursor_root: Path, include_issue_route: bool = False) -> None:
-    if not issue_bridge_declared(cursor_root):
+def validate_issue_bridge_block(config_root: Path, include_issue_route: bool = False) -> None:
+    if not issue_bridge_declared(config_root):
         return
-    workflow_gaps = workflow_model_selection_gaps(cursor_root)
+    workflow_gaps = workflow_model_selection_gaps(config_root)
     if workflow_gaps:
         die(
             'workflow-model selection blocked: missing --terminal prerequisite(s): '
             f'{", ".join(workflow_gaps)}'
         )
-    gaps = issue_bridge_prerequisite_gaps(cursor_root, include_issue_route)
+    gaps = issue_bridge_prerequisite_gaps(config_root, include_issue_route)
     if gaps:
         issue_clause = (
             'third prerequisite: _functions/git/issue.md (output contract); '
@@ -126,5 +126,5 @@ def validate_issue_bridge_block(cursor_root: Path, include_issue_route: bool = F
         )
 
 
-def validate_planned_route_prerequisites(cursor_root: Path) -> None:
-    validate_issue_bridge_block(cursor_root, include_issue_route=True)
+def validate_planned_route_prerequisites(config_root: Path) -> None:
+    validate_issue_bridge_block(config_root, include_issue_route=True)

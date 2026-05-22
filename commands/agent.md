@@ -6,13 +6,13 @@ Route multi-agent scaffold workflows through one public slash command.
 
 **Slash:** `/agent`
 **Signature:** `/agent <install | patch | upgrade>`
-**Prose dispatch:** `(agent install ...)`, `(agent patch ...)`, `(agent upgrade ...)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(agent install ...)`, `(agent patch ...)`, `(agent upgrade ...)` — prose routing hint; not a terminal command.
 **Search phrases:** agent install, agent patch, agent upgrade, bootstrap multi-agent setup, install multi-agent scaffold, patch repository for multi-agent, upgrade multi-agent scaffold
 
 ## Steps
 
 1. Resolve `<install | patch | upgrade>` from the first token after `/agent`. If missing or invalid, **ABORT** naming the token received and emit the allowed route set: `install`, `patch`, `upgrade`.
-2. Load `../_functions/agent/<route>.md` from the Cursor config root.
+2. Load `../_functions/agent/<route>.md` from the command config root.
 3. Execute that route with the remaining user input and attachments.
 
 ## Notes

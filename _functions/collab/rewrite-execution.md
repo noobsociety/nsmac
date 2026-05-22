@@ -6,7 +6,7 @@ Rewrite the calling role's last execution record in-place within the Completion 
 
 **Slash:** `/collab rewrite execution`
 **Signature:** `/collab rewrite execution`
-**Prose dispatch:** `(collab rewrite execution)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab rewrite execution)` — prose routing hint; not a terminal command.
 **Search phrases:** collab rewrite execution, retry collaboration execution, redo last execute
 
 ## Steps
@@ -21,7 +21,7 @@ Rewrite the calling role's last execution record in-place within the Completion 
 8. If no execution-history entry exists for this role, **ABORT**: no prior execution record to rewrite; use `/collab run plan` to begin execution.
 9. Append the next numbered item to the execution history as `<n>. **<role>:** in progress YYYY-MM-DD HH:MM — re-execution started.` only when retry work begins before validation can complete in the same visible record; otherwise keep the retry marker internal and collapse visible history on success.
 10. Re-run the action-plan implementation: re-read `## Action Plan`, collect all unchecked role-scoped checklist items, and implement them.
-11. Run scoped validation for the executing role. Minimum scoped validation is `./tools/cursor/audit.sh`; add targeted tests for touched behavior when available. Do not run `./tests/run.sh` for ordinary role-scoped re-execution. If the retried item is the terminal full-suite Action Plan item, run the full sequence instead: `./tools/cursor/audit.sh` + `./tests/run.sh`.
+11. Run scoped validation for the executing role. Minimum scoped validation is `./tools/command-system/audit.sh`; add targeted tests for touched behavior when available. Do not run `./tests/run.sh` for ordinary role-scoped re-execution. If the retried item is the terminal full-suite Action Plan item, run the full sequence instead: `./tools/command-system/audit.sh` + `./tests/run.sh`.
 12. On validation success: locate all execution-history lines belonging to the prior failed attempt — the `in progress` line, if present, and its subsequent `failed` line. Replace them with a single new success line: `<n>. **<role>:** completed YYYY-MM-DD HH:MM — validation passed; <scope>; <N> paths.` Move the removed lines into a collapsed history block using the **Revision history shape** in **Notes**, placed immediately after the new success line. Remove the "in progress" line written in step 9 as well; it belongs in the history block. Do not leave any failure or stale in-progress line visible.
 13. On validation failure: append `<n>. **<role>:** failed YYYY-MM-DD HH:MM — validation failed: <failed command>; <scope>; <N> paths.` after the in-progress line written in step 9; leave all prior entries unchanged.
 14. Check every completed role-scoped checklist item in `## Action Plan` as `[x]`.

@@ -21,7 +21,7 @@ Shared vocabulary for the `agentId` value recorded in collab registry `participa
 - **Precedence:** Declare the first usable value from this list:
   1. Stable model-family token when the harness exposes one: `opus`, `sonnet`, `haiku`, `claude`, `gpt`, `gpt-mini`, or `codex`.
   2. Versioned model identifier when the harness exposes only an exact model string, such as `claude-sonnet-4-6` or `gpt-5.5`.
-  3. Harness or surface name when no model identity is available, such as `cursor-composer`, `claude-code`, or `codex-cli`.
+  3. Harness or surface name when no model identity is available, such as `composer`, `claude-code`, or `codex-cli`.
   4. The literal string `unknown`, exact lowercase, only when the harness exposes no usable identity at all — identity is inaccessible at the harness layer.
 
 - **Format:** Use lowercase, hyphenated tokens. Prefer stable family or surface tokens for new joins. Existing versioned registry values remain historical records and must not be migrated solely to match this vocabulary.

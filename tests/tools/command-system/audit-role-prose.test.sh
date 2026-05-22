@@ -14,7 +14,7 @@ cp "$fixture_dir/allowed.md.fixture" "$clean_root/docs/allowed.md"
 cp "$fixture_dir/allowed.sh.fixture" "$clean_root/docs/allowed.sh"
 cp "$fixture_dir/allowed.py.fixture" "$clean_root/docs/allowed.py"
 
-"$ROOT/tools/cursor/audit-role-prose.sh" --root "$clean_root" >"$TMPDIR/clean.out"
+"$ROOT/tools/command-system/audit-role-prose.sh" --root "$clean_root" >"$TMPDIR/clean.out"
 
 if [[ -s "$TMPDIR/clean.out" ]]; then
   printf 'FAIL: expected clean fixture to produce empty output\n' >&2
@@ -25,7 +25,7 @@ fi
 cp "$fixture_dir/violation.md.fixture" "$dirty_root/docs/violation.md"
 
 set +e
-"$ROOT/tools/cursor/audit-role-prose.sh" --root "$dirty_root" >"$TMPDIR/dirty.out" 2>&1
+"$ROOT/tools/command-system/audit-role-prose.sh" --root "$dirty_root" >"$TMPDIR/dirty.out" 2>&1
 status=$?
 set -e
 

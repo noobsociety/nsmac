@@ -6,13 +6,13 @@ Route narrative rewrite workflows through one public slash so staged text-conten
 
 **Slash:** `/narrative`
 **Signature:** `/narrative <rewrite content>`
-**Prose dispatch:** `(narrative <rewrite content>)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(narrative <rewrite content>)` — prose routing hint; not a terminal command.
 **Search phrases:** narrative rewrite workflow, staged narrative rewrite, narrative content rewrite
 
 ## Steps
 
 1. Resolve `<rewrite content>` from the first token after `/narrative`. If missing or invalid, **ABORT** naming the token received and emit the allowed route set: `rewrite content`.
-2. Load `../_functions/narrative/rewrite-content.md` from the Cursor config root.
+2. Load `../_functions/narrative/rewrite-content.md` from the command config root.
 3. Execute that route with the remaining user input and attachments.
 
 ## Notes

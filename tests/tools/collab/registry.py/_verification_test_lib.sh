@@ -132,7 +132,7 @@ entry['handoff'] = {
     'roles': {
         'pe': {
             'writeScope': ['tools/collab/registry.py'],
-            'validationCommands': [['./tools/cursor/audit.sh']],
+            'validationCommands': [['./tools/command-system/audit.sh']],
         }
     }
 }

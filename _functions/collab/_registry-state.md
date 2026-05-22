@@ -29,7 +29,7 @@ Load-time, before any registry read. Fires on every registry-loading command.
 
 ### State-root resolution
 
-The state root is `$HOME/.collabs/<projectId>/` by default, or the path from the `CURSOR_COLLAB_STATE_HOME` environment variable when set. The `projectId` is opaque — a UUID hex generated once at `init` time and recorded in `.collab.json`. The marker is never changed after creation; `projectId` rebinding to a different state root is a hard rejection.
+The state root is `$HOME/.collabs/<projectId>/` by default, or the path from the `COLLAB_STATE_HOME` environment variable when set. The `projectId` is opaque — a UUID hex generated once at `init` time and recorded in `.collab.json`. The marker is never changed after creation; `projectId` rebinding to a different state root is a hard rejection.
 
 ### Abort family
 

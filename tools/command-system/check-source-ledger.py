@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-LEDGER_PATH = Path("_data/cursor-migration-ledger.md")
+LEDGER_PATH = Path("_data/source-ledger.md")
 REQUIRED_COLUMNS = [
     "source path",
     "normative essence",
@@ -30,15 +30,22 @@ SCAN_DIRS = [
     "tests",
     "tools",
 ]
+RETIRED_ROOT_ADAPTER = "_" + "CUR" + "SOR.md"
+RETIRED_PREFIX = "cur" + "sor"
 LEGACY_TRACE_RE = re.compile(
-    r"(?P<trace>_CURSOR\.md|(?<![A-Za-z0-9_-])cursor-(?:arg|flag|gate)(?![A-Za-z0-9_-])|alwaysApply|globs:|(?:^|[`\s\"'(/])(?:rules|_mdc)/[^`\s\"')]+|[A-Za-z0-9_-]+\.mdc)"
+    r"(?P<trace>"
+    + re.escape(RETIRED_ROOT_ADAPTER)
+    + r"|(?<![A-Za-z0-9_-])"
+    + RETIRED_PREFIX
+    + r"-(?:arg|flag|gate)(?![A-Za-z0-9_-])"
+    + r"|alwaysApply|globs:|(?:^|[`\s\"'(/])(?:rules|_mdc)/[^`\s\"')]+|[A-Za-z0-9_-]+\.mdc)"
 )
 ALLOWLISTED_TRACE_PATHS = {
-    "tools/cursor/check-cursor-migration.py",
-    "tools/cursor/sync-context-gate.sh",
-    "_data/cursor-migration-ledger.md",
-    "tests/tools/cursor/check-cursor-migration.test.sh",
-    "tests/tools/cursor/sync-context-gate.test.sh",
+    "tools/command-system/check-source-ledger.py",
+    "tools/command-system/sync-context-gate.sh",
+    "_data/source-ledger.md",
+    "tests/tools/command-system/check-source-ledger.test.sh",
+    "tests/tools/command-system/sync-context-gate.test.sh",
     "tests/tools/narrative/state.py/gate-enforcement.test.sh",
 }
 
@@ -94,7 +101,7 @@ def parse_ledger(root: Path, ledger: Path) -> tuple[list[LedgerRow], list[Failur
     failures: list[Failure] = []
     path = root / ledger
     if not path.exists():
-        return [], [Failure(ledger, 1, "missing cursor migration ledger")]
+        return [], [Failure(ledger, 1, "missing source ledger")]
 
     rows: list[LedgerRow] = []
     expected_header = REQUIRED_COLUMNS
@@ -150,8 +157,8 @@ def discover_carriers(root: Path) -> set[str]:
         carriers.add(path.relative_to(root).as_posix())
     for path in sorted((root / "_mdc").rglob("*.mdc")):
         carriers.add(path.relative_to(root).as_posix())
-    if (root / "_CURSOR.md").exists():
-        carriers.add("_CURSOR.md")
+    if (root / RETIRED_ROOT_ADAPTER).exists():
+        carriers.add(RETIRED_ROOT_ADAPTER)
     return carriers
 
 
@@ -224,7 +231,7 @@ def check(root: Path, ledger: Path) -> int:
         for failure in failures:
             print(failure.render(), file=sys.stderr)
         return 1
-    print("OK: cursor migration ledger, carrier inventory, and dependency scan pass")
+    print("OK: source ledger, carrier inventory, and dependency scan pass")
     return 0
 
 

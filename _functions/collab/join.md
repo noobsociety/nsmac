@@ -6,7 +6,7 @@ Register one participant in the active collaboration record from command-owned r
 
 **Slash:** `/collab join`
 **Signature:** `/collab join --role <role>`
-**Prose dispatch:** `(collab join --role <role>)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab join --role <role>)` — prose routing hint; not a terminal command.
 **Search phrases:** collab join, join collaboration record, register collab role
 
 ## Steps

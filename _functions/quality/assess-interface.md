@@ -6,7 +6,7 @@
 
 **Slash:** `/quality assess interface`
 **Signature:** `/quality assess interface <image> <project>`
-**Prose dispatch:** `(quality assess interface <image> <project>)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(quality assess interface <image> <project>)` — prose routing hint; not a terminal command.
 **Search phrases:** principal UI review, screenshot review, UID
 
 ## Steps

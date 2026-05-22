@@ -6,13 +6,13 @@ Route documentation workflows through one singular namespace so the command pale
 
 **Slash:** `/doc`
 **Signature:** `/doc <assess | compact | compare | write changelog | write manual | write readme>`
-**Prose dispatch:** `(doc <assess | compact | compare | write changelog | write manual | write readme>)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(doc <assess | compact | compare | write changelog | write manual | write readme>)` — prose routing hint; not a terminal command.
 **Search phrases:** docs workflow, documentation command, markdown workflow
 
 ## Steps
 
 1. Resolve `<route>` from the first token after `/doc`; `write` consumes the next token as its target. If missing or invalid, **ABORT** naming the token received and emit the allowed route set in **Route**.
-2. Load the mapped file under `../_functions/doc/` from the Cursor config root.
+2. Load the mapped file under `../_functions/doc/` from the command config root.
 3. Execute that route with the remaining user input and attachments.
 
 ## Notes

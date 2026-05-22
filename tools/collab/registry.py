@@ -22,8 +22,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+COMMAND_SYSTEM_DIR = ROOT / 'tools' / 'command-system'
+if str(COMMAND_SYSTEM_DIR) not in sys.path:
+    sys.path.insert(0, str(COMMAND_SYSTEM_DIR))
 
-from tools.cursor.roles import load_role, participant_row, roles_command
+from roles import load_role, participant_row, roles_command
 from tools.collab.planned_routes import validate_issue_bridge_block, validate_planned_route_prerequisites
 from tools.collab.registry_state import (
     PROJECT_ID_RE,
@@ -79,25 +82,22 @@ DEFAULT_OPEN_ROSTER_EFFORT = 'medium'
 STALE_LOCK_SECONDS = 24 * 60 * 60
 
 
-def resolve_cursor_root() -> Path:
-    configured = os.environ.get('CURSOR_CONFIG_ROOT')
+def resolve_config_root() -> Path:
+    configured = os.environ.get('COMMAND_CONFIG_ROOT')
     if configured:
         return Path(configured).expanduser().resolve()
     if (ROOT / 'commands').is_dir() and (ROOT / '_functions').is_dir():
         return ROOT
-    source_cursor = ROOT / 'cursor'
-    if (source_cursor / 'commands').is_dir() and (source_cursor / '_functions').is_dir():
-        return source_cursor.resolve()
     return ROOT
 
 
-DEFAULT_CURSOR_ROOT = resolve_cursor_root()
-DEFAULT_ROLES_DIR = DEFAULT_CURSOR_ROOT / '_roles'
-DEFAULT_EFFORT_PATH = DEFAULT_CURSOR_ROOT / '_functions/collab/_agent-effort.json'
-DEFAULT_AGENT_MODEL_PATH = DEFAULT_CURSOR_ROOT / '_functions/collab/_agent-model.md'
-DEFAULT_BUDGET_PATH = DEFAULT_CURSOR_ROOT / '_functions/collab/_contribution-budget.md'
-DEFAULT_MODERATOR_POLISH_PATH = DEFAULT_CURSOR_ROOT / '_functions/collab/_moderator-polish.md'
-DEFAULT_FLAG_TAXONOMY_PATH = DEFAULT_CURSOR_ROOT / '_core/flag-taxonomy.md'
+DEFAULT_CONFIG_ROOT = resolve_config_root()
+DEFAULT_ROLES_DIR = DEFAULT_CONFIG_ROOT / '_roles'
+DEFAULT_EFFORT_PATH = DEFAULT_CONFIG_ROOT / '_functions/collab/_agent-effort.json'
+DEFAULT_AGENT_MODEL_PATH = DEFAULT_CONFIG_ROOT / '_functions/collab/_agent-model.md'
+DEFAULT_BUDGET_PATH = DEFAULT_CONFIG_ROOT / '_functions/collab/_contribution-budget.md'
+DEFAULT_MODERATOR_POLISH_PATH = DEFAULT_CONFIG_ROOT / '_functions/collab/_moderator-polish.md'
+DEFAULT_FLAG_TAXONOMY_PATH = DEFAULT_CONFIG_ROOT / '_core/flag-taxonomy.md'
 EFFORT_MODEL_MARKER = 'generated; do not edit'
 MODERATOR_ONLY_ACTIONS = {
     'advance',
@@ -463,16 +463,16 @@ def contribution_body_lines(block: list[str]) -> list[str]:
 
 def details_block_end(lines: list[str], start: int, context: str) -> int:
     depth = 1
-    cursor = start + 1
-    while cursor < len(lines):
-        stripped = lines[cursor].strip()
+    line_index = start + 1
+    while line_index < len(lines):
+        stripped = lines[line_index].strip()
         if DETAILS_OPEN_RE.match(stripped):
             depth += 1
         elif DETAILS_CLOSE_RE.match(stripped):
             depth -= 1
             if depth == 0:
-                return cursor + 1
-        cursor += 1
+                return line_index + 1
+        line_index += 1
     die(f'transcript details block not closed in {context}')
 
 
@@ -560,17 +560,17 @@ def contribution_roles(text: str, phase: str) -> list[str]:
             start = index
             depth = 1
             end: int | None = None
-            cursor = index + 1
-            while cursor < len(lines):
-                nested = lines[cursor].strip()
+            line_index = index + 1
+            while line_index < len(lines):
+                nested = lines[line_index].strip()
                 if DETAILS_OPEN_RE.match(nested):
                     depth += 1
                 elif DETAILS_CLOSE_RE.match(nested):
                     depth -= 1
                     if depth == 0:
-                        end = cursor + 1
+                        end = line_index + 1
                         break
-                cursor += 1
+                line_index += 1
             if end is None:
                 die(f'transcript details block not closed in phase: {phase}')
             role = summary_role(lines[start + 1]) if start + 1 < end else None
@@ -646,17 +646,17 @@ def tombstone_count(transcript: str) -> int:
             start = index
             depth = 1
             end: int | None = None
-            cursor = index + 1
-            while cursor < len(lines):
-                stripped = lines[cursor].strip()
+            line_index = index + 1
+            while line_index < len(lines):
+                stripped = lines[line_index].strip()
                 if DETAILS_OPEN_RE.match(stripped):
                     depth += 1
                 elif DETAILS_CLOSE_RE.match(stripped):
                     depth -= 1
                     if depth == 0:
-                        end = cursor + 1
+                        end = line_index + 1
                         break
-                cursor += 1
+                line_index += 1
             if end is None:
                 die(f'transcript details block not closed in phase: {phase}')
             if contribution_is_retracted(lines[start:end]):
@@ -3170,17 +3170,17 @@ def render_handoff_mirror_lines(body_lines: list[str], entry: dict) -> list[str]
         block_start = index
         depth = 1
         block_end: int | None = None
-        cursor = index + 1
-        while cursor < end:
-            stripped = rendered[cursor].strip()
+        line_index = index + 1
+        while line_index < end:
+            stripped = rendered[line_index].strip()
             if DETAILS_OPEN_RE.match(stripped):
                 depth += 1
             elif DETAILS_CLOSE_RE.match(stripped):
                 depth -= 1
                 if depth == 0:
-                    block_end = cursor + 1
+                    block_end = line_index + 1
                     break
-            cursor += 1
+            line_index += 1
         if block_end is None:
             die('transcript details block not closed in phase: Handoff')
         role = summary_role(rendered[block_start + 1]) if block_start + 1 < block_end else None
@@ -3415,17 +3415,17 @@ def contribution_block_bounds(lines: list[str], phase: str, role: str) -> tuple[
             start = index
             depth = 1
             end: int | None = None
-            cursor = index + 1
-            while cursor < phase_end:
-                stripped = lines[cursor].strip()
+            line_index = index + 1
+            while line_index < phase_end:
+                stripped = lines[line_index].strip()
                 if DETAILS_OPEN_RE.match(stripped):
                     depth += 1
                 elif DETAILS_CLOSE_RE.match(stripped):
                     depth -= 1
                     if depth == 0:
-                        end = cursor + 1
+                        end = line_index + 1
                         break
-                cursor += 1
+                line_index += 1
             if end is None:
                 die(f'transcript details block not closed in phase: {phase}')
             summary = summary_role(lines[start + 1]) if start + 1 < end else None
@@ -3914,10 +3914,10 @@ def header_timestamp_from_lines(lines: list[str]) -> str:
 
 
 def anchor_role_for_toc(lines: list[str], anchor_index: int, anchor: str) -> str:
-    for cursor in range(anchor_index + 1, min(len(lines), anchor_index + 8)):
-        if lines[cursor].startswith('## ') or ANCHOR_RE.match(lines[cursor].strip()):
+    for line_index in range(anchor_index + 1, min(len(lines), anchor_index + 8)):
+        if lines[line_index].startswith('## ') or ANCHOR_RE.match(lines[line_index].strip()):
             break
-        role = summary_role(lines[cursor])
+        role = summary_role(lines[line_index])
         if role:
             return role
     parts = anchor.split('-')
@@ -5628,9 +5628,9 @@ def validate_command(path: Path) -> int:
 
 def require_source_text(path: Path, needle: str, label: str) -> None:
     if not path.exists():
-        die(f'source contract missing {label}: {path.relative_to(DEFAULT_CURSOR_ROOT)}')
+        die(f'source contract missing {label}: {path.relative_to(DEFAULT_CONFIG_ROOT)}')
     if needle not in path.read_text():
-        die(f'source contract missing {label}: {path.relative_to(DEFAULT_CURSOR_ROOT)}')
+        die(f'source contract missing {label}: {path.relative_to(DEFAULT_CONFIG_ROOT)}')
 
 
 def source_text(path: Path) -> str:
@@ -5640,13 +5640,13 @@ def source_text(path: Path) -> str:
 
 
 def validate_source_contracts() -> None:
-    old_flag_taxonomy = DEFAULT_CURSOR_ROOT / '_functions/collab/_flag-taxonomy.md'
+    old_flag_taxonomy = DEFAULT_CONFIG_ROOT / '_functions/collab/_flag-taxonomy.md'
     if not DEFAULT_FLAG_TAXONOMY_PATH.exists():
-        die(f'source contract missing flag taxonomy: {DEFAULT_FLAG_TAXONOMY_PATH.relative_to(DEFAULT_CURSOR_ROOT)}')
+        die(f'source contract missing flag taxonomy: {DEFAULT_FLAG_TAXONOMY_PATH.relative_to(DEFAULT_CONFIG_ROOT)}')
     if old_flag_taxonomy.exists():
-        die(f'source contract retired flag taxonomy path still exists: {old_flag_taxonomy.relative_to(DEFAULT_CURSOR_ROOT)}')
+        die(f'source contract retired flag taxonomy path still exists: {old_flag_taxonomy.relative_to(DEFAULT_CONFIG_ROOT)}')
 
-    seal_verification = DEFAULT_CURSOR_ROOT / '_functions/collab/seal-verification.md'
+    seal_verification = DEFAULT_CONFIG_ROOT / '_functions/collab/seal-verification.md'
     require_source_text(seal_verification, 'restore-route-recovery', 'restore-route recovery anchor')
     require_source_text(seal_verification, '/collab show verdict', 'restore-route verdict inspection')
     require_source_text(seal_verification, '/collab reopen action-plan', 'restore-route action-plan reopen')
@@ -5654,10 +5654,10 @@ def validate_source_contracts() -> None:
     require_source_text(seal_verification, '/collab run plan', 'restore-route rerun step')
     require_source_text(seal_verification, '/collab seal verification', 'restore-route reseal step')
 
-    invariants = DEFAULT_CURSOR_ROOT / '_functions/collab/_invariants.md'
+    invariants = DEFAULT_CONFIG_ROOT / '_functions/collab/_invariants.md'
     require_source_text(invariants, 'Rollback triggers', 'rollback trigger section')
     require_source_text(invariants, 'Observation backlog', 'observation backlog section')
-    validate_planned_route_prerequisites(DEFAULT_CURSOR_ROOT)
+    validate_planned_route_prerequisites(DEFAULT_CONFIG_ROOT)
 
 
 def registry_path_command(path: Path) -> int:

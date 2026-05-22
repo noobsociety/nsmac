@@ -60,7 +60,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Check P9-required collab abort coverage.")
     parser.add_argument("--routes-dir", default=".", help="Root directory containing route files.")
     parser.add_argument("--tests-dir", default="tests/tools/collab/registry.py", help="Directory containing P9 abort tests.")
-    parser.add_argument("--allowlist", default="tools/cursor/coverage-gate-allowlist.txt", help="Current migration allowlist.")
+    parser.add_argument("--allowlist", default="tools/command-system/coverage-gate-allowlist.txt", help="Current migration allowlist.")
     parser.add_argument("--route-file", action="append", default=[], help="Route file to scan, relative to routes-dir. Repeatable.")
     parser.add_argument("--print-unanchored-allowlist", action="store_true", help="Print allowlist entries for current unanchored ABORT clauses.")
     return parser.parse_args()

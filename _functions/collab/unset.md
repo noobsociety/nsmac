@@ -6,7 +6,7 @@ Clear scoped collab metadata fields that have explicit empty-state semantics.
 
 **Slash:** `/collab unset`
 **Signature:** `/collab unset reviewer`
-**Prose dispatch:** `(collab unset ...)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab unset ...)` — prose routing hint; not a terminal command.
 **Search phrases:** collab unset, clear collaboration metadata, unset reviewer
 
 ## Steps

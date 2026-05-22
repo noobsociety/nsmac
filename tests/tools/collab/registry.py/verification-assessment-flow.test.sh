@@ -8,7 +8,7 @@ source "$SCRIPT_DIR/_verification_test_lib.sh"
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
 cd "$TMPDIR"
-export CURSOR_COLLAB_STATE_HOME="$TMPDIR/state-home"
+export COLLAB_STATE_HOME="$TMPDIR/state-home"
 
 init_reviewer_target "Verification Assessment Flow" "verification-assessment-flow"
 TARGET="$RUN_DATE-verification-assessment-flow"

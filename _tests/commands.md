@@ -1,4 +1,4 @@
-# QA — cursor commands
+# QA — command commands
 
 Deterministic QA for public slash routers in `~/.cursor/commands/*.md`.
 
@@ -13,7 +13,7 @@ Deterministic QA for public slash routers in `~/.cursor/commands/*.md`.
 7. Validate each file is <= 250 lines.
 8. Validate public routers (`narrative.md`, `doc.md`, `git.md`, `quality.md`, `test.md`) resolve routes to grouped function paths.
 9. Validate catalog integrity: `commands.md` links every public command file.
-10. Validate catalog integrity: the generated roster block in `commands.md` matches filesystem state (`tools/cursor/sync-commands-catalog.sh --check`).
+10. Validate catalog integrity: the generated roster block in `commands.md` matches filesystem state (`tools/command-system/sync-commands-catalog.sh --check`).
 11. Validate command advisory coverage and rendering: v0 advisory namespaces have exactly one effective default or explicit not-applicable marker per invocable route, role overrides are non-orphan and differentiated, aliases resolve through `_data/capability-aliases.json` and `_data/effort-tiers.json`, and caller-facing generated output does not leak runtime policy fields or concrete model identities.
 12. Validate command links stay inside `commands/`, `_functions/`, core policy, core policy, and `_tests/`.
 13. Validate dependencies align with rule routers (core policy, core policy).
@@ -40,4 +40,4 @@ Return a pass/fail report by check (`P1..Pn`) and list exact file paths for fail
 When environment allows, run:
 
 - `./tests/run.sh`
-- `./tools/cursor/audit.sh`
+- `./tools/command-system/audit.sh`

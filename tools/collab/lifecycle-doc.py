@@ -22,8 +22,8 @@ from tools.collab.registry import (  # noqa: E402
 )
 
 
-CURSOR_ROOT = Path(os.environ.get('CURSOR_CONFIG_ROOT', ROOT)).expanduser().resolve()
-ARTIFACT = CURSOR_ROOT / '_generated' / 'collab-lifecycle.md'
+CONFIG_ROOT = Path(os.environ.get('COMMAND_CONFIG_ROOT', ROOT)).expanduser().resolve()
+ARTIFACT = CONFIG_ROOT / '_generated' / 'collab-lifecycle.md'
 
 
 def yes_no(value: bool) -> str:

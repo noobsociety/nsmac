@@ -8,7 +8,7 @@ Create a moderated collaboration record under the user-scope collab state root f
 
 **Slash:** `/collab init`
 **Signature:** `/collab init "<name>" [--reviewer <role>] [--terminal <seal|issue>] [--no-participant-verification] [--preview]`
-**Prose dispatch:** `(collab init ...)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab init ...)` — prose routing hint; not a terminal command.
 **Search phrases:** collab init, create collaboration record, start moderated discussion
 
 ## Steps

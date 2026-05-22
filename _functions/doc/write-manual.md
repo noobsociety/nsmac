@@ -6,7 +6,7 @@ Author or update **only** repo-root `MANUAL.md`: numbered human steps that mirro
 
 **Slash:** `/doc write manual`
 **Signature:** `/doc write manual`
-**Prose dispatch:** `(doc write manual)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(doc write manual)` — prose routing hint; not a terminal command.
 **Search phrases:** `update manual`, `create manual`, `manual fallback`, `recovery guide`, `MANUAL.md`
 
 ## Steps

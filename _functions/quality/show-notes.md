@@ -6,7 +6,7 @@ Serve as the append-only log for QA learning notes approved during `/quality tun
 
 **Slash:** `/quality show notes`
 **Signature:** `/quality show notes`
-**Prose dispatch:** `(quality show notes)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(quality show notes)` — prose routing hint; not a terminal command.
 **Search phrases:** quality notes, QA notes, learning log
 
 ## Steps

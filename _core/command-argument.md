@@ -1,6 +1,6 @@
 # Command Argument
 
-Command argument contract for cursor routes. Routes adopt named flags by declaring a `route-flag` block, and routes with user-facing mutation gates declare a `route-gate` block.
+Command argument contract for command routes. Routes adopt named flags by declaring a `route-flag` block, and routes with user-facing mutation gates declare a `route-gate` block.
 
 ## Flag Parsing Semantics
 
@@ -176,7 +176,7 @@ Never add a verb at the route level without amending this file first.
 
 ## `route-arg` Block Schema
 
-Every route that declares user-facing arguments must carry a fenced `route-arg` block. The block is machine-readable and validated by `tools/cursor/audit.sh`.
+Every route that declares user-facing arguments must carry a fenced `route-arg` block. The block is machine-readable and validated by `tools/command-system/audit.sh`.
 
 **Required fields**
 

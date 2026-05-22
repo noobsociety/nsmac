@@ -1,4 +1,4 @@
-# QA — cursor _roles
+# QA — command _roles
 
 Deterministic QA for shared role JSON sources projected to `~/.cursor/_roles/`.
 

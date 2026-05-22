@@ -1,6 +1,6 @@
 # Repository Contract
 
-Contract between this repository (source plane) and the global Cursor runtime at `~/.cursor/*`.
+Contract between this repository (source plane) and the global agent runtime at `~/.cursor/*`.
 
 ## 1) System Model
 
@@ -8,7 +8,7 @@ The contract has three planes:
 
 - **Source plane:** version-controlled files in this repository.
 - **Global runtime plane:** `~/.cursor/*`.
-- **Project overlay plane:** optional project-local `.cursor/`.
+- **Project overlay plane:** optional project-local overlay.
 
 Only the source plane is authoritative. Runtime planes are derived execution contexts.
 

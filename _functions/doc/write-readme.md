@@ -6,7 +6,7 @@ Create or update `README*` and `readme*` files using verified workspace facts, `
 
 **Slash:** `/doc write readme`
 **Signature:** `/doc write readme`
-**Prose dispatch:** `(doc write readme)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(doc write readme)` — prose routing hint; not a terminal command.
 **Search phrases:** `update readme`, `create readme`, `readme-write`
 
 ## Steps

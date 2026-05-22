@@ -41,4 +41,4 @@ No helper change is planned. If a future collab shows repeated silent non-partic
 
 ## Drift detection
 
-The `show-policy.md` **Honor-system / helper drift** note names the inverse gap: a route may still carry an `agent-honor-system` marker after the helper has begun enforcing the same abort path. The P9 coverage gate (`tools/cursor/coverage-gate.sh`) detects missing helper tests but does not detect stale honor-system markers. Run the maintainer check above after any helper enforcement is added to a previously honor-system path, and update this table accordingly.
+The `show-policy.md` **Honor-system / helper drift** note names the inverse gap: a route may still carry an `agent-honor-system` marker after the helper has begun enforcing the same abort path. The P9 coverage gate (`tools/command-system/coverage-gate.sh`) detects missing helper tests but does not detect stale honor-system markers. Run the maintainer check above after any helper enforcement is added to a previously honor-system path, and update this table accordingly.

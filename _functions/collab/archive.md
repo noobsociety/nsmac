@@ -6,7 +6,7 @@ Soft-delete a collab by marking it archived so it is preserved on disk but exclu
 
 **Slash:** `/collab archive`
 **Signature:** `/collab archive [<target>]`
-**Prose dispatch:** `(collab archive ...)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab archive ...)` — prose routing hint; not a terminal command.
 **Search phrases:** collab archive, archive collab, soft-delete collab record
 
 ## Steps

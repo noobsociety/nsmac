@@ -6,7 +6,7 @@ TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
 
 cd "$TMPDIR"
-export CURSOR_COLLAB_STATE_HOME="$TMPDIR/state-home"
+export COLLAB_STATE_HOME="$TMPDIR/state-home"
 
 RUN_DATE="$(date +%Y-%m-%d)"
 
@@ -27,7 +27,7 @@ REGISTRY="$("$ROOT/tools/collab/registry.py" registry-path)"
 LIST_OUTPUT="$("$ROOT/tools/collab/registry.py" list)"
 LOCK_PATH="${REGISTRY}.lock"
 
-python3 - "$REGISTRY" "$CURSOR_COLLAB_STATE_HOME" "$RUN_DATE-home-state-init" "$LIST_OUTPUT" <<'PY'
+python3 - "$REGISTRY" "$COLLAB_STATE_HOME" "$RUN_DATE-home-state-init" "$LIST_OUTPUT" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -58,7 +58,7 @@ from pathlib import Path
 
 path = Path('.collab.json')
 identity = json.loads(path.read_text())
-identity['label'] = 'renamed-dotcursor'
+identity['label'] = 'renamed-system'
 path.write_text(json.dumps(identity, indent=2) + '\n')
 PY
 UPDATED_LIST_OUTPUT="$("$ROOT/tools/collab/registry.py" list)"

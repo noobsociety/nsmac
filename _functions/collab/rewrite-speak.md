@@ -6,7 +6,7 @@ Rewrite the calling role's last contribution in-place within the active collab p
 
 **Slash:** `/collab rewrite speak`
 **Signature:** `/collab rewrite speak`
-**Prose dispatch:** `(collab rewrite speak)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab rewrite speak)` — prose routing hint; not a terminal command.
 **Search phrases:** collab rewrite speak, rewrite last contribution, redo collab speak
 
 ## Steps
@@ -59,5 +59,5 @@ Implementation scope is revised after verification found one missing route file.
 `tools/collab/registry.py`
 
 **validationCommands**
-`[["./tools/cursor/audit.sh"],["./tests/run.sh"]]`
+`[["./tools/command-system/audit.sh"],["./tests/run.sh"]]`
 ```

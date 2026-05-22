@@ -12,7 +12,7 @@ mkdir -p "$routes/_functions/collab" "$tests_dir"
 touch "$allowlist"
 
 run_gate() {
-  "$ROOT/tools/cursor/coverage-gate.sh" \
+  "$ROOT/tools/command-system/coverage-gate.sh" \
     --routes-dir "$routes" \
     --tests-dir "$tests_dir" \
     --allowlist "$allowlist" \
@@ -137,7 +137,7 @@ if ! grep -Fq "found 0 ABORT clauses" "$TMPDIR/zero.out"; then
   exit 1
 fi
 
-if ! grep -Fq "tools/cursor/coverage-gate.sh" "$ROOT/tools/cursor/audit.sh"; then
+if ! grep -Fq "tools/command-system/coverage-gate.sh" "$ROOT/tools/command-system/audit.sh"; then
   printf 'FAIL: audit.sh does not invoke coverage gate\n' >&2
   exit 1
 fi

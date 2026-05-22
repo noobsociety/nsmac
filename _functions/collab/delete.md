@@ -6,7 +6,7 @@ Permanently remove a collab record from the registry and disk. This operation is
 
 **Slash:** `/collab delete`
 **Signature:** `/collab delete [<target>]`
-**Prose dispatch:** `(collab delete ...)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab delete ...)` — prose routing hint; not a terminal command.
 **Search phrases:** collab delete, hard delete collab, permanently remove collaboration record
 
 ## Steps

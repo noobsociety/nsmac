@@ -54,9 +54,9 @@ description: One sentence — what the skill does and when to invoke it.
 One sentence — purpose and typical use cases.
 ```
 
-**Description format:** Write the description as a single sentence using a semicolon to join the what and the when: `"Verb X; use when Y."` The semicolon keeps the string one sentence while preserving the trigger clause Cursor uses for auto-invocation. Do not split into two sentences.
+**Description format:** Write the description as a single sentence using a semicolon to join the what and the when: `"Verb X; use when Y."` The semicolon keeps the string one sentence while preserving the trigger clause the runtime uses for auto-invocation. Do not split into two sentences.
 
-**Optional metadata:** Add `metadata: surfaces: [cli]` or `metadata: surfaces: [ide]` to limit a skill’s visibility to a specific Cursor surface. Include `surfaces` only for skills tied to a surface-specific tool (e.g., a CLI config editor or an IDE settings manager). Omit `metadata` entirely for skills that should be available in all surfaces. Keep `SKILL.md` at or under 250 lines; long catalogs in a sibling `reference.md`.
+**Optional metadata:** Add `metadata: surfaces: [cli]` or `metadata: surfaces: [ide]` to limit a skill’s visibility to a specific editor surface. Include `surfaces` only for skills tied to a surface-specific tool (e.g., a CLI config editor or an IDE settings manager). Omit `metadata` entirely for skills that should be available in all surfaces. Keep `SKILL.md` at or under 250 lines; long catalogs in a sibling `reference.md`.
 
 ## Human-facing files
 

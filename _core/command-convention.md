@@ -1,6 +1,6 @@
 # Naming
 
-CLI naming convention for cursor commands: namespaces, verbs, targets, and flags. Authoritative source for the reserved-form table and migration rules.
+CLI naming convention for command commands: namespaces, verbs, targets, and flags. Authoritative source for the reserved-form table and migration rules.
 
 ## Grammar
 

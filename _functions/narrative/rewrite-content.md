@@ -1,6 +1,6 @@
 # /narrative rewrite content
 
-Audit narrative content for drift, align project rules against the global Cursor tree, and gate the result with content-baseline scope enforcement.
+Audit narrative content for drift, align project rules against the global dotcursor tree, and gate the result with content-baseline scope enforcement.
 
 **Narrative content:** repository-authored text (`*.md`, rule files) that conveys meaning rather than executing behavior. Code comments, config values, and executable scripts are out of scope unless the runner opts in.
 
@@ -8,7 +8,7 @@ Audit narrative content for drift, align project rules against the global Cursor
 
 **Slash:** `/narrative rewrite content`
 **Signature:** `/narrative rewrite content <audit | align | gate> --role <key>`
-**Prose dispatch:** `(narrative rewrite content <audit | align | gate> --role <key>)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(narrative rewrite content <audit | align | gate> --role <key>)` — prose routing hint; not a terminal command.
 **Search phrases:** site-wide narrative audit, narrative drift audit with role, narrative rule align, mdc sync check, project rule alignment with role, final narrative validation with role
 
 ## Steps
@@ -18,7 +18,7 @@ Audit narrative content for drift, align project rules against the global Cursor
 3. Read `_roles/<key>.json`. If unreadable, **ABORT**: role file unreadable; name the expected path.
 4. Validate the role JSON against [_core/agent-role.md](../../_core/agent-role.md): `key` must match `<key>`, and `displayName` and non-empty `concerns` must be present. If invalid, **ABORT**: invalid role JSON; name the failed field.
 5. For `audit`, run **Phase 1 — Audit**. Focus: meaning assessment — locating drift before scope is known.
-6. For `align`, resolve the state file through `tools/narrative/state.py align --role <key>`. If the state file is missing or `~/.cursor` resolves to the repository `cursor/` tree, **ABORT** naming the failed path. Recovery: re-run `audit` to create state before continuing. Then run **Phase 2 — Align**. Focus: surface enumeration, verifiable match.
+6. For `align`, resolve the state file through `tools/narrative/state.py align --role <key>`. If the state file is missing or `~/.cursor` resolves to the repository source tree, **ABORT** naming the failed path. Recovery: re-run `audit` to create state before continuing. Then run **Phase 2 — Align**. Focus: surface enumeration, verifiable match.
 7. For `gate`, resolve `validationCommands` through `tools/narrative/state.py gate --role <key>`. If the state file is missing or `validationCommands` is empty, **ABORT** naming the missing field. Recovery: re-run `audit` to populate the state file before continuing. Then run **Phase 3 — Gate**. Focus: verifiable execution.
 
 ## Notes

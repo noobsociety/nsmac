@@ -6,7 +6,7 @@ Mark a collaboration record closed so contribution and phase-advance routes stop
 
 **Slash:** `/collab close`
 **Signature:** `/collab close [--no-summary]`
-**Prose dispatch:** `(collab close ...)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab close ...)` — prose routing hint; not a terminal command.
 **Search phrases:** collab close, close collaboration, end collab record
 
 ## Steps

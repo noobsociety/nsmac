@@ -6,7 +6,7 @@
 
 **Slash:** `/quality assess game`
 **Signature:** `/quality assess game <project>`
-**Prose dispatch:** `(quality assess game <project>)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(quality assess game <project>)` — prose routing hint; not a terminal command.
 **Search phrases:** game code review, Phaser review, IGD
 
 ## Steps

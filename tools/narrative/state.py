@@ -79,10 +79,10 @@ def discover_validation_commands(repo_root: Path) -> list[list[str]]:
         text = repository.read_text(errors="replace")
         commands: list[list[str]] = []
         for candidate in (
-            "./tools/cursor/audit.sh",
-            "./tools/cursor/sync-commands-catalog.sh --check",
-            "./tools/cursor/sync-framework-boundaries.sh",
-            "./tools/cursor/sync-roles-roster.sh",
+            "./tools/command-system/audit.sh",
+            "./tools/command-system/sync-commands-catalog.sh --check",
+            "./tools/command-system/sync-framework-boundaries.sh",
+            "./tools/command-system/sync-roles-roster.sh",
             "./tests/run.sh",
         ):
             if candidate in text:

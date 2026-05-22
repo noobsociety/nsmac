@@ -1,4 +1,4 @@
-# QA — cursor _core canon
+# QA — command _core canon
 
 Deterministic QA for `~/.cursor/_core/*.md` canon documents.
 

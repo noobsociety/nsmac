@@ -6,7 +6,7 @@ Write a human-readable reference summary from an existing collaboration record.
 
 **Slash:** `/collab write summary`
 **Signature:** `/collab write summary`
-**Prose dispatch:** `(collab write summary)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab write summary)` — prose routing hint; not a terminal command.
 **Search phrases:** collab summarize, summarize collaboration, collaboration wrap up
 
 ## Steps

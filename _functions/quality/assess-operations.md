@@ -6,7 +6,7 @@
 
 **Slash:** `/quality assess operations`
 **Signature:** `/quality assess operations <project>`
-**Prose dispatch:** `(quality assess operations <project>)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(quality assess operations <project>)` — prose routing hint; not a terminal command.
 **Search phrases:** build review, CI review, OPS
 
 ## Steps

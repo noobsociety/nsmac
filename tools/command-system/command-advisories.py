@@ -12,11 +12,11 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
-CURSOR_ROOT = Path(os.environ.get("CURSOR_CONFIG_ROOT", ROOT)).expanduser().resolve()
-DATA_DIR = CURSOR_ROOT / "_data"
-FUNCTIONS_DIR = CURSOR_ROOT / "_functions"
-ROLES_DIR = CURSOR_ROOT / "_roles"
-ARTIFACT = CURSOR_ROOT / "_generated" / "command-reference.md"
+CONFIG_ROOT = Path(os.environ.get("COMMAND_CONFIG_ROOT", ROOT)).expanduser().resolve()
+DATA_DIR = CONFIG_ROOT / "_data"
+FUNCTIONS_DIR = CONFIG_ROOT / "_functions"
+ROLES_DIR = CONFIG_ROOT / "_roles"
+ARTIFACT = CONFIG_ROOT / "_generated" / "command-reference.md"
 SCHEMA_PATH = DATA_DIR / "command-advisory.schema.json"
 BEGIN_MARKER = "<!-- BEGIN GENERATED:COMMAND_REFERENCE -->"
 END_MARKER = "<!-- END GENERATED:COMMAND_REFERENCE -->"

@@ -6,7 +6,7 @@ Execute the participant-verification sequence for an assigned role within `Compl
 
 **Slash:** `/collab participant verify`
 **Signature:** `/collab participant verify [<role>]`
-**Prose dispatch:** `(collab participant verify ...)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(collab participant verify ...)` — prose routing hint; not a terminal command.
 **Search phrases:** collab participant verify, participant verification, individual verification, per-role verification sequence
 
 ## Steps

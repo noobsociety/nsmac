@@ -6,7 +6,7 @@ Run a named specialist evaluation command on a target, then audit cross-cutting 
 
 **Slash:** `/quality tune`
 **Signature:** `/quality tune <interface | web | game | operations>`
-**Prose dispatch:** `(quality tune <interface | web | game | operations>)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(quality tune <interface | web | game | operations>)` — prose routing hint; not a terminal command.
 **Search phrases:** tune, rubric tune, quality with learning
 
 ## Steps

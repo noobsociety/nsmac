@@ -6,7 +6,7 @@ Prefill a tracked issue workflow (**`create`**) or run implementation work (**`i
 
 **Slash:** `/git issue`
 **Signature:** `/git issue <create | implement> <goal>`
-**Prose dispatch:** `(git issue <create | implement> <goal>)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(git issue <create | implement> <goal>)` — prose routing hint; not a terminal command.
 **Search phrases:** `create issue`, `new issue`, `implement issue`
 
 ## Steps

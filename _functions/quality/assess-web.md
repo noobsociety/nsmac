@@ -6,7 +6,7 @@
 
 **Slash:** `/quality assess web`
 **Signature:** `/quality assess web <project>`
-**Prose dispatch:** `(quality assess web <project>)` — for non-Cursor agents; not terminal-executable in Cursor.
+**Prose dispatch:** `(quality assess web <project>)` — prose routing hint; not a terminal command.
 **Search phrases:** web stack review, WSE, principal web engineer
 
 ## Steps

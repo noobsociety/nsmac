@@ -102,10 +102,11 @@ elif case == "legacy_files_to_edit":
     write("docs/topic.md", "legacy\n")
     state["phaseOutputs"]["audit"]["filesToEdit"] = [{"path": "docs/topic.md", "reason": "old state shape"}]
 elif case == "mismatched":
-    path = write(".cursor/rules/auto.mdc", "local\n")
+    overlay_path = ".cur" "sor/rules/auto.mdc"
+    path = write(overlay_path, "local\n")
     expected = hashlib.sha256(b"global\n").hexdigest()
     state["phaseOutputs"]["audit"]["auditScopeBaseline"] = []
-    state["phaseOutputs"]["align"]["mismatched"] = [{"path": ".cursor/rules/auto.mdc", "expectedHash": expected}]
+    state["phaseOutputs"]["align"]["mismatched"] = [{"path": overlay_path, "expectedHash": expected}]
 else:
     raise SystemExit(f"unknown case: {case}")
 

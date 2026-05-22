@@ -9,7 +9,7 @@ from pathlib import Path
 
 PROJECT_ID_FILENAME = '.collab.json'
 DISALLOWED_VERSION_FIELD = 'schema' + 'Version'
-STATE_HOME_ENV = 'CURSOR_COLLAB_STATE_HOME'
+STATE_HOME_ENV = 'COLLAB_STATE_HOME'
 DEFAULT_STATE_HOME = Path.home() / '.collabs'
 PROJECT_ID_RE = re.compile(r'^[a-z0-9][a-z0-9-]{7,127}$')
 STATE_ROOT_PROOF_COMMAND = './tests/tools/collab/registry.py/state-root-resolution.test.sh'
@@ -59,7 +59,7 @@ def write_project_identity(project_root: Path, label: str | None = None) -> dict
     project_id = uuid.uuid4().hex
     data = {
         'projectId': project_id,
-        'label': label or project_root.name or 'cursor-project',
+        'label': label or project_root.name or 'command-project',
         'state': {
             'mode': 'shared',
             'isolation': 'opt-in',
@@ -89,7 +89,7 @@ def project_metadata_from_identity(identity: dict | None = None) -> dict | None:
         return None
     label = source.get('label')
     if not isinstance(label, str) or not label.strip():
-        label = 'cursor-project'
+        label = 'command-project'
     return {'projectId': project_id, 'label': label.strip()}
 
 

@@ -1,4 +1,4 @@
-name: Cursor Tests
+name: Repository Tests
 
 on:
   push:

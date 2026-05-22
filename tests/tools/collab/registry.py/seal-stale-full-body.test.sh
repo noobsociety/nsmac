@@ -8,7 +8,7 @@ source "$SCRIPT_DIR/_verification_test_lib.sh"
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
 cd "$TMPDIR"
-export CURSOR_COLLAB_STATE_HOME="$TMPDIR/state-home"
+export COLLAB_STATE_HOME="$TMPDIR/state-home"
 
 init_reviewer_target "Seal Stale Full Body" "seal-stale-full-body"
 TARGET="$RUN_DATE-seal-stale-full-body"
