@@ -7,8 +7,8 @@ trap 'rm -rf "$TMPDIR"' EXIT
 
 make_repo() {
   local dir="$1"
-  mkdir -p "$dir/_core"
-  cat >"$dir/_core/context-gate.md" <<'MD'
+  mkdir -p "$dir/core/framework"
+  cat >"$dir/core/framework/context-gate.md" <<'MD'
 # Context gate
 
 Never proceed while any dependency is not fully visible.

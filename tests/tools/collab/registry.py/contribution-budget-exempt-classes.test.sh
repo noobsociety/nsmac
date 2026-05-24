@@ -27,6 +27,22 @@ join_pe_for_phase() {
   "$ROOT/tools/collab/registry.py" join-participants "$target" pe --agent-id gpt >/dev/null
   "$ROOT/tools/collab/registry.py" set "$target" turn-order pe --caller-role mod >/dev/null
   "$ROOT/tools/collab/registry.py" set "$target" active-phase "$phase" --force --caller-role mod >/dev/null
+  if [[ "$phase" == "Conclusion" ]]; then
+    python3 - "$target" "$("$ROOT/tools/collab/registry.py" registry-path)" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+target, registry = sys.argv[1:3]
+path = Path(registry)
+entry = next(item for item in json.loads(path.read_text())['collabs'] if item['id'] == target)
+transcript_path = path.parent / entry['transcriptPath']
+text = transcript_path.read_text()
+marker = "## Audit\n<!-- collab:content-only; do-not-execute -->\n"
+replacement = marker + "\ncharteredDeliverables:\n- tools/collab/registry.py: verify contribution budget fixture\n"
+transcript_path.write_text(text.replace(marker, replacement, 1))
+PY
+  fi
 }
 
 assert_rejects_251_words() {
@@ -54,7 +70,7 @@ assert_rejects_251_words() {
 ACTION_ACCEPT_TARGET="$(init_target "Contribution Budget Action Plan Accept")"
 join_pe_for_phase "$ACTION_ACCEPT_TARGET" "Action Plan"
 for index in $(seq 1 300); do
-  printf -- '- [ ] **pe:** item %s\n' "$index"
+  printf -- '- [ ] **pe:** [execute] item %s\n' "$index"
 done >action-plan-checklist.md
 "$ROOT/tools/collab/registry.py" speak-render "$ACTION_ACCEPT_TARGET" pe \
   --content-file action-plan-checklist.md \
@@ -65,15 +81,19 @@ ACTION_REJECT_TARGET="$(init_target "Contribution Budget Action Plan Reject")"
 join_pe_for_phase "$ACTION_REJECT_TARGET" "Action Plan"
 python3 - <<'PY' >action-plan-prose-over-limit.md
 print(' '.join(f'plainword{i}' for i in range(251)))
-print('- [ ] **pe:** item after prose')
+print('- [ ] **pe:** [execute] item after prose')
 PY
 assert_rejects_251_words "action-plan-checklist prose case" "$ACTION_REJECT_TARGET" pe action-plan-prose-over-limit.md
 
 CONCLUSION_ACCEPT_TARGET="$(init_target "Contribution Budget Conclusion Accept")"
 join_pe_for_phase "$CONCLUSION_ACCEPT_TARGET" "Conclusion"
-for index in $(seq 1 280); do
-  printf -- '- **pe:** verdict %s\n' "$index"
-done >conclusion-ratification.md
+{
+  printf '**Directive:** "Verify the budget exemption contract."\n'
+  printf '**Action Plan: satisfies**\n'
+  for index in $(seq 1 280); do
+    printf -- '- **pe:** verdict %s\n' "$index"
+  done
+} >conclusion-ratification.md
 "$ROOT/tools/collab/registry.py" speak-render "$CONCLUSION_ACCEPT_TARGET" pe \
   --content-file conclusion-ratification.md \
   --observed-revision "$(observed_revision "$CONCLUSION_ACCEPT_TARGET" pe)" \

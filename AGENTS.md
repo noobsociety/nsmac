@@ -28,8 +28,8 @@ Tracked source in this repository is authoritative. Global runtime files under `
 
 Any file referenced from this repository or a project-local overlay must be read in full before acting.
 
-- Router files (`commands/`) → function files (`_functions/<namespace>/<route>.md`)
-- Core policy files (`_core/`) → linked route or helper files
+- Router files (`commands/<namespace>/index.md`) → route files (`commands/<namespace>/<route>/index.md`)
+- Core policy files (`core/framework/`) → linked route or helper files
 
 If any file in the chain cannot be reached or read, halt immediately and name the missing path before continuing.
 

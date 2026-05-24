@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 COMMAND_CONFIG_ROOT="${COMMAND_CONFIG_ROOT:-$ROOT}"
-CONTRACT="${COMMAND_CONFIG_ROOT}/_core/framework-boundaries.md"
+CONTRACT="${COMMAND_CONFIG_ROOT}/core/framework/framework-boundaries.md"
 BEGIN_MARKER="<!-- BEGIN GENERATED:FRAMEWORK_BOUNDARIES -->"
 END_MARKER="<!-- END GENERATED:FRAMEWORK_BOUNDARIES -->"
 MODE="write"
@@ -30,16 +30,16 @@ has_any() {
 }
 
 has_public_commands() {
-  has_any "${COMMAND_CONFIG_ROOT}/commands" -maxdepth 1 -type f -name '*.md' ! -name 'commands.md'
+  has_any "${COMMAND_CONFIG_ROOT}/commands" -mindepth 2 -maxdepth 2 -type f -name 'index.md'
 }
 
-has_private_functions() {
-  has_any "${COMMAND_CONFIG_ROOT}/_functions" -type f -name '*.md'
+has_command_routes() {
+  has_any "${COMMAND_CONFIG_ROOT}/commands" -mindepth 3 -maxdepth 3 -type f -name 'index.md'
 }
 
 status_instructions() {
   if [[ -f "$ROOT/AGENTS.md" && -f "$ROOT/CLAUDE.md" \
-    && -d "${COMMAND_CONFIG_ROOT}/_core" && -f "${COMMAND_CONFIG_ROOT}/commands/commands.md" ]]; then
+    && -d "${COMMAND_CONFIG_ROOT}/core/framework" && -f "${COMMAND_CONFIG_ROOT}/commands/commands.md" ]]; then
     printf '%s' "present"
   else
     printf '%s' "absent"
@@ -47,7 +47,7 @@ status_instructions() {
 }
 
 status_workflows() {
-  if has_public_commands && has_private_functions; then
+  if has_public_commands && has_command_routes; then
     printf '%s' "present"
   else
     printf '%s' "absent"
@@ -71,8 +71,8 @@ status_adapters() {
 }
 
 status_subagents() {
-  if [[ -f "${COMMAND_CONFIG_ROOT}/_functions/collab/run-plan.md" ]] \
-    && grep -Fq "execute-spawn" "${COMMAND_CONFIG_ROOT}/_functions/collab/run-plan.md"; then
+  if [[ -f "${COMMAND_CONFIG_ROOT}/commands/collab/run-plan/index.md" ]] \
+    && grep -Fq "execute-spawn" "${COMMAND_CONFIG_ROOT}/commands/collab/run-plan/index.md"; then
     printf '%s' "present-narrowly"
   else
     printf '%s' "absent"
@@ -80,7 +80,7 @@ status_subagents() {
 }
 
 status_skills() {
-  if has_public_commands && has_private_functions; then
+  if has_public_commands && has_command_routes; then
     printf '%s' "present-conceptually"
   else
     printf '%s' "absent"
@@ -117,8 +117,8 @@ generate_block() {
   printf '\n'
   printf '%s\n' "| Primitive | Status | Notes |"
   printf '%s\n' "| --- | --- | --- |"
-  row "Instructions" "$(status_instructions)" "Bootstrap adapters, rules, and \`_core/\` docs define agent behavior."
-  row "Workflows" "$(status_workflows)" "Public command routers and private \`_functions/\` playbooks own repeatable workflows."
+  row "Instructions" "$(status_instructions)" "Bootstrap adapters, rules, and \`core/framework/\` docs define agent behavior."
+  row "Workflows" "$(status_workflows)" "Command namespace routers and route \`index.md\` playbooks own repeatable workflows."
   row "Repo-local tools" "$(status_repo_tools)" "\`tools/\` contains shell and Python helpers; this is distinct from AI function-calling and MCP tool servers."
   row "Adapters" "$(status_adapters)" "\`AGENTS.md\`, \`CLAUDE.md\`, and \`commands/commands.md\` keep agents routing-only."
   row "Subagents" "$(status_subagents)" "Only Completion-phase execution workers are in scope; they are not collab participants."

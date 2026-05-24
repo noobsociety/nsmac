@@ -14,13 +14,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG_ROOT = Path(os.environ.get("COMMAND_CONFIG_ROOT", ROOT)).expanduser().resolve()
-FUNCTIONS_DIR = CONFIG_ROOT / "_functions"
 COMMANDS_DIR = CONFIG_ROOT / "commands"
-ARTIFACT = CONFIG_ROOT / "_generated" / "command-reference.md"
+ARTIFACT = CONFIG_ROOT / "generated" / "command-reference.md"
 BEGIN_MARKER = "<!-- BEGIN GENERATED:COMMAND_REFERENCE -->"
 END_MARKER = "<!-- END GENERATED:COMMAND_REFERENCE -->"
 ROLE_SOURCE = "tools/collab/registry.py roles"
-ROLE_DYNAMIC_DETAIL = "role keys from core/collab/_roles/"
+ROLE_DYNAMIC_DETAIL = "role keys from core/collab/roles/"
 VALID_CLASSES = {"literal", "type", "dynamic"}
 VALID_REQUIRED = {"required", "optional"}
 ADVISORIES_PATH = ROOT / "tools" / "command-system" / "command-advisories.py"
@@ -64,9 +63,9 @@ def load_advisory_catalog():
     module = load_command_advisories_module()
     try:
         catalog = module.load_catalog(
-            data_dir=CONFIG_ROOT / "_data",
-            functions_dir=FUNCTIONS_DIR,
-            roles_dir=CONFIG_ROOT / "core/collab/_roles",
+            data_dir=CONFIG_ROOT / "data",
+            commands_dir=COMMANDS_DIR,
+            roles_dir=CONFIG_ROOT / "core/collab/roles",
         )
     except module.AdvisoryError as exc:
         raise ReferenceError(f"command advisories invalid: {exc}") from exc
@@ -234,19 +233,6 @@ def parse_route_arg(path: Path, text: str, slash: str, signature: str) -> tuple[
 
 def load_routes() -> list[Route]:
     routes: list[Route] = []
-    for path in sorted(FUNCTIONS_DIR.rglob("*.md")):
-        text = path.read_text(encoding="utf-8")
-        slash_label = first_label(text, "Slash")
-        if not slash_label or "reference only" in slash_label:
-            continue
-        slash = first_code_span(slash_label)
-        signature_label = first_label(text, "Signature")
-        signature = signature_label.replace("`", "") if signature_label else slash
-        dispatch, params = parse_route_arg(path, text, slash, signature)
-        rel = path.relative_to(FUNCTIONS_DIR)
-        namespace = rel.parts[0]
-        route = path.stem
-        routes.append(Route(path, namespace, route, slash, signature, dispatch, params))
     if COMMANDS_DIR.exists():
         for path in sorted(COMMANDS_DIR.glob("*/*/index.md")):
             text = path.read_text(encoding="utf-8")
@@ -290,7 +276,7 @@ def render_block() -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
-def replace_generated_block(existing: str, generated: str) -> str:
+def replacegenerated_block(existing: str, generated: str) -> str:
     lines = existing.splitlines(keepends=True)
     begin_indexes = [i for i, line in enumerate(lines) if line.rstrip("\n") == BEGIN_MARKER]
     end_indexes = [i for i, line in enumerate(lines) if line.rstrip("\n") == END_MARKER]
@@ -306,7 +292,7 @@ def write_artifact() -> None:
         raise ReferenceError(f"missing artifact shell: {ARTIFACT}")
     current = ARTIFACT.read_text(encoding="utf-8")
     with ARTIFACT.open("w", encoding="utf-8", newline="\n") as handle:
-        handle.write(replace_generated_block(current, render_block()))
+        handle.write(replacegenerated_block(current, render_block()))
     print(f"command-reference: rendered {ARTIFACT.relative_to(ROOT)}")
 
 
@@ -319,7 +305,7 @@ def check_artifact() -> int:
         return 1
     current = ARTIFACT.read_text(encoding="utf-8")
     try:
-        expected = replace_generated_block(current, render_block())
+        expected = replacegenerated_block(current, render_block())
     except ReferenceError as exc:
         print(f"command-reference: {exc}", file=sys.stderr)
         return 1
@@ -345,8 +331,8 @@ def check_artifact() -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Render or validate the generated command reference.")
     mode = parser.add_mutually_exclusive_group(required=True)
-    mode.add_argument("--render", action="store_true", help="update _generated/command-reference.md")
-    mode.add_argument("--check", action="store_true", help="verify _generated/command-reference.md is current")
+    mode.add_argument("--render", action="store_true", help="update generated/command-reference.md")
+    mode.add_argument("--check", action="store_true", help="verify generated/command-reference.md is current")
     args = parser.parse_args()
     try:
         if args.render:

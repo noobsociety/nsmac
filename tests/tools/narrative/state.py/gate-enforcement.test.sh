@@ -38,7 +38,7 @@ root = Path(sys.argv[1])
 project = Path(sys.argv[2])
 run_date = sys.argv[3]
 case = sys.argv[4]
-role = json.loads((root / "core/collab/_roles" / "pe.json").read_text())
+role = json.loads((root / "core/collab/roles" / "pe.json").read_text())
 
 
 def digest(path: Path) -> str:

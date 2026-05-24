@@ -111,11 +111,11 @@ def write(rel: str, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text)
 
-write('_functions/collab/export-issues.md', '# /collab export-issues\n')
+write('commands/collab/export-issues/index.md', '# /collab export-issues\n')
 write('commands/collab/index.md', '# /collab\n')
 write('commands/commands.md', '# /commands\n')
 write(
-    '_functions/collab/init.md',
+    'commands/collab/init/index.md',
     '\n'.join([
         '# /collab init',
         'Use --terminal seal|issue|none.',
@@ -125,7 +125,7 @@ write(
     ]),
 )
 write(
-    '_functions/collab/_registry.md',
+    'core/collab/registry.md',
     '\n'.join([
         '# /collab registry',
         '| `terminal` | string | Workflow-model terminal selector: seal|issue|none. |',
@@ -144,14 +144,14 @@ try:
     module.validate_issue_bridge_block(tmp)
 except SystemExit as exc:
     message = str(exc)
-    assert 'issue bridge blocked until prerequisite artifacts are present: _functions/collab/_helper-output.md and tests/tools/collab/registry.py/rebinding-invariants.test.sh' in message, message
+    assert 'issue bridge blocked until prerequisite artifacts are present: core/collab/helper-output.md and tests/tools/collab/registry.py/rebinding-invariants.test.sh' in message, message
     assert 'full-body envelope rejection' in message, message
     assert 'rebinding invariant test file' in message, message
 else:
     raise AssertionError('issue bridge gate accepted missing prerequisites')
 
 write(
-    '_functions/collab/_helper-output.md',
+    'core/collab/helper-output.md',
     '\n'.join([
         '## Abort families',
         'Each entry names the logical module.',

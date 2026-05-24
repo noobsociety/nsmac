@@ -24,7 +24,7 @@ def state_path(repo_root: Path) -> Path:
 
 
 def load_role(role_key: str) -> dict[str, Any]:
-    path = ROOT / "core/collab/_roles" / f"{role_key}.json"
+    path = ROOT / "core/collab/roles" / f"{role_key}.json"
     try:
         data = json.loads(path.read_text())
     except FileNotFoundError as exc:

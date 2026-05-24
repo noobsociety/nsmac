@@ -15,7 +15,7 @@ def source_text(path: Path) -> str:
 
 
 def issue_bridge_declared(config_root: Path) -> bool:
-    if (config_root / '_functions/collab/export-issues.md').exists():
+    if (config_root / 'commands/collab/export-issues/index.md').exists():
         return True
     command_text = '\n'.join([
         source_text(config_root / 'commands/collab/index.md'),
@@ -26,7 +26,7 @@ def issue_bridge_declared(config_root: Path) -> bool:
 
 def issue_bridge_prerequisite_gaps(config_root: Path, include_issue_route: bool = False) -> list[str]:
     gaps: list[str] = []
-    helper_output = source_text(config_root / '_functions/collab/_helper-output.md')
+    helper_output = source_text(config_root / 'core/collab/helper-output.md')
     helper_required = {
         'helper-output abort families': '## Abort families',
         'full-body envelope rejection': 'Full-body envelope rejection',
@@ -54,7 +54,7 @@ def issue_bridge_prerequisite_gaps(config_root: Path, include_issue_route: bool 
             gaps.append(label)
 
     if include_issue_route:
-        issue_route = source_text(config_root / '_functions/git/issue.md')
+        issue_route = source_text(config_root / 'commands/git/issue/index.md')
         issue_route_required = {
             'issue output contract': 'Output contract',
             'issue caller-distinction': 'connector-backed',
@@ -70,8 +70,8 @@ def issue_bridge_prerequisite_gaps(config_root: Path, include_issue_route: bool 
 
 def workflow_model_selection_gaps(config_root: Path) -> list[str]:
     gaps: list[str] = []
-    init_text = source_text(config_root / '_functions/collab/init.md')
-    registry_text = source_text(config_root / '_functions/collab/_registry.md')
+    init_text = source_text(config_root / 'commands/collab/init/index.md')
+    registry_text = source_text(config_root / 'core/collab/registry.md')
     helper_text = source_text(config_root / 'tools/collab/registry.py')
 
     init_required = {
@@ -114,12 +114,12 @@ def validate_issue_bridge_block(config_root: Path, include_issue_route: bool = F
     gaps = issue_bridge_prerequisite_gaps(config_root, include_issue_route)
     if gaps:
         issue_clause = (
-            'third prerequisite: _functions/git/issue.md (output contract); '
+            'third prerequisite: commands/git/issue/index.md (output contract); '
             if include_issue_route else ''
         )
         die(
             'issue bridge blocked until prerequisite artifacts are present: '
-            '_functions/collab/_helper-output.md and '
+            'core/collab/helper-output.md and '
             'tests/tools/collab/registry.py/rebinding-invariants.test.sh; '
             f'{issue_clause}'
             f'missing {", ".join(gaps)}'

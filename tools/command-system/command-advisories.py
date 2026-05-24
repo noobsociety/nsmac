@@ -13,11 +13,10 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG_ROOT = Path(os.environ.get("COMMAND_CONFIG_ROOT", ROOT)).expanduser().resolve()
-DATA_DIR = CONFIG_ROOT / "_data"
-FUNCTIONS_DIR = CONFIG_ROOT / "_functions"
+DATA_DIR = CONFIG_ROOT / "data"
 COMMANDS_DIR = CONFIG_ROOT / "commands"
-ROLES_DIR = CONFIG_ROOT / "core/collab/_roles"
-ARTIFACT = CONFIG_ROOT / "_generated" / "command-reference.md"
+ROLES_DIR = CONFIG_ROOT / "core/collab/roles"
+ARTIFACT = CONFIG_ROOT / "generated" / "command-reference.md"
 SCHEMA_PATH = DATA_DIR / "command-advisory.schema.json"
 BEGIN_MARKER = "<!-- BEGIN GENERATED:COMMAND_REFERENCE -->"
 END_MARKER = "<!-- END GENERATED:COMMAND_REFERENCE -->"
@@ -96,25 +95,8 @@ def route_name_from_slash(slash: str, namespace: str) -> str:
     return slash[len(prefix) + 1 :].strip()
 
 
-def load_routes(functions_dir: Path = FUNCTIONS_DIR, commands_dir: Path = COMMANDS_DIR) -> dict[str, dict[str, Route]]:
+def load_routes(commands_dir: Path = COMMANDS_DIR) -> dict[str, dict[str, Route]]:
     routes: dict[str, dict[str, Route]] = {}
-    if not functions_dir.exists():
-        raise AdvisoryError(f"functions directory missing: {functions_dir}")
-    for path in sorted(functions_dir.rglob("*.md")):
-        text = path.read_text(encoding="utf-8")
-        slash_label = first_label(text, "Slash")
-        if not slash_label or "reference only" in slash_label:
-            continue
-        slash = first_code_span(slash_label)
-        rel = path.relative_to(functions_dir)
-        namespace = rel.parts[0]
-        route_name = route_name_from_slash(slash, namespace)
-        if not route_name:
-            continue
-        by_namespace = routes.setdefault(namespace, {})
-        if route_name in by_namespace:
-            raise AdvisoryError(f"duplicate invocable route name in {namespace}: {route_name}")
-        by_namespace[route_name] = Route(namespace, route_name, slash, path)
     if commands_dir.exists():
         for path in sorted(commands_dir.glob("*/*/index.md")):
             text = path.read_text(encoding="utf-8")
@@ -277,14 +259,14 @@ def differs_from_default(default: Advisory, override: Advisory) -> bool:
 
 def load_catalog(
     data_dir: Path = DATA_DIR,
-    functions_dir: Path = FUNCTIONS_DIR,
+    commands_dir: Path = COMMANDS_DIR,
     roles_dir: Path = ROLES_DIR,
 ) -> Catalog:
     schema_path = data_dir / "command-advisory.schema.json"
     if not schema_path.exists():
         raise AdvisoryError(f"missing advisory schema: {schema_path}")
 
-    routes = load_routes(functions_dir)
+    routes = load_routes(commands_dir)
     role_keys = load_role_keys(roles_dir)
     capability_aliases = load_alias_keys(data_dir / "capability-aliases.json", "capability alias")
     effort_tiers = load_alias_keys(data_dir / "effort-tiers.json", "effort tier")
@@ -428,12 +410,12 @@ def check_generated_leakage(artifact: Path, data_dir: Path = DATA_DIR) -> None:
 
 def check(
     data_dir: Path = DATA_DIR,
-    functions_dir: Path = FUNCTIONS_DIR,
+    commands_dir: Path = COMMANDS_DIR,
     roles_dir: Path = ROLES_DIR,
     artifact: Path = ARTIFACT,
 ) -> int:
     try:
-        load_catalog(data_dir=data_dir, functions_dir=functions_dir, roles_dir=roles_dir)
+        load_catalog(data_dir=data_dir, commands_dir=commands_dir, roles_dir=roles_dir)
         check_generated_leakage(artifact=artifact, data_dir=data_dir)
     except AdvisoryError as exc:
         print(f"command-advisories: {exc}", file=sys.stderr)
@@ -446,13 +428,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Validate command advisory data and generated output.")
     parser.add_argument("--check", action="store_true", required=True, help="validate advisory data and generated output")
     parser.add_argument("--data-dir", default=str(DATA_DIR))
-    parser.add_argument("--functions-dir", default=str(FUNCTIONS_DIR))
+    parser.add_argument("--commands-dir", default=str(COMMANDS_DIR))
     parser.add_argument("--roles-dir", default=str(ROLES_DIR))
     parser.add_argument("--artifact", default=str(ARTIFACT))
     args = parser.parse_args()
     return check(
         data_dir=Path(args.data_dir),
-        functions_dir=Path(args.functions_dir),
+        commands_dir=Path(args.commands_dir),
         roles_dir=Path(args.roles_dir),
         artifact=Path(args.artifact),
     )

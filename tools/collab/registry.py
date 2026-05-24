@@ -87,18 +87,18 @@ def resolve_config_root() -> Path:
     configured = os.environ.get('COMMAND_CONFIG_ROOT')
     if configured:
         return Path(configured).expanduser().resolve()
-    if (ROOT / 'commands').is_dir() and (ROOT / '_functions').is_dir():
+    if (ROOT / 'commands').is_dir():
         return ROOT
     return ROOT
 
 
 DEFAULT_CONFIG_ROOT = resolve_config_root()
-DEFAULT_ROLES_DIR = DEFAULT_CONFIG_ROOT / 'core/collab/_roles'
-DEFAULT_EFFORT_PATH = DEFAULT_CONFIG_ROOT / '_functions/collab/_agent-effort.json'
-DEFAULT_AGENT_MODEL_PATH = DEFAULT_CONFIG_ROOT / '_functions/collab/_agent-model.md'
-DEFAULT_BUDGET_PATH = DEFAULT_CONFIG_ROOT / '_functions/collab/_contribution-budget.md'
-DEFAULT_MODERATOR_POLISH_PATH = DEFAULT_CONFIG_ROOT / '_functions/collab/_moderator-polish.md'
-DEFAULT_FLAG_TAXONOMY_PATH = DEFAULT_CONFIG_ROOT / '_core/flag-taxonomy.md'
+DEFAULT_ROLES_DIR = DEFAULT_CONFIG_ROOT / 'core/collab/roles'
+DEFAULT_EFFORT_PATH = DEFAULT_CONFIG_ROOT / 'core/collab/agent-effort.json'
+DEFAULT_AGENT_MODEL_PATH = DEFAULT_CONFIG_ROOT / 'core/collab/agent-model.md'
+DEFAULT_BUDGET_PATH = DEFAULT_CONFIG_ROOT / 'core/collab/contribution-budget.md'
+DEFAULT_MODERATOR_POLISH_PATH = DEFAULT_CONFIG_ROOT / 'core/collab/moderator-polish.md'
+DEFAULT_FLAG_TAXONOMY_PATH = DEFAULT_CONFIG_ROOT / 'core/framework/flag-taxonomy.md'
 EFFORT_MODEL_MARKER = 'generated; do not edit'
 MODERATOR_ONLY_ACTIONS = {
     'advance',
@@ -126,6 +126,17 @@ ACTION_CHECKLIST_RE = re.compile(
 )
 ACTION_PLAN_SHAPE_RE = re.compile(r'^- \[[ x]\] \*\*[a-z]+:\*\*')
 ACTION_PLAN_EXEMPT_RE = re.compile(r'^\s*-\s+\[[ xX]\]\s+\*\*[A-Za-z0-9_-]+:\*\*')
+ACTION_PLAN_ITEM_TAG_RE = re.compile(r'^\s*(?P<tag>\[[a-z-]+\])(?:\s|$)')
+ACTION_PLAN_ALLOWED_ITEM_TAG_LIST = [
+    '[execute]',
+    '[doc-fix]',
+    '[verify]',
+    '[precondition]',
+    '[verify-precondition]',
+    '[verify-objective]',
+]
+ACTION_PLAN_ALLOWED_ITEM_TAGS = set(ACTION_PLAN_ALLOWED_ITEM_TAG_LIST)
+ACTION_PLAN_EXECUTE_TAG = '[execute]'
 UNLABELED_ACTION_CHECKBOX_RE = re.compile(r'^\s*-\s+\[ \]\s+(?!\*\*[A-Za-z0-9_-]+:\*\*)\S')
 EFFORT_OVERRIDE_RE = re.compile(
     r'^EFFORT OVERRIDE: (?:(matrix)|'
@@ -134,6 +145,10 @@ EFFORT_OVERRIDE_RE = re.compile(
 )
 EFFORT_OVERRIDE_COMMENT_RE = re.compile(
     r'^<!-- collab:effort-override b64:(?P<payload>[A-Za-z0-9_-]+={0,2}) -->$'
+)
+CONCLUSION_DIRECTIVE_LINE_RE = re.compile(r'^\*\*Directive:\*\*\s+"[^"]+"\s*$')
+CONCLUSION_ACTION_PLAN_LINE_RE = re.compile(
+    r'^\*\*Action Plan:\s*(?P<status>satisfies|partially satisfies|defers)\*\*(?P<detail>.*)$'
 )
 STRUCTURED_HANDOFF_HEADING_RE = re.compile(r'^\s*\*\*(?P<field>writeScope|validationCommands):?\*\*:?\s*(?P<rest>.*)$')
 CODE_SPAN_RE = re.compile(r'`([^`]+)`')
@@ -594,6 +609,16 @@ def contribution_roles(text: str, phase: str) -> list[str]:
     return roles
 
 
+def action_plan_item_tag(text: str) -> str | None:
+    match = ACTION_PLAN_ITEM_TAG_RE.match(text)
+    if not match:
+        return None
+    tag = match.group('tag')
+    if tag not in ACTION_PLAN_ALLOWED_ITEM_TAGS:
+        return None
+    return tag
+
+
 def action_plan_checklist_items(transcript: str) -> list[dict]:
     items: list[dict] = []
     details_depth = 0
@@ -619,11 +644,13 @@ def action_plan_checklist_items(transcript: str) -> list[dict]:
             continue
         item_number += 1
         mark = match.group('mark').lower()
+        text = match.group('text').strip()
         items.append({
             'number': item_number,
             'role': match.group('role'),
             'checked': mark == 'x',
-            'text': match.group('text').strip(),
+            'tag': action_plan_item_tag(text),
+            'text': text,
         })
     return items
 
@@ -768,7 +795,9 @@ def assert_chartered_deliverables_covered(entry: dict, transcript: str) -> None:
         die(
             'CHARTERED-DELIVERABLE-MISSING: '
             + ', '.join(chartered_deliverable_path(item) for item in missing)
+            + '; loop target: Completion/Conclusion for missing objective evidence'
         )
+
 
 
 def handoff_abort(field: str, value: object) -> None:
@@ -1317,6 +1346,14 @@ def git_commit_paths(ref: str) -> set[str] | None:
 
 
 def assert_no_execution_touched_path_drift(entry: dict) -> None:
+    # Match committed files against the UNION of every role's declared paths, not
+    # each role in isolation: one commit may legitimately hold several roles'
+    # scoped subsets. The safety property is "every committed file was declared by
+    # some role, and every declared path appears in some commit" — per-role exact
+    # matching falsely rejects a valid combined commit.
+    declared_paths: set[str] = set()
+    committed_paths: set[str] = set()
+    commits_seen: list[str] = []
     for execution in active_execution_entries(entry):
         role = execution.get('role')
         if not isinstance(role, str) or handoff_state_for_role(entry, role) is None:
@@ -1328,29 +1365,32 @@ def assert_no_execution_touched_path_drift(entry: dict) -> None:
         ]
         if not commits:
             continue
-        declared_paths = {
-            item
-            for item in execution.get('touchedPaths', [])
-            if isinstance(item, str) and item.strip()
-        }
-        committed_paths: set[str] = set()
         for commit in commits:
+            if commit not in commits_seen:
+                commits_seen.append(commit)
             commit_paths = git_commit_paths(commit)
             if commit_paths is not None:
                 committed_paths.update(commit_paths)
-        undeclared = sorted(committed_paths - declared_paths)
-        overdeclared = sorted(declared_paths - committed_paths)
-        if undeclared or overdeclared:
-            details: list[str] = []
-            if undeclared:
-                details.append(f'undeclared={json.dumps(undeclared, separators=(",", ":"))}')
-            if overdeclared:
-                details.append(f'overdeclared={json.dumps(overdeclared, separators=(",", ":"))}')
-            die(
-                'EXECUTION-WRITESCOPE-OVERAGE: '
-                f'execution commits {json.dumps(commits, separators=(",", ":"))} touchedPaths drift; '
-                + '; '.join(details)
-            )
+        declared_paths.update(
+            item
+            for item in execution.get('touchedPaths', [])
+            if isinstance(item, str) and item.strip()
+        )
+    if not commits_seen:
+        return
+    undeclared = sorted(committed_paths - declared_paths)
+    overdeclared = sorted(declared_paths - committed_paths)
+    if undeclared or overdeclared:
+        details: list[str] = []
+        if undeclared:
+            details.append(f'undeclared={json.dumps(undeclared, separators=(",", ":"))}')
+        if overdeclared:
+            details.append(f'overdeclared={json.dumps(overdeclared, separators=(",", ":"))}')
+        die(
+            'EXECUTION-WRITESCOPE-OVERAGE: '
+            f'execution commits {json.dumps(commits_seen, separators=(",", ":"))} touchedPaths drift; '
+            + '; '.join(details)
+        )
 
 
 def assert_no_execution_agent_conflation(entry: dict) -> None:
@@ -2103,7 +2143,7 @@ def transition_notice(from_phase: str, to_phase: str) -> dict | None:
             'notice': 'action-plan-shape',
             'transition': transition,
             'message': (
-                'Action Plan entries must follow _invariants.md Invariant #9: '
+                'Action Plan entries must follow invariants.md Invariant #9: '
                 r'^- \[[ x]\] \*\*[a-z]+:\*\*.'
             ),
         }
@@ -2501,11 +2541,15 @@ def audit_effort_matrix(effort_defaults_path: Path, model_path: Path) -> int:
         for failure in failures:
             print(f'effort matrix drift: {failure}', file=sys.stderr)
         return 1
-    print('OK: _agent-model.md effort projection matches _agent-effort.json')
+    print('OK: agent-model.md effort projection matches agent-effort.json')
     return 0
 
 
-def apply_speak_lifecycle_to_entry(entry: dict, contributors: list[str]) -> bool:
+def apply_speak_lifecycle_to_entry(
+    entry: dict,
+    contributors: list[str],
+    transcript: str | None = None,
+) -> bool:
     phase = entry['activePhase']
     order = effective_turn_order(entry)
     reviewer = reviewer_required_for_phase(entry, phase)
@@ -2527,6 +2571,8 @@ def apply_speak_lifecycle_to_entry(entry: dict, contributors: list[str]) -> bool
     next_phase = next_phase_name(phase)
     if next_phase is None:
         return False
+    if phase == 'Action Plan':
+        validate_action_plan_executable_scope(transcript if transcript is not None else read_transcript_for_entry(entry))
     entry['activePhase'] = next_phase
     if next_phase in MOD_EXCLUDED_PHASES:
         remove_moderator_from_turn_order(entry, order)
@@ -2535,9 +2581,13 @@ def apply_speak_lifecycle_to_entry(entry: dict, contributors: list[str]) -> bool
     return True
 
 
-def apply_speak_lifecycle_with_notice(entry: dict, contributors: list[str]) -> tuple[bool, dict | None]:
+def apply_speak_lifecycle_with_notice(
+    entry: dict,
+    contributors: list[str],
+    transcript: str | None = None,
+) -> tuple[bool, dict | None]:
     from_phase = entry['activePhase']
-    advanced = apply_speak_lifecycle_to_entry(entry, contributors)
+    advanced = apply_speak_lifecycle_to_entry(entry, contributors, transcript)
     notice = transition_notice(from_phase, entry['activePhase']) if advanced else None
     if not notice and from_phase == 'Discussion':
         notice = discussion_turn_notice(entry, contributors)
@@ -2695,17 +2745,17 @@ def unset_field(
         if current_entry['status'] in {'closed', 'archived'}:
             die('record is closed')
 
-        next_data = deepcopy(data)
-        next_entry = resolve_collab(next_data, target)
+        nextdata = deepcopy(data)
+        next_entry = resolve_collab(nextdata, target)
         clear_reviewer(next_entry)
-        validate_registry(next_data, path)
+        validate_registry(nextdata, path)
 
         transcript_path = Path(next_entry['transcriptPath'])
         if not transcript_path.exists():
             die(f'transcript missing: {transcript_path}')
         rendered, header_changed = render_managed_header_text(transcript_path.read_text(), next_entry, roles_dir)
         print_header_overwrite(header_changed)
-        commit_registry_and_transcript(path, next_data, transcript_path, rendered)
+        commit_registry_and_transcript(path, nextdata, transcript_path, rendered)
     print(next_entry['id'])
     return 0
 
@@ -2721,10 +2771,11 @@ def speak_lifecycle(path: Path, target: str, contributors: list[str]) -> int:
         for role in contributors:
             if not has_participant(entry, role):
                 die(f'contributor must already be a participant: {role}')
-        advanced, notice = apply_speak_lifecycle_with_notice(entry, contributors)
         transcript_path = Path(entry['transcriptPath'])
+        transcript = transcript_path.read_text() if transcript_path.exists() else None
+        advanced, notice = apply_speak_lifecycle_with_notice(entry, contributors, transcript)
         if transcript_path.exists():
-            rendered, header_changed = render_managed_header_text(transcript_path.read_text(), entry, DEFAULT_ROLES_DIR)
+            rendered, header_changed = render_managed_header_text(transcript or '', entry, DEFAULT_ROLES_DIR)
             notice = add_completion_summary_notice(notice, rendered)
             print_header_overwrite(header_changed)
             commit_registry_and_transcript(path, data, transcript_path, rendered)
@@ -2972,7 +3023,7 @@ def speak_lifecycle_live(path: Path, target: str) -> int:
             die(f'transcript missing: {transcript_path}')
         transcript = transcript_path.read_text()
         state = speak_state_for_entry(entry, transcript)
-        advanced, notice = apply_speak_lifecycle_with_notice(entry, state['contributors'])
+        advanced, notice = apply_speak_lifecycle_with_notice(entry, state['contributors'], transcript)
         rendered, header_changed = render_managed_header_text(transcript, entry, DEFAULT_ROLES_DIR)
         print_header_overwrite(header_changed)
         commit_registry_and_transcript(path, data, transcript_path, rendered)
@@ -3087,8 +3138,24 @@ def is_markdown_heading(line: str) -> bool:
 def action_plan_shape_abort(line_number: int, line: str) -> None:
     die(
         f"ABORT: line {line_number} does not match Action Plan shape '- [ ] **<role>:** ...' "
-        f"(Invariant #9, _invariants.md). Offending line: '{line}'. "
+        f"(Invariant #9, invariants.md). Offending line: '{line}'. "
         f"Example: '{ACTION_PLAN_SHAPE_EXAMPLE}'"
+    )
+
+
+def action_plan_tag_abort(line_number: int, line: str) -> None:
+    tags = ', '.join(ACTION_PLAN_ALLOWED_ITEM_TAG_LIST)
+    die(
+        f'ABORT: line {line_number} missing recognized Action Plan item tag; '
+        'loop target: Action Plan for missing executable scope. '
+        f'Expected one of: {tags}. Offending line: {line!r}.'
+    )
+
+
+def action_plan_executable_scope_abort() -> None:
+    die(
+        'ABORT: action-plan advance blocked: missing [execute] item for execution directive; '
+        'loop target: Action Plan for missing executable scope.'
     )
 
 
@@ -3114,14 +3181,74 @@ def validate_action_plan_shape(content: str, phase: str) -> None:
         if is_markdown_heading(line):
             continue
         if ACTION_PLAN_SHAPE_RE.match(line):
+            match = ACTION_CHECKLIST_RE.match(line)
+            if not match or action_plan_item_tag(match.group('text').strip()) is None:
+                action_plan_tag_abort(line_number, line)
             saw_assignment = True
             continue
         action_plan_shape_abort(line_number, line)
     if not saw_assignment:
         die(
             'ABORT: Action Plan body contains no assignment lines after exempt content is removed '
-            f"(Invariant #9, _invariants.md). Example: '{ACTION_PLAN_SHAPE_EXAMPLE}'"
+            f"(Invariant #9, invariants.md). Example: '{ACTION_PLAN_SHAPE_EXAMPLE}'"
         )
+
+
+def validate_action_plan_executable_scope(transcript: str) -> None:
+    items = action_plan_checklist_items(transcript)
+    if not items:
+        action_plan_executable_scope_abort()
+    if not any(item.get('tag') == ACTION_PLAN_EXECUTE_TAG for item in items):
+        action_plan_executable_scope_abort()
+
+
+def first_substantive_lines(content: str, limit: int) -> list[tuple[int, str]]:
+    lines: list[tuple[int, str]] = []
+    in_html_comment = False
+    for line_number, line in enumerate(content.splitlines(), start=1):
+        stripped = line.strip()
+        if in_html_comment:
+            if '-->' in stripped:
+                in_html_comment = False
+            continue
+        if stripped.startswith('<!--'):
+            if '-->' not in stripped[stripped.find('<!--') + 4:]:
+                in_html_comment = True
+            continue
+        if not stripped:
+            continue
+        if line_number == 1 and EFFORT_OVERRIDE_RE.match(stripped):
+            continue
+        lines.append((line_number, stripped))
+        if len(lines) >= limit:
+            break
+    return lines
+
+
+def conclusion_directive_gap_abort() -> None:
+    die(
+        'CONCLUSION-DIRECTIVE-GAP-MISSING: loop target: Completion/Conclusion '
+        'for missing directive-gap evidence. Expected first lines: '
+        '\'**Directive:** "<active directive>"\' and '
+        '\'**Action Plan: satisfies | partially satisfies | defers**\'.'
+    )
+
+
+def validate_conclusion_directive_gap(content: str, phase: str) -> None:
+    if phase != 'Conclusion':
+        return
+    lines = first_substantive_lines(content, 2)
+    if len(lines) < 2:
+        conclusion_directive_gap_abort()
+    directive_line = lines[0][1]
+    action_line = lines[1][1]
+    if not CONCLUSION_DIRECTIVE_LINE_RE.match(directive_line):
+        conclusion_directive_gap_abort()
+    match = CONCLUSION_ACTION_PLAN_LINE_RE.match(action_line)
+    if not match:
+        conclusion_directive_gap_abort()
+    if match.group('status') in {'partially satisfies', 'defers'} and not match.group('detail').strip():
+        conclusion_directive_gap_abort()
 
 
 def validate_reviewer_conclusion_gates(content: str, phase: str, role: str, entry: dict) -> None:
@@ -3573,6 +3700,7 @@ def render_speak(
         reject_full_body_details_controls(full_body)
         enforce_contribution_budget(content, phase, role, current_entry['moderatorRole'], verbatim)
         validate_effort_override(content, phase, role, current_entry['moderatorRole'])
+        validate_conclusion_directive_gap(content, phase)
         validate_reviewer_conclusion_gates(content, phase, role, current_entry)
         validate_action_plan_shape(content, phase)
         handoff_state = parse_handoff_content(content) if phase == 'Handoff' else None
@@ -3589,13 +3717,13 @@ def render_speak(
         )
         rendered_lines = append_phase_block(lines, phase, block)
 
-        next_data = deepcopy(data)
-        next_entry = resolve_collab(next_data, target)
+        nextdata = deepcopy(data)
+        next_entry = resolve_collab(nextdata, target)
         if handoff_state is not None:
             set_handoff_state(next_entry, role, handoff_state)
         rendered_text = '\n'.join(rendered_lines) + '\n'
         rendered_state = speak_state_for_entry(next_entry, rendered_text)
-        advanced, notice = apply_speak_lifecycle_with_notice(next_entry, rendered_state['contributors'])
+        advanced, notice = apply_speak_lifecycle_with_notice(next_entry, rendered_state['contributors'], rendered_text)
         rendered_text, header_changed = render_managed_header_text(rendered_text, next_entry, DEFAULT_ROLES_DIR)
         notice = add_completion_summary_notice(notice, rendered_text)
         print('BOUNDARY: transcript write only; no shell commands or source edits outside the user-scope collab state root')
@@ -3605,7 +3733,7 @@ def render_speak(
         label_advisory = action_plan_label_advisory(content, phase)
         if label_advisory:
             print(label_advisory)
-        commit_registry_and_transcript(path, next_data, transcript_path, rendered_text)
+        commit_registry_and_transcript(path, nextdata, transcript_path, rendered_text)
     print_post_action_advisories(
         next_entry,
         role,
@@ -3808,6 +3936,7 @@ def render_re_speak(
         reject_full_body_details_controls(full_body)
         enforce_contribution_budget(content, phase, role, entry['moderatorRole'], verbatim)
         validate_effort_override(content, phase, role, entry['moderatorRole'])
+        validate_conclusion_directive_gap(content, phase)
         validate_reviewer_conclusion_gates(content, phase, role, entry)
         validate_action_plan_shape(content, phase)
         handoff_state = parse_handoff_content(content) if phase == 'Handoff' else None
@@ -3859,9 +3988,15 @@ def advance_phase(
             die('record is closed')
         index = PHASES.index(entry['activePhase'])
         from_phase = entry['activePhase']
+        transcript_path = Path(entry['transcriptPath'])
+        transcript = transcript_path.read_text() if transcript_path.exists() else None
         if direction == 'next':
             if index == len(PHASES) - 1:
                 die('no next phase')
+            if from_phase == 'Action Plan':
+                if transcript is None:
+                    die(f'transcript missing: {transcript_path}')
+                validate_action_plan_executable_scope(transcript)
             entry['activePhase'] = PHASES[index + 1]
             if entry['activePhase'] in MOD_EXCLUDED_PHASES:
                 remove_moderator_from_turn_order(entry)
@@ -3876,9 +4011,8 @@ def advance_phase(
                 invalidate_verification_seal(entry, f'restored to {entry["activePhase"]}')
 
         notice = transition_notice(from_phase, entry['activePhase'])
-        transcript_path = Path(entry['transcriptPath'])
         if transcript_path.exists():
-            rendered, header_changed = render_managed_header_text(transcript_path.read_text(), entry, DEFAULT_ROLES_DIR)
+            rendered, header_changed = render_managed_header_text(transcript or transcript_path.read_text(), entry, DEFAULT_ROLES_DIR)
             notice = add_completion_summary_notice(notice, rendered)
             print_header_overwrite(header_changed)
             commit_registry_and_transcript(path, data, transcript_path, rendered)
@@ -3936,7 +4070,8 @@ def record_execution(
             if unchecked_count:
                 die(
                     f'execution completed blocked for role {role}: '
-                    f'{unchecked_count} unchecked assigned Action Plan item(s) remain'
+                    f'{unchecked_count} unchecked assigned Action Plan item(s) remain; '
+                    'loop target: Handoff for missing execution evidence'
                 )
         assert_touched_paths_inside_handoff(entry, role, normalized_touched_paths)
 
@@ -5514,12 +5649,12 @@ def init_collab(
                 'participants': {},
             }
 
-        next_data = deepcopy(data)
-        count_caller_declined_agent_id_write(next_data, agent_id)
-        next_data['collabs'].append(entry)
-        next_data['activeCollabId'] = collab_id
+        nextdata = deepcopy(data)
+        count_caller_declined_agent_id_write(nextdata, agent_id)
+        nextdata['collabs'].append(entry)
+        nextdata['activeCollabId'] = collab_id
         rendered = render_initial_transcript(title, entry, roles_dir, format_banner_timestamp())
-        commit_new_registry_and_transcript(path, next_data, transcript_path, rendered)
+        commit_new_registry_and_transcript(path, nextdata, transcript_path, rendered)
     print(transcript_path)
     if open_requested:
         file_uri = transcript_path.resolve().as_uri()
@@ -5556,11 +5691,11 @@ def join_participants(
                     f'supplied agentId {normalized_agent_id} ignored'
                 )
 
-        next_data = deepcopy(data)
-        next_entry = resolve_collab(next_data, target)
+        nextdata = deepcopy(data)
+        next_entry = resolve_collab(nextdata, target)
         if add_participant_to_entry(next_entry, role, normalized_agent_id):
-            count_caller_declined_agent_id_write(next_data, normalized_agent_id)
-        validate_registry(next_data, path)
+            count_caller_declined_agent_id_write(nextdata, normalized_agent_id)
+        validate_registry(nextdata, path)
 
         transcript_path = Path(next_entry['transcriptPath'])
         if not transcript_path.exists():
@@ -5569,7 +5704,7 @@ def join_participants(
 
         rendered, header_changed = render_managed_header_text(transcript, next_entry, roles_dir)
         print_header_overwrite(header_changed)
-        commit_registry_and_transcript(path, next_data, transcript_path, rendered)
+        commit_registry_and_transcript(path, nextdata, transcript_path, rendered)
     print_post_action_advisories(
         next_entry,
         role,
@@ -5660,7 +5795,10 @@ def close_collab(
             details = ', '.join(
                 f"{item['role']}={item['uncheckedCount']}" for item in violations
             )
-            die(f'close blocked: completed execution has unchecked assigned Action Plan item(s): {details}')
+            die(
+                'close blocked: completed execution has unchecked assigned Action Plan item(s): '
+                f'{details}; loop target: Handoff for missing execution evidence'
+            )
         if reviewer_backed(entry) and entry['activePhase'] == 'Completion':
             seal = entry.get('verificationSeal')
             if not isinstance(seal, dict):
@@ -5864,13 +6002,10 @@ def source_text(path: Path) -> str:
 
 
 def validate_source_contracts() -> None:
-    old_flag_taxonomy = DEFAULT_CONFIG_ROOT / '_functions/collab/_flag-taxonomy.md'
     if not DEFAULT_FLAG_TAXONOMY_PATH.exists():
         die(f'source contract missing flag taxonomy: {DEFAULT_FLAG_TAXONOMY_PATH.relative_to(DEFAULT_CONFIG_ROOT)}')
-    if old_flag_taxonomy.exists():
-        die(f'source contract retired flag taxonomy path still exists: {old_flag_taxonomy.relative_to(DEFAULT_CONFIG_ROOT)}')
 
-    seal_verification = DEFAULT_CONFIG_ROOT / '_functions/collab/seal-verification.md'
+    seal_verification = DEFAULT_CONFIG_ROOT / 'commands/collab/seal-verification/index.md'
     require_source_text(seal_verification, 'restore-route-recovery', 'restore-route recovery anchor')
     require_source_text(seal_verification, '/collab show verdict', 'restore-route verdict inspection')
     require_source_text(seal_verification, '/collab reopen action-plan', 'restore-route action-plan reopen')
@@ -5878,7 +6013,7 @@ def validate_source_contracts() -> None:
     require_source_text(seal_verification, '/collab run plan', 'restore-route rerun step')
     require_source_text(seal_verification, '/collab seal verification', 'restore-route reseal step')
 
-    invariants = DEFAULT_CONFIG_ROOT / 'core/collab/_invariants.md'
+    invariants = DEFAULT_CONFIG_ROOT / 'core/collab/invariants.md'
     require_source_text(invariants, 'Rollback triggers', 'rollback trigger section')
     require_source_text(invariants, 'Observation backlog', 'observation backlog section')
     validate_planned_route_prerequisites(DEFAULT_CONFIG_ROOT)

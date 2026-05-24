@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Contract: tools/command-system/placement-audit-contract.md
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -120,7 +121,7 @@ failures = 0
 for target, sources in sorted(references.items()):
     if len(sources) < 2:
         continue
-    if mode == "migration" and target.startswith(("_core/", "_functions/")):
+    if mode == "migration" and target.startswith("core/framework/"):
         continue
     namespace_sources: dict[str, list[str]] = defaultdict(list)
     for source in sorted(sources):
@@ -129,6 +130,8 @@ for target, sources in sorted(references.items()):
             namespace_sources[namespace].append(source)
 
     if len(namespace_sources) > 1:
+        if target.startswith("core/framework/"):
+            continue
         core_parts = Path(target).parts
         is_namespace_core = (
             len(core_parts) >= 2
@@ -142,6 +145,8 @@ for target, sources in sorted(references.items()):
         continue
 
     for ns, ns_sources in sorted(namespace_sources.items()):
+        if target.startswith("core/framework/"):
+            continue
         if len(ns_sources) >= 2 and not target.startswith(f"core/{ns}/"):
             print(f"ERROR: shared file must move to core/{ns}/: {target}", file=sys.stderr)
             print(f"  referenced by: {', '.join(ns_sources)}", file=sys.stderr)

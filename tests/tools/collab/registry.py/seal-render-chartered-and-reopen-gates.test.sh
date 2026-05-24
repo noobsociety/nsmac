@@ -9,7 +9,7 @@ cd "$TMPDIR"
 export COLLAB_STATE_HOME="$TMPDIR/state-home"
 
 # shellcheck source=/dev/null
-source "$ROOT/tests/tools/collab/registry.py/_verification_test_lib.sh"
+source "$ROOT/tests/tools/collab/registry.py/verification-test-lib.sh"
 
 RUN_DATE="$(date +%Y-%m-%d)"
 
@@ -89,7 +89,12 @@ CONCLUSION_TARGET="$RUN_DATE-reviewer-conclusion-gates"
 pe_state="$("$ROOT/tools/collab/registry.py" speak-state "$CONCLUSION_TARGET" pe)"
 pe_revision="$(read_json_field registryRevision <<<"$pe_state")"
 pe_content="$TMPDIR/pe-conclusion.md"
-printf 'participant conclusion\n' >"$pe_content"
+cat >"$pe_content" <<'PE'
+**Directive:** "Verify reviewer conclusion gates."
+**Action Plan: satisfies**
+
+participant conclusion
+PE
 "$ROOT/tools/collab/registry.py" speak-render "$CONCLUSION_TARGET" pe \
   --content-file "$pe_content" \
   --observed-revision "$pe_revision" \
@@ -97,7 +102,14 @@ printf 'participant conclusion\n' >"$pe_content"
 pa_state="$("$ROOT/tools/collab/registry.py" speak-state "$CONCLUSION_TARGET" pa)"
 pa_revision="$(read_json_field registryRevision <<<"$pa_state")"
 pa_content="$TMPDIR/pa-conclusion.md"
-printf 'EFFORT OVERRIDE: matrix\n\nreviewer conclusion without required gates\n' >"$pa_content"
+cat >"$pa_content" <<'PA'
+EFFORT OVERRIDE: matrix
+
+**Directive:** "Verify reviewer conclusion gates."
+**Action Plan: satisfies**
+
+reviewer conclusion without required gates
+PA
 set +e
 pa_output="$("$ROOT/tools/collab/registry.py" speak-render "$CONCLUSION_TARGET" pa \
   --content-file "$pa_content" \

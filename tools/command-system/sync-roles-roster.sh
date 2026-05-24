@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 COMMAND_CONFIG_ROOT="${COMMAND_CONFIG_ROOT:-$ROOT}"
-CONTRACT="${COMMAND_CONFIG_ROOT}/_core/agent-role.md"
+CONTRACT="${COMMAND_CONFIG_ROOT}/core/framework/agent-role.md"
 BEGIN_MARKER="<!-- BEGIN GENERATED:ROLES_ROSTER -->"
 END_MARKER="<!-- END GENERATED:ROLES_ROSTER -->"
 MODE="write"
@@ -43,7 +43,7 @@ generate_block() {
   printf '\n'
   printf '%s\n' "| Key | Display name |"
   printf '%s\n' "|-----|--------------|"
-  python3 "$ROOT/tools/command-system/roles.py" --roles-dir "$COMMAND_CONFIG_ROOT/core/collab/_roles" roster
+  python3 "$ROOT/tools/command-system/roles.py" --roles-dir "$COMMAND_CONFIG_ROOT/core/collab/roles" roster
 }
 
 write_block() {

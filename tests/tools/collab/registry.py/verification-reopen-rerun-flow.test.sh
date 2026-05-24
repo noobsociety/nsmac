@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=/dev/null
-source "$SCRIPT_DIR/_verification_test_lib.sh"
+source "$SCRIPT_DIR/verification-test-lib.sh"
 
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
@@ -82,7 +82,7 @@ Scope revised after verification found the route function file missing.
 
 **writeScope**
 `tools/collab/registry.py`
-`_functions/collab/reopen.md`
+`commands/collab/reopen/index.md`
 
 **validationCommands**
 `[["./tools/command-system/audit.sh"],["./tests/run.sh"]]`
@@ -100,7 +100,7 @@ from pathlib import Path
 registry = Path(sys.argv[1])
 entry = next(item for item in json.loads(registry.read_text())['collabs'] if item['slug'] == 'verification-reopen-rerun-flow')
 state = entry['handoff']['roles']['pe']
-assert state['writeScope'] == ['tools/collab/registry.py', '_functions/collab/reopen.md']
+assert state['writeScope'] == ['tools/collab/registry.py', 'commands/collab/reopen/index.md']
 assert state['validationCommands'] == [['./tools/command-system/audit.sh'], ['./tests/run.sh']]
 assert 'Scope revised after verification' in state['body']
 assert 'Previous revision,' in state['body']
@@ -108,7 +108,7 @@ assert 'verdict' not in entry
 transcript = (registry.parent / entry['transcriptPath']).read_text()
 assert Path('findings-block.txt').read_text() in transcript
 assert '> Reopened from [reviewer findings](#reviewer-findings-1); next expected role: `pe`.' in transcript
-assert '_functions/collab/reopen.md' in transcript
+assert 'commands/collab/reopen/index.md' in transcript
 assert 'Previous revision,' in transcript
 PY
 
@@ -122,7 +122,7 @@ registry = Path(sys.argv[1])
 entry = next(item for item in json.loads(registry.read_text())['collabs'] if item['slug'] == 'verification-reopen-rerun-flow')
 transcript = (registry.parent / entry['transcriptPath']).read_text()
 assert 'Previous revision,' in transcript
-assert '_functions/collab/reopen.md' in transcript
+assert 'commands/collab/reopen/index.md' in transcript
 PY
 
 "$ROOT/tools/collab/registry.py" advance "$TARGET" next --caller-role mod >/dev/null
@@ -132,7 +132,7 @@ PY
   --validation-result passed \
   --validation-scope scoped \
   --touched-path tools/collab/registry.py \
-  --touched-path _functions/collab/reopen.md \
+  --touched-path commands/collab/reopen/index.md \
   --caller-role pe >/dev/null
 
 seal_target "$TARGET"
@@ -140,7 +140,7 @@ revision="$(assessment_revision "$TARGET")"
 "$ROOT/tools/collab/registry.py" seal-render "$TARGET" pa \
   --observed-revision "$revision" \
   --outcome success \
-  --evidence '{"registryRevision":3,"transcriptIds":["handoff-pe-1"],"committedPaths":["tools/collab/registry.py","_functions/collab/reopen.md"],"executionEntryIds":["pe-2026-05-17t10-30-00-02-00"]}' \
+  --evidence '{"registryRevision":3,"transcriptIds":["handoff-pe-1"],"committedPaths":["tools/collab/registry.py","commands/collab/reopen/index.md"],"executionEntryIds":["pe-2026-05-17t10-30-00-02-00"]}' \
   --caller-role pa >/dev/null
 
 python3 - "$REGISTRY" <<'PY'

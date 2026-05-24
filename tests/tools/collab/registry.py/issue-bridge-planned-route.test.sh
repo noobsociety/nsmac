@@ -28,11 +28,11 @@ def write(rel: str, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text)
 
-write('_functions/collab/export-issues.md', '# /collab export-issues\n')
+write('commands/collab/export-issues/index.md', '# /collab export-issues\n')
 write('commands/collab/index.md', '# /collab\n')
 write('commands/commands.md', '# /commands\n')
 write(
-    '_functions/collab/_helper-output.md',
+    'core/collab/helper-output.md',
     '\n'.join([
         '## Abort families',
         'Each entry names the logical module.',
@@ -51,7 +51,7 @@ write(
     ]),
 )
 write(
-    '_functions/git/issue.md',
+    'commands/git/issue/index.md',
     '\n'.join([
         '## Notes',
         '- **Output contract:** Issue delivery: prefill or connector-backed.',
@@ -74,7 +74,7 @@ else:
     raise AssertionError('planned route gate accepted missing workflow-model selection contract')
 
 write(
-    '_functions/collab/init.md',
+    'commands/collab/init/index.md',
     '\n'.join([
         '# /collab init',
         'Use --terminal seal|issue.',
@@ -84,7 +84,7 @@ write(
     ]),
 )
 write(
-    '_functions/collab/_registry.md',
+    'core/collab/registry.md',
     '\n'.join([
         '# /collab registry',
         '| `terminal` | string | Workflow-model terminal selector: seal|issue. |',
@@ -99,12 +99,12 @@ write(
     ]),
 )
 
-(tmp / '_functions/git/issue.md').unlink()
+(tmp / 'commands/git/issue/index.md').unlink()
 try:
     module.validate_planned_route_prerequisites(tmp)
 except SystemExit as exc:
     message = str(exc)
-    assert 'third prerequisite: _functions/git/issue.md (output contract)' in message, message
+    assert 'third prerequisite: commands/git/issue/index.md (output contract)' in message, message
     assert 'issue output contract' in message, message
     assert 'issue owner metadata' in message, message
     assert 'issue requires preservation' in message, message
@@ -113,7 +113,7 @@ else:
     raise AssertionError('planned route gate accepted missing /git issue contract')
 
 write(
-    '_functions/git/issue.md',
+    'commands/git/issue/index.md',
     '\n'.join([
         '## Notes',
         '- **Output contract:** Issue delivery: prefill or connector-backed.',
@@ -147,14 +147,14 @@ try:
     os.chdir(init_tmp)
     registry = init_tmp / 'registry.json'
     try:
-        module.init_collab(registry, ['--agent-id', 'codex', '--terminal', 'issue', 'Issue Init'], root / 'core/collab/_roles')
+        module.init_collab(registry, ['--agent-id', 'codex', '--terminal', 'issue', 'Issue Init'], root / 'core/collab/roles')
     except SystemExit as exc:
         assert str(exc) == '--terminal issue is reserved and not yet implemented; use --terminal seal or omit --terminal', exc
     else:
         raise AssertionError('init accepted reserved issue terminal selector')
     with redirect_stdout(StringIO()):
-        module.init_collab(registry, ['--agent-id', 'codex', '--terminal', 'seal', 'Seal Init'], root / 'core/collab/_roles')
-        module.init_collab(registry, ['--agent-id', 'codex', 'Default Init'], root / 'core/collab/_roles')
+        module.init_collab(registry, ['--agent-id', 'codex', '--terminal', 'seal', 'Seal Init'], root / 'core/collab/roles')
+        module.init_collab(registry, ['--agent-id', 'codex', 'Default Init'], root / 'core/collab/roles')
 finally:
     os.chdir(old_cwd)
 

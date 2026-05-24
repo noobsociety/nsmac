@@ -6,7 +6,7 @@ TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
 
 fixture="$TMPDIR/fixture"
-mkdir -p "$fixture/commands/demo/run" "$fixture/_functions"
+mkdir -p "$fixture/commands/demo/run"
 cat >"$fixture/commands/commands.md" <<'MD'
 # /commands
 

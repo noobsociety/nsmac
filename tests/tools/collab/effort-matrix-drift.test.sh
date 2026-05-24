@@ -10,7 +10,7 @@ cd "$ROOT"
 "$ROOT/tools/collab/registry.py" audit-effort-matrix >/dev/null
 
 sed '/generated; do not edit/d' \
-  "$ROOT/_functions/collab/_agent-model.md" >"$TMPDIR/no-marker.md"
+  "$ROOT/core/collab/agent-model.md" >"$TMPDIR/no-marker.md"
 
 set +e
 marker_output="$("$ROOT/tools/collab/registry.py" audit-effort-matrix \
@@ -29,7 +29,7 @@ if [[ "$marker_output" != *"header-missing"* ]]; then
 fi
 
 sed 's/| Conclusion | low | medium | medium | xhigh |/| Conclusion | low | medium | high | xhigh |/' \
-  "$ROOT/_functions/collab/_agent-model.md" >"$TMPDIR/drift.md"
+  "$ROOT/core/collab/agent-model.md" >"$TMPDIR/drift.md"
 
 set +e
 drift_output="$("$ROOT/tools/collab/registry.py" audit-effort-matrix \
@@ -48,7 +48,7 @@ if [[ "$drift_output" != *"role pe, phase/row Conclusion: JSON value medium, ren
 fi
 
 grep -v '^| Completion\.verification |' \
-  "$ROOT/_functions/collab/_agent-model.md" >"$TMPDIR/missing-row.md"
+  "$ROOT/core/collab/agent-model.md" >"$TMPDIR/missing-row.md"
 
 set +e
 row_output="$("$ROOT/tools/collab/registry.py" audit-effort-matrix \

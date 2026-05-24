@@ -160,4 +160,70 @@ if [[ "$conflation_status" -eq 0 || "$conflation_output" != *"PARTICIPANT-VERIFY
   exit 1
 fi
 
-printf 'OK: seal-render rejects execution touched-path drift and agent conflation\n'
+init_target "Seal Render Combined Commit" "seal-render-combined-commit"
+COMBINED_TARGET="$RUN_DATE-seal-render-combined-commit"
+"$ROOT/tools/collab/registry.py" join-participants "$COMBINED_TARGET" tw --agent-id codex >/dev/null
+"$ROOT/tools/collab/registry.py" join-participants "$COMBINED_TARGET" pe --agent-id gpt >/dev/null
+"$ROOT/tools/collab/registry.py" set "$COMBINED_TARGET" turn-order "tw pe" --caller-role mod >/dev/null
+"$ROOT/tools/collab/registry.py" execution "$COMBINED_TARGET" tw completed "2026-05-23T18:00:00+02:00" \
+  --assigned-role tw \
+  --assigned-role pe \
+  --validation-result passed \
+  --validation-scope scoped \
+  --agent-id codex \
+  --caller-role tw >/dev/null
+"$ROOT/tools/collab/registry.py" execution "$COMBINED_TARGET" pe completed "2026-05-23T18:01:00+02:00" \
+  --assigned-role tw \
+  --assigned-role pe \
+  --validation-result passed \
+  --validation-scope scoped \
+  --agent-id gpt \
+  --caller-role pe >/dev/null
+python3 - "$REGISTRY" "$COMBINED_TARGET" "$HEAD_COMMIT" "$ROOT" <<'PY'
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+target = sys.argv[2]
+head = sys.argv[3]
+root = sys.argv[4]
+head_paths = [
+    line.strip()
+    for line in subprocess.check_output(
+        ['git', '-C', root, 'show', '--name-only', '--format=', head],
+        text=True,
+    ).splitlines()
+    if line.strip()
+]
+# Split the single commit's files into disjoint per-role subsets whose UNION is
+# the full commit: the legitimate combined-commit shape the gate must accept.
+split = len(head_paths) // 2
+role_paths = {'tw': head_paths[:split], 'pe': head_paths[split:]}
+data = json.loads(path.read_text())
+entry = next(item for item in data['collabs'] if item['id'] == target)
+handoff_roles = entry.setdefault('handoff', {}).setdefault('roles', {})
+for role in ('tw', 'pe'):
+    entry['execution'][role]['commits'] = [head]
+    entry['execution'][role]['touchedPaths'] = role_paths[role]
+    handoff_roles[role] = {
+        'writeScope': head_paths,
+        'validationCommands': [['./tools/command-system/audit.sh']],
+        'body': '',
+    }
+path.write_text(json.dumps(data, indent=2) + '\n')
+PY
+seed_round "$COMBINED_TARGET"
+combined_state="$("$ROOT/tools/collab/registry.py" seal-state "$COMBINED_TARGET" pa)"
+combined_revision="$(read_json_field registryRevision <<<"$combined_state")"
+set +e
+combined_output="$("$ROOT/tools/collab/registry.py" seal-render "$COMBINED_TARGET" pa --observed-revision "$combined_revision" --caller-role pa 2>&1)"
+combined_status=$?
+set -e
+if [[ "$combined_status" -ne 0 || "$combined_output" == *"EXECUTION-WRITESCOPE-OVERAGE:"* ]]; then
+  printf 'FAIL: seal-render rejected a legitimate combined commit (union of role scopes == commit)\n%s\n' "$combined_output" >&2
+  exit 1
+fi
+
+printf 'OK: seal-render rejects touched-path drift and agent conflation, accepts a combined commit\n'

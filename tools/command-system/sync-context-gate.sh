@@ -34,12 +34,12 @@ import sys
 from pathlib import Path
 
 root = Path(sys.argv[1])
-canonical = root / "_core/context-gate.md"
+canonical = root / "core/framework/context-gate.md"
 retired_projection = root / "_mdc/auto/auto-context-gate.mdc"
 failures: list[str] = []
 
 if not canonical.exists():
-    failures.append("FAIL: missing _core/context-gate.md")
+    failures.append("FAIL: missing core/framework/context-gate.md")
 if retired_projection.exists():
     failures.append("FAIL: retired context-gate projection still exists")
 
@@ -50,7 +50,7 @@ if failures:
 canonical_text = canonical.read_text()
 
 if canonical_text.startswith("---"):
-    failures.append("FAIL: _core/context-gate.md must not carry retired projection frontmatter")
+    failures.append("FAIL: core/framework/context-gate.md must not carry retired projection frontmatter")
 
 
 def normalize(line: str) -> str:

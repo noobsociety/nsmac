@@ -28,12 +28,12 @@ cd "$ROOT"
 python3 tools/command-system/command-advisories.py --check >/dev/null
 python3 tools/command-system/command-reference.py --check >/dev/null
 
-if ! grep -Fq '> **Recommended:** execution capability; high effort' _generated/command-reference.md; then
+if ! grep -Fq '> **Recommended:** execution capability; high effort' generated/command-reference.md; then
   printf 'FAIL: generated command reference does not render advisory lines\n' >&2
   exit 1
 fi
 
-cp -R _data "$TMPDIR/unknown-alias"
+cp -R data "$TMPDIR/unknown-alias"
 python3 - "$TMPDIR/unknown-alias/advisories/agent.json" <<'PY'
 from __future__ import annotations
 
@@ -49,7 +49,7 @@ PY
 assert_fails_with "unknown capabilityTier: missing" \
   python3 tools/command-system/command-advisories.py --check --data-dir "$TMPDIR/unknown-alias"
 
-cp -R _data "$TMPDIR/flat-override"
+cp -R data "$TMPDIR/flat-override"
 python3 - "$TMPDIR/flat-override/advisories/collab.json" <<'PY'
 from __future__ import annotations
 
@@ -67,7 +67,7 @@ PY
 assert_fails_with "must differ from the route default capabilityTier or effortTier" \
   python3 tools/command-system/command-advisories.py --check --data-dir "$TMPDIR/flat-override"
 
-python3 - "$ROOT/_generated/command-reference.md" "$TMPDIR/leaky-command-reference.md" <<'PY'
+python3 - "$ROOT/generated/command-reference.md" "$TMPDIR/leaky-command-reference.md" <<'PY'
 from __future__ import annotations
 
 import sys

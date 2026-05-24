@@ -198,8 +198,8 @@ if [[ "$rewrite_effort_status" -eq 0 || "$rewrite_effort_output" != *"EFFORT OVE
   exit 1
 fi
 
-grep -Fq 'The cap is a visible-excerpt budget, not a total contribution budget.' "$ROOT/_functions/collab/_contribution-budget.md"
-grep -Fq 'Agents must not summarize away or omit that detail solely to satisfy the excerpt cap.' "$ROOT/_functions/collab/_contribution-budget.md"
+grep -Fq 'The cap is a visible-excerpt budget, not a total contribution budget.' "$ROOT/core/collab/contribution-budget.md"
+grep -Fq 'Agents must not summarize away or omit that detail solely to satisfy the excerpt cap.' "$ROOT/core/collab/contribution-budget.md"
 grep -Fq 'preserve that material in the full body instead of trimming it out' "$ROOT/commands/collab/speak/index.md"
 
 printf 'OK: full-body blocks are helper-owned, budget-exempt, rewrite/retract-preserved, and hidden from rendered non-Audit reads\n'

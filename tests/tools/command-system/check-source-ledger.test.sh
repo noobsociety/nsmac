@@ -7,17 +7,17 @@ trap 'rm -rf "$TMPDIR"' EXIT
 
 make_repo() {
   local dir="$1"
-  mkdir -p "$dir/_data" "$dir/_functions/demo"
-  cat >"$dir/_data/source-ledger.md" <<'MD'
+  mkdir -p "$dir/data" "$dir/commands/demo/route"
+  cat >"$dir/data/source-ledger.md" <<'MD'
 # Migration ledger
 
 | Source path | Normative essence | Destination owner | Load contract | Validation check | Delete condition |
 |---|---|---|---|---|---|
 | `rules/auto.mdc` | router | deleted | n/a | audit | no refs |
-| `_mdc/auto/example.mdc` | policy | `_core/example.md` | read | audit | no refs |
-| `_functions/demo/route.md` (embedded `route-arg`) | args | same file | read | audit | retained |
+| `_mdc/auto/example.mdc` | policy | `core/framework/example.md` | read | audit | no refs |
+| `commands/demo/route/index.md` (embedded `route-arg`) | args | same file | read | audit | retained |
 MD
-  cat >"$dir/_functions/demo/route.md" <<'MD'
+  cat >"$dir/commands/demo/route/index.md" <<'MD'
 # route
 
 ```route-arg
@@ -58,7 +58,7 @@ fi
 
 blank="$TMPDIR/blank"
 make_repo "$blank"
-perl -0pi -e 's/\| `_mdc\/auto\/example\.mdc` \| policy \| `_core\/example\.md` \| read \| audit \| no refs \|/\| `_mdc\/auto\/example.mdc` \| policy \|  \| read \| audit \| no refs \|/' "$blank/_data/source-ledger.md"
+perl -0pi -e 's{\| `_mdc/auto/example\.mdc` \| policy \| `core/framework/example\.md` \| read \| audit \| no refs \|}{| `_mdc/auto/example.mdc` | policy |  | read | audit | no refs |}' "$blank/data/source-ledger.md"
 set +e
 "$ROOT/tools/command-system/check-source-ledger.py" --check --root "$blank" >"$TMPDIR/blank.out" 2>&1
 status=$?
@@ -76,7 +76,8 @@ fi
 
 undeclared="$TMPDIR/undeclared"
 make_repo "$undeclared"
-printf 'See _mdc/auto/untracked.mdc\n' >"$undeclared/_functions/demo/use.md"
+mkdir -p "$undeclared/commands/demo/use"
+printf 'See _mdc/auto/untracked.mdc\n' >"$undeclared/commands/demo/use/index.md"
 set +e
 "$ROOT/tools/command-system/check-source-ledger.py" --check --root "$undeclared" >"$TMPDIR/undeclared.out" 2>&1
 status=$?

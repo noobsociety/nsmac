@@ -29,7 +29,7 @@ is_source_path() {
   case "$1" in
     .gitignore|.collab.json|CLAUDE.md|AGENTS.md|README.md|REPOSITORY.md) return 0 ;;
     .github/*) return 0 ;;
-    _core/*|_data/*|_functions/*|_generated/*|_templates/*|_tests/*|commands/*|core/*|tests/*|tools/*) return 0 ;;
+    core/framework/*|data/*|generated/*|templates/*|tests/specs/*|commands/*|core/*|tests/*|tools/*) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -40,11 +40,10 @@ check_required_surface() {
   require_file README.md
   require_file .collab.json
   require_file commands/commands.md
-  require_dir _core
-  require_dir _functions
-  require_dir _generated
-  require_dir core/collab/_roles
-  require_dir _tests
+  require_dir core/framework
+  require_dir generated
+  require_dir core/collab/roles
+  require_dir tests/specs
   require_dir tools/command-system
 }
 
@@ -83,13 +82,13 @@ tracked = subprocess.run(['git', 'ls-files', '-z'], check=True, stdout=subproces
 canonical = 'user-scope ' + 'collab ' + 'state root'
 checks = [
     ('retired marker filename', '.collab-project' + '.json', set(), False),
-    ('retired repo-local stub path', '.collabs/project' + '.json', {'_functions/collab/_identity-contract.md'}, False),
-    ('retired collab phrase', 'global ' + 'home', {'_functions/collab/_glossary.md'}, False),
-    ('forbidden substitute for user-scope collab state root', 'state ' + 'directory', {'_functions/collab/_glossary.md'}, False),
-    ('forbidden substitute for user-scope collab state root', 'resolved state ' + 'directory', {'_functions/collab/_glossary.md'}, False),
-    ('forbidden substitute for user-scope collab state root', 'home ' + 'state root', {'_functions/collab/_glossary.md'}, False),
-    ('forbidden substitute for user-scope collab state root', 'collab ' + 'state root', {'_functions/collab/_glossary.md'}, True),
-    ('forbidden substitute for user-scope collab state root', 'resolved state root ' + 'path', {'_functions/collab/_glossary.md'}, False),
+    ('retired repo-local stub path', '.collabs/project' + '.json', {'core/collab/identity-contract.md'}, False),
+    ('retired collab phrase', 'global ' + 'home', {'core/collab/glossary.md'}, False),
+    ('forbidden substitute for user-scope collab state root', 'state ' + 'directory', {'core/collab/glossary.md'}, False),
+    ('forbidden substitute for user-scope collab state root', 'resolved state ' + 'directory', {'core/collab/glossary.md'}, False),
+    ('forbidden substitute for user-scope collab state root', 'home ' + 'state root', {'core/collab/glossary.md'}, False),
+    ('forbidden substitute for user-scope collab state root', 'collab ' + 'state root', {'core/collab/glossary.md'}, True),
+    ('forbidden substitute for user-scope collab state root', 'resolved state root ' + 'path', {'core/collab/glossary.md'}, False),
 ]
 failures: list[str] = []
 
@@ -252,9 +251,9 @@ check_tracked_source_boundary() {
 }
 
 check_generated_freshness() {
-  local topology_mode=()
+  local topology_mode=""
   if find commands -maxdepth 1 -type f -name '*.md' ! -name 'commands.md' | grep -q .; then
-    topology_mode=(--migration)
+    topology_mode="--migration"
   fi
   python3 tools/command-system/check-source-ledger.py --check || failures=$((failures + 1))
   tools/command-system/sync-context-gate.sh --check || failures=$((failures + 1))
@@ -263,9 +262,17 @@ check_generated_freshness() {
   tools/command-system/sync-roles-roster.sh --check || failures=$((failures + 1))
   python3 tools/command-system/command-advisories.py --check || failures=$((failures + 1))
   python3 tools/command-system/command-reference.py --check || failures=$((failures + 1))
-  tools/command-system/audit-topology.sh "${topology_mode[@]}" || failures=$((failures + 1))
+  if [[ -n "$topology_mode" ]]; then
+    tools/command-system/audit-topology.sh "$topology_mode" || failures=$((failures + 1))
+  else
+    tools/command-system/audit-topology.sh || failures=$((failures + 1))
+  fi
   tools/command-system/audit-flag-scope.sh || failures=$((failures + 1))
-  tools/command-system/audit-placement.sh "${topology_mode[@]}" || failures=$((failures + 1))
+  if [[ -n "$topology_mode" ]]; then
+    tools/command-system/audit-placement.sh "$topology_mode" || failures=$((failures + 1))
+  else
+    tools/command-system/audit-placement.sh || failures=$((failures + 1))
+  fi
   tools/collab/lifecycle-doc.py --check || failures=$((failures + 1))
   tools/command-system/coverage-gate.sh || failures=$((failures + 1))
   tools/command-system/audit-role-prose.sh || failures=$((failures + 1))
@@ -276,15 +283,15 @@ check_generated_boundary() {
   while IFS= read -r path; do
     [[ -n "$path" ]] || continue
     case "$path" in
-      _generated/command-reference.md|_generated/collab-lifecycle.md|_generated/content-invariants.tsv) ;;
+      generated/command-reference.md|generated/collab-lifecycle.md|generated/content-invariants.tsv) ;;
       *)
         printf 'FAIL: unexpected generated artifact: %s\n' "$path" >&2
         bad=1
         ;;
     esac
-  done < <(find _generated -type f | sort)
+  done < <(find generated -type f | sort)
   ((bad == 0)) || failures=$((failures + 1))
-  ((bad == 0)) && ok "framework-generated output is isolated in _generated/"
+  ((bad == 0)) && ok "framework-generated output is isolated in generated/"
 }
 
 check_links() {
@@ -371,7 +378,7 @@ from pathlib import Path
 
 failures: list[str] = []
 
-for path in sorted(Path('_functions').rglob('*.md')):
+for path in sorted(Path('commands').rglob('index.md')):
     for number, line in enumerate(path.read_text().splitlines(), start=1):
         stripped = line.strip()
         if not stripped.startswith('param: '):
@@ -409,6 +416,7 @@ check_collab_registry_lock
 check_generated_freshness
 check_generated_boundary
 check_links
+tools/command-system/audit-reachability.sh || failures=$((failures + 1))
 check_route_arg_defaults
 
 if ((failures > 0)); then

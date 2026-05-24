@@ -13,7 +13,7 @@ from pathlib import Path
 
 root = Path(sys.argv[1])
 tmp = Path(sys.argv[2])
-roles = tmp / '_roles'
+roles = tmp / 'roles'
 roles.mkdir()
 (roles / 'mod.json').write_text(json.dumps({
     'key': 'mod',
@@ -54,7 +54,7 @@ try:
 except SystemExit as exc:
     message = str(exc)
     assert 'participants role file unreadable for ghost' in message, message
-    assert '_roles/ghost.json' in message, message
+    assert 'roles/ghost.json' in message, message
 else:
     raise AssertionError('missing participant role file was accepted')
 PY

@@ -41,12 +41,12 @@ Both forms are treated as equivalent references for the purpose of counting.
 
 **`--migration` mode:** Also examines flat `commands/<ns>.md` sources alongside directory `commands/<ns>/<cmd>/index.md` sources. Use during the transition period when flat-layout and directory-layout namespaces coexist.
 
-While migration mode is active, shared targets under `_core/` and `_functions/` are retained shared surfaces and are not forced into `core/<ns>/`. This keeps per-namespace command moves executable before the later no-underscore cleanup cycle removes or classifies retained underscore paths.
+While migration mode is active, shared targets under `core/framework/` are retained shared surfaces and are not forced into `core/<ns>/`. This keeps per-namespace command moves executable before the later no-underscore cleanup cycle removes or classifies retained underscore paths.
 
 In both modes, the audit traverses only the `commands/` tree for **sources** of references. Specifically:
 
 - Source files examined: `commands/<ns>/<cmd>/index.md` (both modes) and `commands/<ns>.md` (`--migration` mode only)
-- Files from `_functions/`, `core/`, `_tests/`, `tools/`, or any path outside `commands/` are not examined as **sources** of references
+- Files from `core/`, `tests/specs/`, `tools/`, or any path outside `commands/` are not examined as **sources** of references
 - The **targets** of references (the files being pointed to) may be located anywhere in the repository
 
 ## Multi-Command Threshold

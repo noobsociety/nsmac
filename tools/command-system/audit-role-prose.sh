@@ -59,7 +59,7 @@ def is_source_candidate(path: Path) -> bool:
     rel = path.as_posix()
     return (
         rel in {".gitignore", ".collab.json", "CLAUDE.md", "AGENTS.md", "README.md", "REPOSITORY.md"}
-        or rel.startswith((".github/", "_core/", "_functions/", "_generated/", "_templates/", "_tests/", "commands/", "core/", "tests/", "tools/"))
+        or rel.startswith((".github/", "core/framework/", "generated/", "templates/", "tests/specs/", "commands/", "core/", "tests/", "tools/"))
     )
 
 
@@ -109,7 +109,7 @@ def expand_requested(paths: list[Path]) -> list[Path]:
 def skip_path(rel: Path) -> bool:
     text = rel.as_posix()
     return (
-        text.startswith("_generated/")
+        text.startswith("generated/")
         or text.startswith("tests/fixtures/")
         or text.startswith("tests/tools/")
     )
@@ -126,7 +126,7 @@ def strip_allowed_inline_code(line: str) -> str:
             return ""
         if value.endswith((".md", ".mdc", ".json", ".sh", ".py")):
             return ""
-        if value.startswith("core/collab/_roles/"):
+        if value.startswith("core/collab/roles/"):
             return ""
         return value
 
@@ -167,7 +167,7 @@ def scan_file(rel: Path) -> list[str]:
     in_fence = False
     fence = ""
     in_front_matter = starts_front_matter(lines)
-    in_generated = False
+    ingenerated = False
     in_examples_section_level: int | None = None
     in_declared_bias_section_level: int | None = None
 
@@ -191,12 +191,12 @@ def scan_file(rel: Path) -> list[str]:
             continue
 
         if "BEGIN GENERATED:" in line:
-            in_generated = True
+            ingenerated = True
             continue
         if "END GENERATED:" in line:
-            in_generated = False
+            ingenerated = False
             continue
-        if in_generated:
+        if ingenerated:
             continue
 
         heading = HEADING_RE.match(line)

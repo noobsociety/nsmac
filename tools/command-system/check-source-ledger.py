@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-LEDGER_PATH = Path("_data/source-ledger.md")
+LEDGER_PATH = Path("data/source-ledger.md")
 REQUIRED_COLUMNS = [
     "source path",
     "normative essence",
@@ -19,13 +19,12 @@ REQUIRED_COLUMNS = [
     "delete condition",
 ]
 SCAN_DIRS = [
-    "_templates",
-    "_tests",
-    "_generated",
-    "_settings",
-    "_core",
+    "templates",
+    "tests/specs",
+    "generated",
+    "settings",
+    "core/framework",
     "commands",
-    "_functions",
     "core",
     "tests",
     "tools",
@@ -43,7 +42,7 @@ LEGACY_TRACE_RE = re.compile(
 ALLOWLISTED_TRACE_PATHS = {
     "tools/command-system/check-source-ledger.py",
     "tools/command-system/sync-context-gate.sh",
-    "_data/source-ledger.md",
+    "data/source-ledger.md",
     "tests/tools/command-system/check-source-ledger.test.sh",
     "tests/tools/command-system/sync-context-gate.test.sh",
     "tests/tools/narrative/state.py/gate-enforcement.test.sh",

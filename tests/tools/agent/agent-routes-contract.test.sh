@@ -19,11 +19,11 @@ grep -Fq 'a target path of `~/.cursor` is permitted' commands/agent/upgrade/inde
 grep -Fq 'A checkout developed in place at `~/.cursor` is a valid target repository root' commands/agent/install/index.md || fail "install.md lacks valid ~/.cursor target policy"
 grep -Fq 'A checkout developed in place at `~/.cursor` is a valid target repository root' commands/agent/upgrade/index.md || fail "upgrade.md lacks valid ~/.cursor target policy"
 
-grep -Fq 'TODO(install)' _templates/AGENTS.md || fail "AGENTS template lacks TODO(install)"
-grep -Fq 'TODO(patch)' _templates/REPOSITORY.md || fail "REPOSITORY template lacks TODO(patch)"
+grep -Fq 'TODO(install)' templates/AGENTS.md || fail "AGENTS template lacks TODO(install)"
+grep -Fq 'TODO(patch)' templates/REPOSITORY.md || fail "REPOSITORY template lacks TODO(patch)"
 
-if grep -R 'TODO(agent)' commands/agent _templates _tests/_templates.md commands/commands.md >/dev/null; then
-  grep -R 'TODO(agent)' commands/agent _templates _tests/_templates.md commands/commands.md >&2
+if grep -R 'TODO(agent)' commands/agent templates tests/specs/templates.md commands/commands.md >/dev/null; then
+  grep -R 'TODO(agent)' commands/agent templates tests/specs/templates.md commands/commands.md >&2
   fail "agent route contract still references TODO(agent)"
 fi
 

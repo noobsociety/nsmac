@@ -8,7 +8,7 @@ trap 'rm -rf "$TMPDIR"' EXIT
 routes="$TMPDIR/routes"
 tests_dir="$TMPDIR/tests/tools/collab/registry.py"
 allowlist="$TMPDIR/coverage-gate-allowlist.txt"
-mkdir -p "$routes/_functions/collab" "$tests_dir"
+mkdir -p "$routes/commands/collab/sample" "$tests_dir"
 touch "$allowlist"
 
 run_gate() {
@@ -16,10 +16,10 @@ run_gate() {
     --routes-dir "$routes" \
     --tests-dir "$tests_dir" \
     --allowlist "$allowlist" \
-    --route-file _functions/collab/sample.md "$@"
+    --route-file commands/collab/sample/index.md "$@"
 }
 
-cat >"$routes/_functions/collab/sample.md" <<'MD'
+cat >"$routes/commands/collab/sample/index.md" <<'MD'
 # sample route
 
 <!-- abort: sample-missing-input -->
@@ -51,7 +51,7 @@ if ! grep -Fq "expected $tests_dir/sample-missing-input.test.sh" "$TMPDIR/missin
   exit 1
 fi
 
-cat >"$routes/_functions/collab/sample.md" <<'MD'
+cat >"$routes/commands/collab/sample/index.md" <<'MD'
 # sample route
 
 <!-- abort: missing-input -->
@@ -76,7 +76,7 @@ fi
 
 rm "$tests_dir/missing-input.test.sh"
 
-cat >"$routes/_functions/collab/sample.md" <<'MD'
+cat >"$routes/commands/collab/sample/index.md" <<'MD'
 # sample route
 
 <!-- abort: sample-human-judgment -->
@@ -84,7 +84,7 @@ cat >"$routes/_functions/collab/sample.md" <<'MD'
 MD
 run_gate >"$TMPDIR/honor.out"
 
-cat >"$routes/_functions/collab/sample.md" <<'MD'
+cat >"$routes/commands/collab/sample/index.md" <<'MD'
 # sample route
 
 1. If input is missing, **ABORT**: input required.
@@ -115,7 +115,7 @@ if ! grep -Fq "migration debt remains; 1 allowlisted unanchored ABORT clause(s)"
   exit 1
 fi
 
-cat >"$routes/_functions/collab/sample.md" <<'MD'
+cat >"$routes/commands/collab/sample/index.md" <<'MD'
 # sample route
 
 No abort clauses here.

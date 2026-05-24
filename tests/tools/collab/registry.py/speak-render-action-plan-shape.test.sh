@@ -86,13 +86,13 @@ run_rejected_case() {
 
 cat >prose-header.md <<'PROSE'
 Implementation notes
-- [ ] **pe:** Add the validator.
+- [ ] **pe:** [execute] Add the validator.
 PROSE
 
 run_rejected_case \
   "prose-header" \
   prose-header.md \
-  "ABORT: line 1 does not match Action Plan shape '- [ ] **<role>:** ...' (Invariant #9, _invariants.md). Offending line: 'Implementation notes'. Example: '- [ ] **tw:** Update the route doc.'"
+  "ABORT: line 1 does not match Action Plan shape '- [ ] **<role>:** ...' (Invariant #9, invariants.md). Offending line: 'Implementation notes'. Example: '- [ ] **tw:** Update the route doc.'"
 
 cat >plain-bullet.md <<'PLAIN'
 - [ ] Implement the helper.
@@ -101,7 +101,7 @@ PLAIN
 run_rejected_case \
   "plain-bullet" \
   plain-bullet.md \
-  "ABORT: line 1 does not match Action Plan shape '- [ ] **<role>:** ...' (Invariant #9, _invariants.md). Offending line: '- [ ] Implement the helper.'. Example: '- [ ] **tw:** Update the route doc.'"
+  "ABORT: line 1 does not match Action Plan shape '- [ ] **<role>:** ...' (Invariant #9, invariants.md). Offending line: '- [ ] Implement the helper.'. Example: '- [ ] **tw:** Update the route doc.'"
 
 cat >empty-after-exempts.md <<'EMPTY'
 EFFORT OVERRIDE: matrix
@@ -114,6 +114,48 @@ EMPTY
 run_rejected_case \
   "empty-after-exempts" \
   empty-after-exempts.md \
-  "ABORT: Action Plan body contains no assignment lines after exempt content is removed (Invariant #9, _invariants.md). Example: '- [ ] **tw:** Update the route doc.'"
+  "ABORT: Action Plan body contains no assignment lines after exempt content is removed (Invariant #9, invariants.md). Example: '- [ ] **tw:** Update the route doc.'"
 
-printf 'OK: speak-render rejects malformed Action Plan checklist shapes before mutation\n'
+cat >missing-tag.md <<'MISSINGTAG'
+- [ ] **pe:** Add the validator.
+MISSINGTAG
+
+run_rejected_case \
+  "missing-tag" \
+  missing-tag.md \
+  "ABORT: line 1 missing recognized Action Plan item tag; loop target: Action Plan for missing executable scope. Expected one of: [execute], [doc-fix], [verify], [precondition], [verify-precondition], [verify-objective]. Offending line: '- [ ] **pe:** Add the validator.'."
+
+cat >defer-tag.md <<'DEFER'
+- [ ] **pe:** [defer] Move this to a later collab.
+DEFER
+
+run_rejected_case \
+  "defer-tag" \
+  defer-tag.md \
+  "ABORT: line 1 missing recognized Action Plan item tag; loop target: Action Plan for missing executable scope. Expected one of: [execute], [doc-fix], [verify], [precondition], [verify-precondition], [verify-objective]. Offending line: '- [ ] **pe:** [defer] Move this to a later collab.'."
+
+cat >precondition-only.md <<'PRECONDITION'
+- [ ] **pe:** [precondition] Confirm the workspace is clean.
+- [ ] **pe:** [doc-fix] Update the note.
+- [ ] **pe:** [verify-precondition] Confirm the note exists.
+PRECONDITION
+
+run_rejected_case \
+  "precondition-only" \
+  precondition-only.md \
+  "ABORT: action-plan advance blocked: missing [execute] item for execution directive; loop target: Action Plan for missing executable scope."
+
+cat >execute-item.md <<'EXECUTE'
+- [ ] **pe:** [execute] Add runtime item-kind enforcement for the directive.
+EXECUTE
+
+state="$("$ROOT/tools/collab/registry.py" speak-state "$TARGET" pe)"
+observed_revision="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["registryRevision"])' <<<"$state")"
+"$ROOT/tools/collab/registry.py" speak-render "$TARGET" pe --content-file execute-item.md --observed-revision "$observed_revision" --caller-role pe >/dev/null
+phase_after="$(registry_value "entry['activePhase']")"
+if [[ "$phase_after" != "Handoff" ]]; then
+  printf 'FAIL: Action Plan with [execute] item did not advance to Handoff: %s\n' "$phase_after" >&2
+  exit 1
+fi
+
+printf 'OK: speak-render rejects malformed Action Plan checklist shapes and terminal non-execute plans before mutation\n'

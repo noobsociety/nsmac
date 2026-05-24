@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Contract: tools/command-system/flag-scope-validator-contract.md
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"

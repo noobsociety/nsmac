@@ -1,8 +1,0 @@
-# source	path-invariant	needle
-./_functions/collab/run-plan.md	collab-run-plan-layer1-enforcement	Layer-1 enforcement
-./_functions/collab/run-plan.md	collab-run-plan-layer1-rejection-condition	rejects recording `execution.<role>.status = completed` when unchecked `**<role>:**` Action Plan items remain
-./_functions/collab/run-plan.md	collab-run-plan-layer1-abort-shape	execution completed blocked for role
-./_functions/collab/run-plan.md	collab-run-plan-layer1-unchecked-count	unchecked assigned Action Plan item(s) remain
-./_functions/collab/run-plan.md	collab-run-plan-layer1-recovery-path	mark all assigned items `[x]` in the transcript, then re-run `/collab run plan`
-./commands/collab/speak/index.md	collab-speak-action-plan-shape	Action Plan checklist shape
-./_tests/_tests.md	test-layer-ownership	`tests/*.test.sh` owns shell-executable CI contract validation

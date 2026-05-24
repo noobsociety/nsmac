@@ -48,7 +48,7 @@ WARN: orphaned entry point: commands/<ns>/<cmd>/index.md (no catalog entry for c
 
 ## Registration Source
 
-The commands catalog (`commands/commands.md`, `<!-- BEGIN GENERATED:COMMANDS_ROSTER -->` block) is the authoritative list of registered namespaces and commands. The validator reads the catalog to determine expected paths; it does not scan `_functions/` independently.
+The commands catalog (`commands/commands.md`, `<!-- BEGIN GENERATED:COMMANDS_ROSTER -->` block) is the authoritative list of registered namespaces and commands. The validator reads the catalog to determine expected route playbook paths.
 
 ## Implementation Target
 

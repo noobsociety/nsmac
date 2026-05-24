@@ -16,19 +16,21 @@ Each adapter is a thin routing-only file that points to `commands/commands.md` a
 ```
 ~/.cursor/
 ├── CLAUDE.md          — Claude Code adapter (routing only)
-├── AGENTS.md          — other-harness adapter (routing only)├── README.md          — this file
-├── .collab.json         — checked-in collab repo marker
-├── _core/             — cross-cutting invariants and contracts
-├── _functions/        — slash command implementations
-├── _generated/        — framework-generated catalogs (do not edit by hand)├── core/              — shared cross-cutting policy files
-├── _templates/        — scaffolding templates
-├── _tests/            — agent-facing QA harnesses for `/test`
-├── commands/          — command catalog and routing table└── tools/             — framework tooling (collab engine, framework utilities)
+├── AGENTS.md          — other-harness adapter (routing only)
+├── README.md          — this file
+├── .collab.json       — checked-in collab repo marker
+├── core/framework/             — cross-cutting invariants and contracts
+├── generated/        — framework-generated catalogs (do not edit by hand)
+├── core/              — shared cross-cutting policy files
+├── templates/        — scaffolding templates
+├── tests/specs/            — agent-facing QA harnesses for `/test`
+├── commands/          — command catalog, routers, and route playbooks
+└── tools/             — framework tooling (collab engine, framework utilities)
 ```
 
-### `_generated/` discovery
+### `generated/` discovery
 
-Files under `_generated/` are produced by scripts in `tools/command-system/`. Edit the source files or templates, then re-run the relevant sync script — do not edit `_generated/` directly.
+Files under `generated/` are produced by scripts in `tools/command-system/`. Edit the source files or templates, then re-run the relevant sync script — do not edit `generated/` directly.
 
 ## Setup
 

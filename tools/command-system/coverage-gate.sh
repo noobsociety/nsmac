@@ -15,26 +15,26 @@ from pathlib import Path
 
 DEFAULT_ROUTE_FILES = [
     "commands/collab/index.md",
-    "_functions/collab/activate.md",
-    "_functions/collab/advance.md",
-    "_functions/collab/archive.md",
-    "_functions/collab/close.md",
-    "_functions/collab/delete.md",
-    "_functions/collab/init.md",
-    "_functions/collab/join.md",
-    "_functions/collab/list.md",
-    "_functions/collab/open.md",
-    "_functions/collab/remove-participant.md",
-    "_functions/collab/restore.md",
-    "_functions/collab/retract-speak.md",
-    "_functions/collab/rewrite-execution.md",
-    "_functions/collab/rewrite-speak.md",
-    "_functions/collab/rewrite-summary.md",
-    "_functions/collab/run-plan.md",
-    "_functions/collab/set.md",
+    "commands/collab/activate/index.md",
+    "commands/collab/advance/index.md",
+    "commands/collab/archive/index.md",
+    "commands/collab/close/index.md",
+    "commands/collab/delete/index.md",
+    "commands/collab/init/index.md",
+    "commands/collab/join/index.md",
+    "commands/collab/list/index.md",
+    "commands/collab/open/index.md",
+    "commands/collab/remove-participant/index.md",
+    "commands/collab/restore/index.md",
+    "commands/collab/retract-speak/index.md",
+    "commands/collab/rewrite-execution/index.md",
+    "commands/collab/rewrite-speak/index.md",
+    "commands/collab/rewrite-summary/index.md",
+    "commands/collab/run-plan/index.md",
+    "commands/collab/set/index.md",
     "commands/collab/speak/index.md",
-    "_functions/collab/unset.md",
-    "_functions/collab/write-summary.md",
+    "commands/collab/unset/index.md",
+    "commands/collab/write-summary/index.md",
 ]
 
 
@@ -71,8 +71,6 @@ def route_files(args: argparse.Namespace) -> list[str]:
 
 
 def route_subcommand(path: str) -> str:
-    if path.startswith("_functions/collab/") and path.endswith(".md"):
-        return Path(path).stem
     if path.endswith("/index.md"):
         return Path(path).parent.name
     return Path(path).stem
