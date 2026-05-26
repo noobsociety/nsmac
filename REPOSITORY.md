@@ -1,6 +1,6 @@
 # Repository Contract
 
-Contract between this repository (source plane) and the agent runtime at `~/.cursor/*`.
+Contract between this repository (source plane) and the global agent runtime at `~/.cursor/*`.
 
 ## 1) System Model
 
@@ -19,9 +19,9 @@ Authority is strict and ordered:
 1. Repo-owned executable checks and scripts:
    - `./tests/run.sh` (runs `./tools/command-system/audit.sh` then every `tests/**/*.test.sh`)
    - `./tools/command-system/audit.sh` (adapter routing, runtime ignore rules, role-key prose drift guard)
-   - `./tools/command-system/check-source-ledger.py --check` (spec: [`data/source-ledger.md`](data/source-ledger.md); source ledger schema, retired-trace scan, and declared-dependency validation)
+   - `./tools/command-system/check-source-ledger.py --check` (source-ledger schema, retired-trace scan, declared-dependency validation)
    - `./tools/command-system/sync-context-gate.sh --check` (context-gate canonical source/projection parity)
-   - `./tools/command-system/audit-role-prose.sh` (role-key prose drift guard for Markdown and MDC prose surfaces)
+   - `./tools/command-system/audit-role-prose.sh` (role-key prose drift guard for Markdown and MDC surfaces)
    - `./tools/command-system/sync-commands-catalog.sh --check` (commands roster integrity)
    - `./tools/command-system/sync-framework-boundaries.sh` (framework boundary projections)
    - `./tools/command-system/sync-roles-roster.sh` (roles roster projection)
@@ -37,33 +37,33 @@ Authority is strict and ordered:
    - Generated mirrors under `generated/`: `collab-lifecycle.md`, `command-reference.md`, `content-invariants.tsv`
    - Generated block `<!-- BEGIN GENERATED:COMMANDS_ROSTER --> ... <!-- END GENERATED:COMMANDS_ROSTER -->` inside `commands/commands.md`
    - Runtime invocation surface at `~/.cursor/*` (this checkout, developed in place)
-   - Optional project overlay plane: project-local overlay in consumer repos
-   - Ignored runtime state (not source): `.claude/`, `projects/`, `extensions/`, `ide_state.json`, `plugins/`, `skills/`, `plans/`, `subagents/`
-   - User-scope collab state root (outside the repo): `$HOME/.collabs/<projectId>/` — live registry and records for the repo marker in `.collab.json` (see § 6 Collab State)
+   - Ignored runtime state (not source): `projects/`, `extensions/`, `ide_state.json`, `plugins/`, `skills/`, `plans/`, `subagents/`
 
 ## 3) Output Chain Contract
 
 This repo projects the following root outputs, with deepest dependency chains and validation:
 
 - **Adapter routing surface** — `CLAUDE.md`, `AGENTS.md` route into `commands/commands.md` → `commands/<ns>/index.md` → `commands/<ns>/<route>/index.md`, with cross-references into `core/framework/*.md`. Validated by `./tools/command-system/audit.sh` and the Markdown harness via `/test commands` and `/test core`.
-- **Generated mirrors** — `generated/collab-lifecycle.md`, `generated/command-reference.md`, `generated/content-invariants.tsv` are derived from `commands/*`, `core/collab/*`, and `data/advisories/*.json` sources. Validated by `/test generated` and regenerated through `tools/collab/lifecycle-doc.py`, `tools/command-system/command-reference.py`, and `tools/command-system/sync-framework-boundaries.sh`.
+- **Generated mirrors** — `generated/collab-lifecycle.md`, `generated/command-reference.md`, `generated/content-invariants.tsv` are derived from `commands/*`, `core/collab/*`, and `data/advisories/*.json`. Regenerated through `tools/collab/lifecycle-doc.py`, `tools/command-system/command-reference.py`, and `tools/command-system/sync-framework-boundaries.sh`.
+- **Collab support contracts** — helper output, identity binding, planned-route gates, and registry-state rules live in [`helper-output.md`](core/collab/helper-output.md), [`identity-contract.md`](core/collab/identity-contract.md), [`planned-routes.md`](core/collab/planned-routes.md), and [`registry-state.md`](core/collab/registry-state.md).
 - **Commands roster block** — the `BEGIN GENERATED:COMMANDS_ROSTER` block in `commands/commands.md` is derived from filesystem state under `commands/`. Validated by `./tools/command-system/sync-commands-catalog.sh --check`.
-- **Scaffold templates for downstream repos** — `templates/{CLAUDE,AGENTS,REPOSITORY}.md` are copied into target repos by `/agent install` and patched in place by `/agent patch`. Validated by the install/patch routes' own scaffold-local checks and by `tests/tools/agent/agent-routes-contract.test.sh`.
+- **Scaffold templates for downstream repos** — `templates/{CLAUDE,AGENTS,REPOSITORY}.md` are copied into target repos by `/agent install` and patched in place by `/agent patch`. Validated by `tests/tools/agent/agent-routes-contract.test.sh`.
 - **QA harness surface** — `tests/specs/*.md` and `tests/**/*.test.sh` are the executable proof layer. Validated by `/test all` and `./tests/run.sh`.
 
 ## 4) Mutation Protocol and Ownership
 
-- Must edit tracked source only. The set of tracked source is enumerated in `.gitignore` (managed allowlist policy: a leading `*` ignores everything and explicit opt-in entries add source back). New source under `core/` must stay reachable through the managed allowlist; if a future `core/` subtree is not covered by the broad `core/` opt-in, update `.gitignore` and add an executable guard with the same change.
+- Must edit tracked source only.
+- Narrative gate state is runtime state, not source; it stays omitted by the managed `.gitignore` allowlist.
 - Do not edit by hand:
   - Files under `generated/` — regenerated by `tools/collab/lifecycle-doc.py`, `tools/command-system/command-reference.py`, and `tools/command-system/sync-framework-boundaries.sh`.
   - The `BEGIN GENERATED:COMMANDS_ROSTER` ... `END GENERATED:COMMANDS_ROSTER` block in `commands/commands.md` — regenerated by `tools/command-system/sync-commands-catalog.sh`.
-  - Any path matched by `.gitignore` (e.g. `.claude/`, `projects/`, `extensions/`, `ide_state.json`, `plugins/`, `skills/`, `plans/`, `subagents/`) — runtime state, never source. Repo-local `.collabs/` is not a current topology. `.collab.json` is the only collab-related file that is tracked source.
+  - Any path matched by `.gitignore` (e.g. `projects/`, `extensions/`, `ide_state.json`, `plugins/`, `skills/`, `plans/`, `subagents/`) — runtime state, never source.
 - Ownership boundaries:
   - `commands/<ns>/index.md` owns public routing; route bodies belong in `commands/<ns>/<route>/index.md`.
   - `core/framework/*.md` owns cross-route invariants and standards; routes cite them rather than restating them.
-  - `templates/*` is the only source for scaffold files installed by `/agent install`; the installed copies in target repos are not edited by this repo's routes except via `/agent patch` and `/agent upgrade`.
-  - `tests/specs/*.md` owns Markdown-layer harness policy; `tests/**/*.test.sh` owns shell-executable harness; neither layer may be reduced without updating `tests/specs/tests.md`.
-  - `data/capability-aliases.json`, `data/effort-tiers.json`, `data/runtime-policy.json`, and `data/command-advisory-policy.json` own the command-advisory vocabulary, coverage policy, leakage vocabulary, and runtime mapping. `data/advisories/*.json` owns per-namespace caller recommendations. `tools/command-system/command-advisories.py` validates advisory coverage, alias freshness, role overrides, and caller-facing leakage.
+  - `templates/*` is the only source for scaffold files installed by `/agent install`; installed copies in target repos are edited only via `/agent patch` and `/agent upgrade`.
+  - `tests/specs/*.md` owns Markdown-layer harness policy; `tests/**/*.test.sh` owns the shell-executable harness.
+  - `data/*.json` and `data/advisories/*.json` own the command-advisory vocabulary and per-namespace caller recommendations; `tools/command-system/command-advisories.py` validates coverage and leakage.
   - `tools/command-system/*` and `tools/collab/*` are the only mutators of `generated/*` and the roster block.
 
 ## 5) Validation Modes
@@ -72,76 +72,26 @@ This repo projects the following root outputs, with deepest dependency chains an
 
 - `./tests/run.sh`
 
-`./tests/run.sh` includes `./tools/command-system/audit-role-prose.sh` through the repository audit path and as an explicit guard before the shell-test sweep.
-
 ### Runtime Mode (required if the repo projects runtime state)
 
 This repo projects runtime state under `~/.cursor/*` and generated mirrors under `generated/`. Required validation:
 
-- `./tools/command-system/audit.sh`
-  - includes `./tools/command-system/audit-role-prose.sh`
-  - includes `./tools/command-system/check-source-ledger.py --check`
-  - includes `./tools/command-system/sync-context-gate.sh --check`
+- `./tools/command-system/audit.sh` (includes `audit-role-prose.sh`, `check-source-ledger.py --check`, and `sync-context-gate.sh --check`)
 - `./tools/command-system/sync-commands-catalog.sh --check`
-- `./tools/command-system/sync-framework-boundaries.sh` (run and diff `generated/` if a `--check` flag is not supported)
-- `./tools/command-system/sync-roles-roster.sh` (run and diff `generated/` if a `--check` flag is not supported)
+- `./tools/command-system/sync-framework-boundaries.sh` (run and diff `generated/` if `--check` is unsupported)
+- `./tools/command-system/sync-roles-roster.sh` (run and diff `generated/` if `--check` is unsupported)
 - `/test all` (Markdown-harness sweep over `tests/specs/`)
 
 ### Overlay Mode (optional)
 
-No project-local overlay is owned by this repo. Consumer repos that carry their own overlay must validate it through that repo's own gates; this repo does not gate overlays from upstream.
+No project-local overlay is owned by this repo. Consumer repos that carry their own overlay validate it through that repo's own gates; this repo does not gate overlays from upstream.
 
-## 6) Collab State
-
-Primary collab state lives outside the repository at the user-scope collab state root `$HOME/.collabs/<projectId>/`, bound by the tracked repo marker `.collab.json`. The project id value is opaque and follows git history (rename, fork). Schema and binding rules: [`core/collab/identity-contract.md`](core/collab/identity-contract.md).
-
-| Path | Role |
-| --- | --- |
-| `.collab.json` | Tracked repo marker; binds the repo to its state root. Initialized once; never changes `projectId`. |
-| `$HOME/.collabs/<projectId>/registry.json` | Live registry; outside the repository, unaffected by `git clean -Xdf`. |
-| `$HOME/.collabs/<projectId>/records/*.md` | Transcript files; outside the repository. |
-
-The `git clean -Xdf` data-loss risk that applied to repo-local `.collabs/` storage is retired: primary collab state is at `$HOME/.collabs/<projectId>/`, outside the repository tree.
-
-**Irrecoverability note:** `$HOME/.collabs/<projectId>/` is not tracked by git and is not included in any git history. Loss of this directory — through `rm -rf`, disk failure, or OS re-imaging — is permanent and unrecoverable from any git operation. To back up, copy the directory: `cp -r "$HOME/.collabs/<projectId>/" <backup-path>/`. Back up before destructive operations on the home directory.
-
-## 7) No-Deprecation Principle
-
-Every contract surface in `~/.cursor` is authored as a fresh feature. There is no support for deprecation paths, legacy behavior, or backwards compatibility shims. Standing platform doctrines that extend this principle to naming and cross-cutting policy are collected in [`data/doctrines.md`](data/doctrines.md).
-
-**Rule:** When a contract changes, write the new contract from scratch. Do not frame the change as a patch, replacement, or upgrade of prior behavior. Do not retain old behavior alongside new behavior for migration purposes. Do not add `deprecated`, `legacy`, or compatibility notes to route prose, schema blocks, or helper interfaces.
-
-**Corollary:** Removal of a flag, parameter, token, or route is a contract rewrite, not a deprecation. The new contract is the complete specification; the old form simply does not exist.
-
-This principle applies to every layer: public routers (`commands/<ns>/index.md`), route playbooks (`commands/<ns>/<route>/index.md`), core invariants (`core/framework/*.md`), schema blocks (`route-flag`, `route-arg`, `route-gate`), and helper interfaces (`tools/collab/registry.py`, `tools/command-system/*`).
-
-## 8) Reporting Contract
+## 6) Reporting Contract
 
 When work completes, report:
 
 - Each validation command executed and its pass/fail status, including any documented skips with rationale.
 - Whether root adapters (`CLAUDE.md`, `AGENTS.md`, `REPOSITORY.md`, `README.md`) and scaffold templates (`templates/*`) were modified.
 - Whether any `generated/*` file or the `COMMANDS_ROSTER` block in `commands/commands.md` was regenerated, and which sync script produced the change.
-- Any unresolved install or patch placeholder markers remaining in installed scaffold files (as defined in `commands/agent/install/index.md` and `commands/agent/patch/index.md`).
-- Any residual risks: known blockers in `tests/specs/*`, deferred test additions, or boundary cases (e.g. the documented `agent-honor-system` limit in `tests/specs/tests.md`) that affected the run.
-- Any uncommitted state in ignored runtime directories (`.claude/`, `projects/`, etc.) or the user-scope collab state root that influenced behavior during the run.
-
-## 9) Contract History
-
-Contract history is recorded from `0.3.0` forward; pre-`0.3.0` entries are absent because this section was introduced at `0.3.0` and those contracts predate it — their absence here does not archive or retire them.
-
-**0.4.0** (2026-05-19): Five inter-bump structural changes recorded — § 10 Workflow Models added as additive contract surface (seal-terminal committed as default, issue-terminal gated behind `planned_routes.py`); verification round increment relocated from `seal_render` to `participant_verify_render` as the sole owner; `_planned-routes.md` and `_registry-state.md` sibling specs added; first honor-system promotion recorded in `_honor-system-audit.md` (`seal-verification-zero-rounds` clause); `tools/collab/planned_routes.py` extracted from `registry.py` as the forward-defensive issue-terminal gate.
-
-**0.3.0** (2026-05-19): Registry identity binding enforced — `projectId` rebinding to a different user-scope collab state root is a hard rejection in `tools/collab/registry.py`; participant `agentId` rebinding detection added; state root resolution extracted into `tools/collab/registry_state.py` (spec: [`core/collab/registry-state.md`](core/collab/registry-state.md)); issue-bridge gate diagnostics documented in `tools/collab/registry.py`; helper output abort families in [`core/collab/helper-output.md`](core/collab/helper-output.md) expanded to exact-exit-1-message depth for existing helpers.
-
-## 10) Workflow Models
-
-A **workflow model** determines which artifact serves as the terminal closing transaction for a collab record.
-
-**Committed default: seal-terminal.** The collab record is the terminal artifact. A collab closes when `verificationSeal` is recorded and `verdict.outcome == success`. This is the only implemented model.
-
-**Selectable alternative: issue-terminal.** An issue-terminal model closes the record by publishing the collab output to an external issue tracker rather than by sealing the record. Selection is per-collab at `/collab init --terminal seal|issue` (not yet implemented; blocked by the prerequisite gate below).
-
-**Switching the default is a contract rewrite under § 7.** No deprecation path. The new contract is the complete specification. When the committed default changes, write the new contract from scratch.
-
-**Forward-defensive gate.** `tools/collab/planned_routes.py` enforces that `/collab export-issues` cannot land without the init-side selection mechanism as a prerequisite. Any route that would enable issue-terminal behavior must have the selection contract specified and the gate updated before it enters scope. See [`core/collab/planned-routes.md`](core/collab/planned-routes.md) for the gate's abort family and prerequisite set.
+- Any unresolved install or patch placeholder markers remaining in installed scaffold files.
+- Any residual risks: known blockers in `tests/specs/*`, deferred test additions, or boundary cases that affected the run.

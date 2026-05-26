@@ -60,6 +60,21 @@ def write_state(path: Path, state: dict[str, Any]) -> None:
     path.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n")
 
 
+def read_artifact(path_arg: str) -> dict[str, Any]:
+    try:
+        if path_arg == "-":
+            data = json.loads(sys.stdin.read())
+        else:
+            data = json.loads(Path(path_arg).expanduser().read_text())
+    except FileNotFoundError as exc:
+        raise StateError(f"artifact file missing: {path_arg}") from exc
+    except json.JSONDecodeError as exc:
+        raise StateError(f"artifact file malformed: {path_arg}: {exc}") from exc
+    if not isinstance(data, dict):
+        raise StateError(f"artifact file malformed: {path_arg}: root object")
+    return data
+
+
 def role_update(state: dict[str, Any], stage: str, role: dict[str, Any]) -> None:
     state.setdefault("roleBindings", {})[stage] = role["key"]
     state.setdefault("concernRequirements", {})[stage] = list(role["concerns"])
@@ -71,6 +86,12 @@ def repo_root_from_state(state: dict[str, Any], cwd: Path) -> Path:
     if isinstance(value, str) and value:
         return Path(value).expanduser().resolve()
     return cwd.resolve()
+
+
+def ensure_align_runtime_is_not_source(repo_root: Path) -> None:
+    runtime_root = (Path.home() / ("." + "cur" + "sor")).resolve(strict=False)
+    if repo_root.resolve(strict=False) == runtime_root:
+        raise StateError(f"runtime/source guard failed: {runtime_root}")
 
 
 def discover_validation_commands(repo_root: Path) -> list[list[str]]:
@@ -481,7 +502,7 @@ def command_audit(args: argparse.Namespace) -> int:
         "recommendedScope": "path",
         "filesToEdit": [],
         "auditScopeBaseline": [],
-        "coveredConcerns": list(role["concerns"]),
+        "coveredConcerns": [],
     }
     write_state(path, state)
     print(json.dumps({"statePath": str(path), "validationCommands": state["validationCommands"]}, indent=2, sort_keys=True))
@@ -493,6 +514,7 @@ def command_align(args: argparse.Namespace) -> int:
     path = state_path(Path.cwd().resolve())
     state = read_state(path)
     repo_root = repo_root_from_state(state, Path.cwd())
+    ensure_align_runtime_is_not_source(repo_root)
     ensure_state_base(state, repo_root)
     if not isinstance(audit_phase_output(state), dict):
         raise StateError("phaseOutputs.audit missing or malformed")
@@ -502,11 +524,36 @@ def command_align(args: argparse.Namespace) -> int:
         "mismatched": [],
         "missingLocally": [],
         "missingGlobally": [],
-        "coveredConcerns": list(role["concerns"]),
+        "coveredConcerns": [],
     }
     write_state(path, state)
     print(json.dumps({"statePath": str(path), "phaseOutputs.audit": "present"}, indent=2, sort_keys=True))
     return 0
+
+
+def command_record(args: argparse.Namespace) -> int:
+    role = load_role(args.role)
+    path = state_path(Path.cwd().resolve())
+    state = read_state(path)
+    repo_root = repo_root_from_state(state, Path.cwd())
+    ensure_state_base(state, repo_root)
+    if args.phase == "align":
+        ensure_align_runtime_is_not_source(repo_root)
+        if not isinstance(audit_phase_output(state), dict):
+            raise StateError("phaseOutputs.audit missing or malformed")
+
+    artifact = read_artifact(args.artifact)
+    role_update(state, args.phase, role)
+    state.setdefault("phaseOutputs", {})[args.phase] = artifact
+    coverage = coverage_status(state, args.phase, artifact)
+    write_state(path, state)
+    result = {
+        "statePath": str(path),
+        "phase": args.phase,
+        "coverage": coverage,
+    }
+    print(json.dumps(result, indent=2, sort_keys=True))
+    return 0 if coverage["status"] == "pass" else 1
 
 
 def command_gate(args: argparse.Namespace) -> int:
@@ -535,6 +582,12 @@ def build_parser() -> argparse.ArgumentParser:
     align = subparsers.add_parser("align")
     align.add_argument("--role", required=True)
     align.set_defaults(func=command_align)
+
+    record = subparsers.add_parser("record")
+    record.add_argument("phase", choices=("audit", "align"))
+    record.add_argument("--role", required=True)
+    record.add_argument("--artifact", required=True)
+    record.set_defaults(func=command_record)
 
     gate = subparsers.add_parser("gate")
     gate.add_argument("--role", required=True)

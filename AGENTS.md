@@ -1,7 +1,7 @@
 # Agent guide — dotcursor
 <!-- scaffolded-at: 2026-05-02 -->
 
-Agents edit tracked source in this repository. Global command catalog lives in `~/.cursor/commands/commands.md`.
+Agents edit tracked source in this repository. Global command guidance lives in `~/.cursor/commands/commands.md`.
 
 ## Bootstrap chain
 
