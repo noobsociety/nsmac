@@ -93,3 +93,20 @@ Reference document for the resolved collab `registry.json` schema and field owne
 - **Shared helper:** `tools/collab/registry.py` is the single implementation of registry read, write, and target resolution. Helper-owned transcript reader code lives in `tools/collab/transcript_readers.py` and is limited to deriving state that is authored in transcript prose, including contributors, Action Plan assignments, chartered deliverables, and verification inputs. All collab routes delegate registry access to these helpers. Route specs reference the helpers by name and do not restate the resolution algorithm.
 
 - **Decomposition follow-up:** `tools/collab/transcript_readers.py` is the first extraction from the registry helper. Remaining registry-helper decomposition should proceed by bounded behavior slices with same-change tests, preserving `tools/collab/registry.py` as the public CLI entry point unless a route contract explicitly moves a subcommand.
+
+### Proposed #57: `tools/collab/transcript_render.py`
+
+#57 should extract the managed transcript rendering and transcript-display surface from `tools/collab/registry.py` into `tools/collab/transcript_render.py`. Baseline before the extraction: `tools/collab/registry.py` is 6008 lines. Success requires either `tools/collab/registry.py` at 5200 lines or fewer after #57, or a per-symbol assertion that every retained `registry.py` binding for moved surface is import-only or a dispatch wrapper with no rendering/transcript logic left behind.
+
+Extraction sequence:
+
+1. Move transcript read/view and next-command helpers: `transcript_view_command`, `read_transcript_for_entry`, `next_line_for_state`, `next_line_after_speak`, `next_line_after_execution`, `transcript_view`, and `transcript_repair`.
+2. Move effort and contribution rendering helpers: `normalize_rendered_effort_cell`, `rendered_effort_drift_items`, `render_full_body_block`, `render_contribution_body`, `render_handoff_mirror_lines`, `render_contribution_block`, `render_speak`, `contribution_block_bounds`, and `render_re_speak`.
+3. Move managed header and status renderers: `rendered_status_table`, `rendered_participants_table`, `rendered_prohibitions_block`, `rendered_reviewer_section`, `rendered_table_of_contents`, `rendered_managed_header`, `render_managed_header_text`, `render_initial_transcript`, and `render_initial_transcript_legacy`.
+4. Move CLI render dispatchers that own transcript output bytes: `render_status`, `render_participants`, `role_row_command`, and `summary_role_command`.
+
+Retained facade rule: each moved symbol remains importable from `tools.collab.registry` by importing it from `tools.collab.transcript_render` at the top of `registry.py`; CLI subcommand branches may remain in `registry.py` only as argument parsing and direct dispatch. If a moved command needs local state such as `DEFAULT_ROLES_DIR`, `DEFAULT_CONFIG_ROOT`, or `load_registry`, pass it as an argument rather than importing `tools.collab.registry` from `transcript_render.py`.
+
+#57 validation must include a byte-identical render fixture covering managed header, status table, participant table, Handoff mirror replacement, speak render, rewrite-speak render, transcript repair, and transcript view output before and after the extraction. The existing gates `./tests/run.sh` and `./tools/command-system/audit.sh` still apply.
+
+#58 should use the same charter shape for seal/verification extraction: name the moved symbols, preserve `tools.collab.registry` imports or dispatch wrappers, set a concrete `registry.py` line-count target from that collab's starting baseline, and pair every stale-seal trigger move with a same-change test.

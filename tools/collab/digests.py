@@ -1,4 +1,6 @@
 """Content and path digest computation and signatures; does not own git policy or registry state."""
+# Tests: full-body block detection and strip, write-scope signature stability, execution-content
+#        signature invalidation on path/status change, content digest for worktree and ref paths.
 from __future__ import annotations
 
 import base64

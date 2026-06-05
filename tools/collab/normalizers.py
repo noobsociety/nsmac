@@ -1,4 +1,6 @@
 """Pure slug, title, path, scope, and validation-arg normalization; does not own registry state or I/O."""
+# Tests: slug/title/path normalization, scope-matching (glob and prefix), execution-datetime parsing,
+#        restore-target normalization, touched-path deduplication, agent-id validation.
 from __future__ import annotations
 
 import datetime as dt

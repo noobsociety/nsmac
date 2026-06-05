@@ -173,3 +173,11 @@ Action Plan items must carry one of the recognized item tags immediately after t
 The purpose of `charteredDeliverables` is to prevent reviewer-driven scope expansion at seal: a reviewer finding cannot charter new work. It was never intended to require moderators to enumerate file paths before the audit has run.
 
 **Enforcement note:** Seal-time coverage is enforced by `assert_chartered_deliverables_covered(entry, transcript)` in `tools/collab/registry.py`. No advance-time gate exists; the Conclusion → Action Plan transition is not blocked by the presence or absence of `charteredDeliverables`.
+
+**20. Seal verification is content-addressed, not commit-reachable**
+
+Seal integrity is enforced by the **scope digest** — the `pathDigests`/`contentDigest` recomputed from the *content* of each execution `touchedPath` at `HEAD` — together with the requirement that every touched path is committed at `HEAD` (`SEAL-GIT-STATE` / `SEAL-CONTENT-INCOMPLETE`). The commit SHA recorded in `execution.<role>.commits` is provenance **metadata only**: it is never checked for reachability or membership. A "wrong", orphaned, amended, rebased, or squashed commit does **not** fail the seal, as long as the touched-path content is committed at `HEAD` and matches the sealed digest. This replaces the retired commit-reachability check (`SEAL-PROVENANCE`); content identity is invariant under history rewrites that preserve the tree.
+
+**Reviewer directive:** Never block or condition a seal on commit-hash provenance (e.g. "the cited commit does not contain the file", "the SHA is stale/orphaned"). The only seal-time integrity questions are: (1) is every touched-path's final content committed at `HEAD`, and (2) does the recomputed scope digest equal `verificationSeal.contentDigest`. If both hold, provenance is satisfied regardless of which commit is cited.
+
+**Enforcement note:** Enforced by `invalidate_seal_on_content_drift` and `assert_execution_touched_paths_in_git_state` in `tools/collab/registry.py`; see the [Content-integrity gate](../../commands/collab/seal-verification/index.md#content-integrity-gate) note in `/collab seal verification` and `verification.md` §"Seal time". `repair-execution-provenance` repoints commit metadata and recomputes the digest — it does not make the SHA a seal gate.

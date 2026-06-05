@@ -1,4 +1,7 @@
-"""Collab creation and participant roster management; does not own turn-order lifecycle."""
+"""Participant roster, reviewer wiring, and turn-order helpers; does not own phase mutations."""
+# Tests: join validation (duplicate role, agent-id conflict, caller-declined), add/remove
+#        participant round-trips, turn-order normalization per phase, reviewer wiring
+#        (active/pending/optional), role-file presence checks.
 from __future__ import annotations
 
 import sys

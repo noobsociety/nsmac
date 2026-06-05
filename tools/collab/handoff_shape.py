@@ -1,4 +1,7 @@
 """Handoff writeScope and validationCommands schema validation and parsing; does not own handoff lifecycle or state."""
+# Tests: writeScope validation (absolute, glob, duplicate, overlength paths), validationCommands
+#        validation (argv shape, shell-pattern rejection), effort-override encode/decode round-trip,
+#        handoff body section parsing (writeScope and validationCommands extraction).
 from __future__ import annotations
 
 import base64

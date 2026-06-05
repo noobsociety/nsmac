@@ -1,4 +1,7 @@
 """Registry persistence, schema validation, lock, and resolve; does not own phase or lifecycle decisions."""
+# Tests: registry load/save with lock serialization, revision bump and event management,
+#        collab-id resolution (slug, id, numeric), bootstrap from absent registry,
+#        semantic-change detection, legacy field retirement.
 from __future__ import annotations
 
 import datetime as dt

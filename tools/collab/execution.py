@@ -1,4 +1,6 @@
-"""Execution recording, run-plan dispatch, and write-scope enforcement; does not own seal or verification."""
+"""Execution helper checks, run-plan dispatch support, and write-scope enforcement."""
+# Tests: touched-path enforcement against declared writeScope, disjoint-scope assertion for
+#        subagent spawns, completion check across all assigned roles, execution-scope advisory.
 from __future__ import annotations
 
 from pathlib import Path
