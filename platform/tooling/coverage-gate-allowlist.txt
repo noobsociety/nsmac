@@ -1,0 +1,97 @@
+# Weekly-review reduction target (2026-06-07):
+# Gate-reported live migration debt is 88 allowlisted unanchored ABORT clauses.
+# Reduce live debt to <=66 before the next weekly audit by anchoring and testing
+# at least 22 clauses. Route-family targets: contribution flow
+# (speak/rewrite-speak plus advance/restore) -12 entries; completion flow
+# (run-plan/rewrite-execution) -8 entries; participant/admin flow
+# (join/remove-participant plus set/unset) -6 entries. Keep fingerprints below
+# until each clause has a stable abort anchor and any required registry test.
+commands/collab/activate/index.md:14|6de3220d9d35
+commands/collab/activate/index.md:15|8a77055f7223
+commands/collab/activate/index.md:16|b714b022357b
+commands/collab/activate/index.md:17|80b786ff1ce0
+commands/collab/advance/index.md:15|16d605315414
+commands/collab/advance/index.md:16|9a198642e797
+commands/collab/advance/index.md:17|b8bbfe259afb
+commands/collab/advance/index.md:18|6e6465c9c7c4
+commands/collab/advance/index.md:29|5c789ceb0b5e
+commands/collab/advance/index.md:34|f8f8ea79e694
+commands/collab/archive/index.md:15|16d605315414
+commands/collab/archive/index.md:25|5c789ceb0b5e
+commands/collab/close/index.md:15|16d605315414
+commands/collab/close/index.md:25|a2fbeee98e0d
+commands/collab/delete/index.md:15|16d605315414
+commands/collab/delete/index.md:36|5c789ceb0b5e
+commands/collab/join/index.md:15|9ccaeaec07e9
+commands/collab/join/index.md:16|e92b0b849856
+commands/collab/join/index.md:17|de16aaa1a4aa
+commands/collab/join/index.md:18|fecd327780c1
+commands/collab/join/index.md:19|4ad9e6257fe9
+commands/collab/join/index.md:30|5c789ceb0b5e
+commands/collab/list/index.md:14|dabe2f670caf
+commands/collab/list/index.md:16|7bae20ed8734
+commands/collab/open/index.md:15|16d605315414
+commands/collab/open/index.md:17|74db554f9a53
+commands/collab/open/index.md:26|5c789ceb0b5e
+commands/collab/remove-participant/index.md:15|90b860506095
+commands/collab/remove-participant/index.md:16|c1b76a08e904
+commands/collab/remove-participant/index.md:18|81b865ff88b9
+commands/collab/remove-participant/index.md:19|72f2c69b3d12
+commands/collab/remove-participant/index.md:27|5c789ceb0b5e
+commands/collab/restore/index.md:15|16d605315414
+commands/collab/restore/index.md:16|9a198642e797
+commands/collab/restore/index.md:17|b8bbfe259afb
+commands/collab/restore/index.md:18|8e4a82086c6c
+commands/collab/restore/index.md:27|5c789ceb0b5e
+commands/collab/restore/index.md:31|99dde24e2d84
+commands/collab/retract-speak/index.md:15|22ddae7de64f
+commands/collab/retract-speak/index.md:16|1c4b4fdea96a
+commands/collab/retract-speak/index.md:24|5c789ceb0b5e
+commands/collab/rewrite-execution/index.md:15|16d605315414
+commands/collab/rewrite-execution/index.md:16|b5cd5f4f1e77
+commands/collab/rewrite-execution/index.md:17|c190d93368e3
+commands/collab/rewrite-execution/index.md:18|af6d2d4638df
+commands/collab/rewrite-execution/index.md:19|88d9dbaddca3
+commands/collab/rewrite-execution/index.md:20|9d7fac645cbc
+commands/collab/rewrite-execution/index.md:21|114cd02be3ec
+commands/collab/rewrite-execution/index.md:35|5c789ceb0b5e
+commands/collab/rewrite-speak/index.md:17|16d605315414
+commands/collab/rewrite-speak/index.md:18|9a198642e797
+commands/collab/rewrite-speak/index.md:19|c190d93368e3
+commands/collab/rewrite-speak/index.md:20|c110be377fcc
+commands/collab/rewrite-speak/index.md:21|5f9bf75fa3ec
+commands/collab/rewrite-speak/index.md:22|cf03d713b1e7
+commands/collab/rewrite-speak/index.md:23|4118dc3449da
+commands/collab/rewrite-speak/index.md:24|d717d7857b6c
+commands/collab/rewrite-speak/index.md:31|5c789ceb0b5e
+commands/collab/rewrite-summary/index.md:17|16d605315414
+commands/collab/rewrite-summary/index.md:18|e34221ceb62f
+commands/collab/rewrite-summary/index.md:26|5c789ceb0b5e
+commands/collab/run-plan/index.md:15|56c34e207802
+commands/collab/run-plan/index.md:16|2f21513fb095
+commands/collab/run-plan/index.md:17|c190d93368e3
+commands/collab/run-plan/index.md:18|6ba49bb0b42a
+commands/collab/run-plan/index.md:19|88d9dbaddca3
+commands/collab/run-plan/index.md:22|8eda620cd3fe
+commands/collab/run-plan/index.md:37|5c789ceb0b5e
+commands/collab/set/index.md:15|3f54d30be2b2
+commands/collab/set/index.md:16|d84cbcba8683
+commands/collab/set/index.md:17|a770ecd339c1
+commands/collab/set/index.md:18|dafb49482a2b
+commands/collab/set/index.md:33|5c789ceb0b5e
+commands/collab/speak/index.md:17|16d605315414
+commands/collab/speak/index.md:18|9a198642e797
+commands/collab/speak/index.md:19|c190d93368e3
+commands/collab/speak/index.md:20|f821ab5ad9ce
+commands/collab/speak/index.md:21|ff105d4e38f5
+commands/collab/speak/index.md:22|3d64e44cc02a
+commands/collab/speak/index.md:23|ae89d4096da1
+commands/collab/speak/index.md:24|751d6def38f9
+commands/collab/speak/index.md:27|ffcaff1f899a
+commands/collab/speak/index.md:34|5c789ceb0b5e
+commands/collab/unset/index.md:15|b5cbc3e96e39
+commands/collab/unset/index.md:16|c1b76a08e904
+commands/collab/unset/index.md:17|57408953fd18
+commands/collab/unset/index.md:24|5c789ceb0b5e
+commands/collab/write-summary/index.md:15|c472d41cad55
+commands/collab/write-summary/index.md:24|5c789ceb0b5e

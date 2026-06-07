@@ -13,7 +13,7 @@
 
 1. Resolve **`<project>`** from the first argument or `@`-mention per **Invocation** in **Notes**. If missing, **ABORT**: `<project>` is required.
 2. Walk **Rubric** items **1–10** in **Notes**; skip or generalize Phaser-only checks when Phaser is absent.
-3. When rubric learning applies, follow [quality-learning](../../../core/framework/quality-learning.md) **Protocol** steps 2–6 after the primary review.
+3. When rubric learning applies, follow [quality-learning](../../../platform/standards/quality-learning.md) **Protocol** steps 2–6 after the primary review.
 
 ## Notes
 

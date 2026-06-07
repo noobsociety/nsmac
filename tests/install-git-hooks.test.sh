@@ -20,7 +20,7 @@ chmod 0755 "$repo/tests/run.sh"
 hooks_dir="$repo/.git/hooks"
 marker="$TMPDIR/marker"
 
-COMMAND_SYSTEM_GIT_HOOKS_DIR="$hooks_dir" "$ROOT/tools/command-system/install-git-hooks.sh" >"$TMPDIR/install.out"
+COMMAND_SYSTEM_GIT_HOOKS_DIR="$hooks_dir" "$ROOT/platform/tooling/install-git-hooks.sh" >"$TMPDIR/install.out"
 
 for hook in pre-commit pre-push; do
   if [[ ! -x "$hooks_dir/$hook" ]]; then
@@ -44,7 +44,7 @@ if [[ "$line_count" != "2" ]]; then
 fi
 
 set +e
-COMMAND_SYSTEM_GIT_HOOKS_DIR="$hooks_dir" "$ROOT/tools/command-system/install-git-hooks.sh" >"$TMPDIR/reinstall.out" 2>&1
+COMMAND_SYSTEM_GIT_HOOKS_DIR="$hooks_dir" "$ROOT/platform/tooling/install-git-hooks.sh" >"$TMPDIR/reinstall.out" 2>&1
 status=$?
 set -e
 

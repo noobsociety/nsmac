@@ -8,7 +8,7 @@ Deterministic QA for generated runtime artifacts projected to `~/.cursor/generat
 2. Validate the source roster is exact.
 3. Validate each generated file has one H1 and is <= 250 lines.
 4. Validate each generated file names its generator and source-of-truth pattern.
-5. Validate `tools/collab/lifecycle-doc.py --check` passes for `collab-lifecycle.md`.
+5. Validate `commands/collab/engine/lifecycle-doc.py --check` passes for `collab-lifecycle.md`.
 
 ## Required roster
 
@@ -17,6 +17,7 @@ Tracked generated files under `generated/`:
 - `collab-lifecycle.md`
 - `command-reference.md`
 - `content-invariants.tsv`
+- `registry-cli.md`
 
 ## Output
 

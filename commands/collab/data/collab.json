@@ -1,0 +1,186 @@
+{
+  "namespace": "collab",
+  "advisories": [
+    {
+      "route": "init",
+      "capabilityTier": "composition",
+      "effortTier": "high",
+      "rationale": "Composes a new multi-section transcript and registry entry; downstream phases depend on the initial shape."
+    },
+    {
+      "route": "join",
+      "capabilityTier": "execution",
+      "effortTier": "low",
+      "rationale": "Registry write that captures at-join identity; bounded helper call."
+    },
+    {
+      "route": "speak",
+      "capabilityTier": "reasoning",
+      "effortTier": "high",
+      "rationale": "Contribution must integrate with prior speakers and the active-phase contract."
+    },
+    {
+      "route": "speak",
+      "role": "pa",
+      "capabilityTier": "reasoning",
+      "effortTier": "xhigh",
+      "rationale": "Convergent gate reviewer pass; one bad judgment propagates across the verdict."
+    },
+    {
+      "route": "retract speak",
+      "capabilityTier": "execution",
+      "effortTier": "low",
+      "rationale": "Tombstones the current role's latest active-phase contribution; bounded transcript edit."
+    },
+    {
+      "route": "rewrite speak",
+      "capabilityTier": "composition",
+      "effortTier": "medium",
+      "rationale": "Replaces the visible contribution while preserving audit history."
+    },
+    {
+      "route": "advance",
+      "capabilityTier": "execution",
+      "effortTier": "low",
+      "rationale": "Phase transition gated by the registry; helper enforces preconditions."
+    },
+    {
+      "route": "restore",
+      "capabilityTier": "execution",
+      "effortTier": "low",
+      "rationale": "Restores an archived collab from registry state."
+    },
+    {
+      "route": "set",
+      "capabilityTier": "execution",
+      "effortTier": "low",
+      "rationale": "Scoped metadata edit on the resolved collab."
+    },
+    {
+      "route": "unset",
+      "capabilityTier": "execution",
+      "effortTier": "low",
+      "rationale": "Clears scoped metadata on the resolved collab."
+    },
+    {
+      "route": "list",
+      "capabilityTier": "transformation",
+      "effortTier": "low",
+      "rationale": "Renders registry state as a list."
+    },
+    {
+      "route": "activate",
+      "capabilityTier": "execution",
+      "effortTier": "low",
+      "rationale": "Switches the active collab pointer in the registry."
+    },
+    {
+      "route": "open",
+      "capabilityTier": "execution",
+      "effortTier": "low",
+      "rationale": "Opens a new collab from existing record state."
+    },
+    {
+      "route": "reopen",
+      "capabilityTier": "reasoning",
+      "effortTier": "high",
+      "rationale": "Reopen rationale must be preserved and justified; the lifecycle decision affects downstream cap-exit actions."
+    },
+    {
+      "route": "close",
+      "capabilityTier": "execution",
+      "effortTier": "low",
+      "rationale": "Closes a completed collab and emits the close summary."
+    },
+    {
+      "route": "remove participant",
+      "capabilityTier": "execution",
+      "effortTier": "low",
+      "rationale": "Removes a participant from the registry roster."
+    },
+    {
+      "route": "archive",
+      "capabilityTier": "execution",
+      "effortTier": "low",
+      "rationale": "Soft-deletes the collab from the active set."
+    },
+    {
+      "route": "delete",
+      "capabilityTier": "execution",
+      "effortTier": "low",
+      "rationale": "Permanently removes the collab record and registry entry."
+    },
+    {
+      "route": "write summary",
+      "capabilityTier": "composition",
+      "effortTier": "high",
+      "rationale": "Synthesizes the completion narrative from transcript state."
+    },
+    {
+      "route": "rewrite summary",
+      "capabilityTier": "composition",
+      "effortTier": "medium",
+      "rationale": "Replaces the existing summary while preserving its outline."
+    },
+    {
+      "route": "run plan",
+      "capabilityTier": "execution",
+      "effortTier": "high",
+      "rationale": "Implements role-assigned action-plan items in source; scoped validation gates the execution record."
+    },
+    {
+      "route": "rewrite execution",
+      "capabilityTier": "execution",
+      "effortTier": "medium",
+      "rationale": "Rewrites the last execution record in place; preserves historical metadata."
+    },
+    {
+      "route": "participant verify",
+      "capabilityTier": "reasoning",
+      "effortTier": "xhigh",
+      "rationale": "Per-participant verification judgment; convergent gate before reviewer seal."
+    },
+    {
+      "route": "show policy",
+      "capabilityTier": "transformation",
+      "effortTier": "low",
+      "rationale": "Renders the resolved gate policy for the active collab."
+    },
+    {
+      "route": "show flags",
+      "capabilityTier": "transformation",
+      "effortTier": "low",
+      "rationale": "Renders the generated flag inventory."
+    },
+    {
+      "route": "show verdict",
+      "capabilityTier": "transformation",
+      "effortTier": "low",
+      "rationale": "Renders verdict metadata from registry state."
+    },
+    {
+      "route": "seal verification",
+      "capabilityTier": "reasoning",
+      "effortTier": "xhigh",
+      "rationale": "Reviewer seal pass; one bad judgment stales the seal and blocks close."
+    },
+    {
+      "route": "log",
+      "capabilityTier": "transformation",
+      "effortTier": "low",
+      "rationale": "Reads the append-only revision store and emits the registry changelog."
+    },
+    {
+      "route": "status",
+      "capabilityTier": "transformation",
+      "effortTier": "low",
+      "rationale": "Reads registry state and displays the current workflow state of the resolved collab."
+    },
+    {
+      "route": "diff",
+      "capabilityTier": "transformation",
+      "effortTier": "low",
+      "rationale": "Compares registry-derived content state against the content-only transcript sections."
+    }
+  ]
+}

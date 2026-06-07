@@ -11,7 +11,7 @@ List the registry-backed collabs so the moderator can inspect status and active 
 
 ## Steps
 
-1. Read [invariants.md](../../../core/collab/invariants.md) before executing; call the relevant helper fresh and do not trust prior reads from conversation context (Invariant #4). Read the resolved registry. If unreadable, **ABORT**: registry unreadable; name the path.
+1. Read [invariants.md](../../../commands/collab/reference/invariants.md) before executing; call the relevant helper fresh and do not trust prior reads from conversation context (Invariant #4). Read the resolved registry. If unreadable, **ABORT**: registry unreadable; name the path.
 2. Validate the registry structure and active pointer.
 3. Apply the `--status` filter when present: include only collabs whose `status` matches the given value. If the value is not one of `open`, `closed`, or `archived`, **ABORT**: invalid status filter; name the value.
 4. Sort the filtered list: active collab first, then by descending registry insertion order (`#N`), then alphabetically by slug as a tiebreaker.

@@ -13,22 +13,22 @@ Prefill a tracked issue workflow (**`create`**) or run implementation work (**`i
 
 1. Resolve `<create | implement>` from the first keyword. If missing, **ABORT**: `<create | implement>` is required.
 2. Resolve `<goal>` from remaining tokens after the mode keyword. If missing, **ABORT**: `<goal>` is required.
-3. Load [git-convention](../../../core/framework/git-convention.md) before generating branch names, commit subjects, PR fields, or grounded plans. If not readable, **ABORT** per **`context-gate.md`**.
-4. Load [markdown-workflow](../../../core/framework/markdown-workflow.md) when `<goal>` names devblog paths (`**/devblog/**/*.md`) or lean contracts under `doc/playbook/`. If required and not readable, **ABORT**.
+3. Load [git-convention](../../../platform/standards/git-convention.md) before generating branch names, commit subjects, PR fields, or grounded plans. If not readable, **ABORT** per **`context-gate.md`**.
+4. Load [markdown-workflow](../../../platform/standards/markdown-workflow.md) when `<goal>` names devblog paths (`**/devblog/**/*.md`) or lean contracts under `doc/playbook/`. If required and not readable, **ABORT**.
 5. For **create**, output **all four** phases in **Notes** (Phases 1–4) with `<goal>` populating issue title, branch name, and PR title. Use **`#<n>`** only for the GitHub issue number of the issue being prefilled (same `<n>` in branch, `Resolves #<n>`, and related fields). Do not run code or edit files.
-6. For **implement**, scan the repo per [git-convention](../../../core/framework/git-convention.md) **Repo grounding** before changing files. Derive `type`, `scope`, and `title kebab-case` from `<goal>`; read `stack` from manifests; populate `requirements` and `constraints` only from what is explicitly stated in `<goal>` or directly readable in the repo — do not infer. Fill **Structured input** in **Notes**, then plan, edit files, and list atomic commit subjects. Run `git` commands only when explicitly requested.
+6. For **implement**, scan the repo per [git-convention](../../../platform/standards/git-convention.md) **Repo grounding** before changing files. Derive `type`, `scope`, and `title kebab-case` from `<goal>`; read `stack` from manifests; populate `requirements` and `constraints` only from what is explicitly stated in `<goal>` or directly readable in the repo — do not infer. Fill **Structured input** in **Notes**, then plan, edit files, and list atomic commit subjects. Run `git` commands only when explicitly requested.
 
 ## Notes
 
 - **Route (create vs implement).** `create` → step 5 only; outputs **Create — Phases 1–4** in **Notes** (create issue, implement issue, branch into `dev`, dev into `main`) — no files edited. `implement` → step 6; grounds in repo, edits files, and lists atomic commit subjects.
 - **Parameters:** `<create | implement>` — mode keyword (required): `create` prefills issue template only; `implement` writes code and edits files. `<goal>` — brief description of the issue or work (required).
 - **Scope:** Devblog- and playbook-specific bullets apply only when those paths exist and matching project rules load; otherwise omit them.
-- **Conventions:** Types, scopes, branch pattern `<type>-<scope>/<n>-<issue-title-kebab-case>`, PR keywords, and release title `chore(release): merge dev to main` follow [git-convention](../../../core/framework/git-convention.md).
+- **Conventions:** Types, scopes, branch pattern `<type>-<scope>/<n>-<issue-title-kebab-case>`, PR keywords, and release title `chore(release): merge dev to main` follow [git-convention](../../../platform/standards/git-convention.md).
 - **Output contract:** `create` always labels its result as either `Issue delivery: prefill` or `Issue delivery: connector-backed`. `prefill` means the route emitted copy-ready issue and PR fields only. `connector-backed` means the route created the issue through an available tracker connector and must include the created issue URL and number before Phase 2 fields. Callers must branch on this delivery label, not on prose.
 - **Owner metadata:** When the caller supplies an owner role, assignee login, or Action Plan role label, preserve it in the Phase 1 metadata block as `Owner:`. Map `Owner:` to `Assignees:` only when a concrete tracker login is directly readable from input or repository metadata; otherwise leave `Assignees:` blank and keep `Owner:` for downstream routing.
 - **`_requires:` preservation:** If `<goal>` or caller context contains `_requires: #N` or `_requires: #N #M`, copy the exact `_requires:` line into the create handoff block and the implement structured input. Do not translate these numbers to issue IDs; they are source Action Plan item references.
 - **Implement handoff shape:** `implement` accepts the create handoff block as structured input. The block shape is title, optional `Issue: #<n>`, optional `Owner: <role-or-login>`, optional `_requires: #N...`, then `requirements:` with checklist-derived bullets. Preserve all present fields in the grounded implementation plan before editing files.
-- **Issue labels (inventory):** For **`Labels:`** in **Create — Phase 1**, use comma-separated names that are directly readable from the active repo context: existing issue or PR templates, repo docs, local metadata, or user-provided label inventory. Match spelling, casing, and spaces exactly. Use the issue-label rule of thumb in [git-convention](../../../core/framework/git-convention.md) only when those label names are visible in context. If no label inventory is directly readable, leave `Labels:` empty and say why. Do not invent labels. Do not require a network lookup.
+- **Issue labels (inventory):** For **`Labels:`** in **Create — Phase 1**, use comma-separated names that are directly readable from the active repo context: existing issue or PR templates, repo docs, local metadata, or user-provided label inventory. Match spelling, casing, and spaces exactly. Use the issue-label rule of thumb in [git-convention](../../../platform/standards/git-convention.md) only when those label names are visible in context. If no label inventory is directly readable, leave `Labels:` empty and say why. Do not invent labels. Do not require a network lookup.
 - **Acceptance criteria:** Use three to five `- [ ]` lines; text after each marker stays ≤ 80 characters.
 - **Headings for `create` output:** Use these `###` titles **above** each block (never inside paste fences): **Phase 1 — Create issue**, **Phase 2 — Implement issue**, **Phase 3 — branch into `dev`**, **Phase 4 — dev into main**. They pair with **Create — Phase 1–4** bullets below.
 - **Create — Phase 1 (create issue):** Emit **`### Phase 1 — Create issue`** above the fence (never inside it). Paste block: plain `Assignees` / `Labels` / `Milestone` / `Projects` lines, one per line (omit `Assignees` when the tracker does not use it). After each colon, either leave the value empty or set a concrete name — no filler placeholder text in template output. For `Labels:`, follow **Issue labels (inventory)** above (repository `/labels` page, not guessed names).
@@ -47,7 +47,7 @@ Projects: <project>
 - [ ] <criteria>
 ```
 
-- **Create — Phase 2 (implement issue):** Branch and **Subject** per [git-convention](../../../core/framework/git-convention.md). Emit **`### Phase 2 — Implement issue`**, then **Field | Value**:
+- **Create — Phase 2 (implement issue):** Branch and **Subject** per [git-convention](../../../platform/standards/git-convention.md). Emit **`### Phase 2 — Implement issue`**, then **Field | Value**:
 
 | Field   | Value                                      |
 | ------- | ------------------------------------------ |
@@ -79,7 +79,7 @@ requirements:
 | Base     | `dev` |
 | Compare  | `<type>-<scope>/<n>-<issue-title-kebab-case>` |
 | PR title | `type(scope): <Issue title>` |
-| PR body  | `<keyword> #<n>` — keyword from **PR keyword mapping** in [git-convention](../../../core/framework/git-convention.md) (`feat` → `Closes`, `fix` → `Fixes`, all others → `Resolves`) |
+| PR body  | `<keyword> #<n>` — keyword from **PR keyword mapping** in [git-convention](../../../platform/standards/git-convention.md) (`feat` → `Closes`, `fix` → `Fixes`, all others → `Resolves`) |
 
 - **Create — Phase 4 (dev into main):** Heading, then dev-to-main sync blocks, then **Field | Value** (release PR):
 

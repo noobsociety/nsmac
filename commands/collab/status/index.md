@@ -1,0 +1,43 @@
+# /collab status
+
+Show the current workflow state of a collaboration record — not the registry `status` field (which is the lifecycle value `open`, `closed`, or `archived`) but the full runtime picture: active phase, turn order, reviewer configuration, participant list, and counter values. Use `/collab list` to filter collabs by their `status` field.
+
+## Trigger
+
+**Slash:** `/collab status`
+**Signature:** `/collab status [<target>]`
+**Prose dispatch:** `(collab status [<target>])` — prose routing hint; not a terminal command.
+**Search phrases:** collab status, collab state, current phase, collaboration state
+
+## Steps
+
+1. Read [invariants.md](../../../commands/collab/reference/invariants.md) before executing; call the relevant helper fresh and do not trust prior reads from conversation context (Invariant #4). Resolve the target collab with **Registry targeting** in **Notes**.
+2. Call `commands/collab/engine/registry.py status <target>`.
+3. Display the helper output exactly. Stop.
+
+## Notes
+
+- **Parameters:** target collab slug, id, or numeric `#N` as the first token after `status`; when absent, resolved per **Registry targeting** in **Notes**.
+- **Registry targeting:** Resolve the target collab from the resolved registry, using `commands/collab/engine/registry.py` as the shared helper. When the first token after the route is present, treat it as a collab slug, id, or stable numeric position. Otherwise use `activeCollabId`. If the registry is unreadable or invalid, the token does not match any entry, or `activeCollabId` is empty, **ABORT**: registry target unavailable; name the registry field or token.
+- **Naming disambiguation:** This route's name (`status`) reuses the same word as the registry field `status` (`open` / `closed` / `archived`). The route shows workflow state; the field records lifecycle state. To filter by lifecycle state, use `/collab list --status <open|closed|archived>`.
+- **Output shape:** Structured key-value display. Includes: `id`, `slug`, `title`, `status` (lifecycle), `activePhase`, `completionSubState` (when in Completion), `turnOrder`, `reviewerRole`, `reviewerMode`, `revision` (write-guard counter), `uncheckedAssignedItemsByRole` (when in Completion), and participant rows. Example:
+
+  ```
+  id:           a13dba4ca8714205b217dca31da96eee
+  slug:         collab-state-observability
+  title:        Collab State Observability
+  status:       open
+  activePhase:  Completion.execution
+  turnOrder:    tw, pe
+  reviewer:     pa (last-in-convergent-phases)
+  revision:     2423
+  participants: tw (claude-sonnet-4-6), pe (codex), pa (opus)
+  ```
+
+- **Counter displayed:** The `revision` field is the write-guard counter sourced from the `revision` field in `registry.json`. See [schema-evolution.md](../../../commands/collab/reference/schema-evolution.md) for the counter lifecycle. The helper-output label for this value may differ from the stored field name.
+- **Read-only:** This route does not mutate registry state or transcript text.
+
+```route-arg
+dispatch: (collab status [<target>])
+param: name=<target>; required=optional; placeholder=<target>; class=dynamic; rule=collab slug, id, or #N; defaults to active collab; default=derived:active-collab
+```

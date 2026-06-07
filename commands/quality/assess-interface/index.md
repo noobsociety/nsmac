@@ -13,7 +13,7 @@
 
 1. Resolve **`<image>`** and **`<project>`** per **Parameters** in **Notes**. If either is missing, **ABORT**: list which argument(s) are missing.
 2. Apply the **Rubric** in **Notes**; tie every finding to visible evidence.
-3. When rubric learning applies, read [quality-learning](../../../core/framework/quality-learning.md) and follow its **Protocol** and **Review workflow** after the primary review.
+3. When rubric learning applies, read [quality-learning](../../../platform/standards/quality-learning.md) and follow its **Protocol** and **Review workflow** after the primary review.
 
 ## Notes
 

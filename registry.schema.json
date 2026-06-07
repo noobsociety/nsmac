@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dotcursor.local/schemas/collab-registry.schema.json",
+  "title": "Collab registry",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["activeCollabId", "collabs"],
+  "properties": {
+    "activeCollabId": {
+      "type": ["string", "null"]
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Canonical stale-write guard counter."
+    },
+    "eventIndex": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Append-only registry changelog event counter."
+    },
+    "collabs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id", "slug", "title", "description", "status", "activePhase", "moderatorRole", "participants", "turnOrder", "transcriptPath", "archived"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*$"},
+          "slug": {"type": "string"},
+          "title": {"type": "string"},
+          "description": {"type": "string"},
+          "status": {"enum": ["open", "closed", "archived"]},
+          "activePhase": {"enum": ["Audit", "Discussion", "Conclusion", "Action Plan", "Handoff", "Completion"]},
+          "moderatorRole": {"type": "string"},
+          "participants": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true,
+              "required": ["role", "agentId"],
+              "properties": {
+                "role": {"type": "string"},
+                "agentId": {"type": "string"}
+              }
+            }
+          },
+          "turnOrder": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "transcriptPath": {"type": "string"},
+          "archived": {"type": "boolean"},
+          "execution": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "status": {"type": "string"},
+                "date": {"type": "string"},
+                "entryId": {"type": "string"},
+                "agentId": {"type": "string"},
+                "validationResult": {"type": "string"},
+                "validationScope": {"type": "string"},
+                "touchedPaths": {
+                  "type": "array",
+                  "items": {"type": "string"}
+                },
+                "commits": {
+                  "type": "array",
+                  "items": {"type": "string"}
+                },
+                "contentDigest": {"type": "string"},
+                "pathDigests": {"$ref": "#/$defs/pathDigests"}
+              }
+            }
+          },
+          "verification": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "handoff": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "verificationSeal": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "observedRevision": {"type": "integer"},
+              "executionEntries": {
+                "type": "array",
+                "items": {"type": "object", "additionalProperties": true}
+              },
+              "validationScopes": {
+                "type": "array",
+                "items": {"type": "string"}
+              },
+              "touchedPaths": {
+                "type": "array",
+                "items": {"type": "string"}
+              },
+              "contentDigest": {"type": "string"},
+              "pathDigests": {"$ref": "#/$defs/pathDigests"},
+              "sealedAt": {"type": "string"},
+              "sealedBy": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "identityMetrics": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "pathDigests": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["mode", "blob"],
+        "properties": {
+          "mode": {"type": "string"},
+          "blob": {"type": "string"}
+        }
+      }
+    }
+  }
+}

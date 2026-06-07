@@ -15,13 +15,14 @@ Deterministic QA for harness docs in `~/.cursor/tests/specs/*.md`.
 Harness files under `~/.cursor/tests/specs/`:
 
 - `commands.md`
-- `rules.md`
 - `core.md`
 - `roles.md`
 - `generated.md`
 - `settings.md`
 - `templates.md`
 - `tests.md`
+
+**Note — intentionally internal harness specs:** `generated.md`, `templates.md`, and `tests.md` are not exposed as `/test <target>` routing targets. They are internal harness specifications swept by `./tests/run.sh`'s Markdown harness sweep, not dispatched through the `/test` command.
 
 ## Principle
 
@@ -31,15 +32,15 @@ Add a test only when a source behavior requires executable proof; prefer shell-l
 
 `tests/*.test.sh` owns shell-executable CI contract validation; `tests/specs/*.md` owns agent-facing policy for the `/test` command surface.
 
-`tools/command-system/audit.sh` is the shell-layer owning gate for adapter routing, `commands/commands.md` discovery, and runtime ignore rules; no Markdown harness is required for these behaviors.
+`platform/tooling/audit.sh` is the shell-layer owning gate for adapter routing, `commands/commands.md` discovery, and runtime ignore rules; no Markdown harness is required for these behaviors.
 
 `tests/run.sh` is the single entry point for the full test suite and is owned by three runtimes:
 
 - **GitHub Actions** — external runnable owner; the workflow calls `tests/run.sh` on push and pull request to `main`.
-- **Local pre-commit and pre-push hooks** — installed by `tools/command-system/install-git-hooks.sh`; both hooks invoke `./tests/run.sh`.
+- **Local pre-commit and pre-push hooks** — installed by `platform/tooling/install-git-hooks.sh`; both hooks invoke `./tests/run.sh`.
 - **Local manual invocation** — direct shell call; no harness or installer required.
 
-`tools/command-system/audit.sh` admits `.github/**` as tracked source. This boundary covers workflow files, CODEOWNERS, dependabot config, issue templates, and PR templates — not workflow files alone.
+`platform/tooling/audit.sh` admits `.github/**` as tracked source. This boundary covers workflow files, CODEOWNERS, dependabot config, issue templates, and PR templates — not workflow files alone.
 
 Neither layer may be reduced without updating this statement to name the resulting ownership per layer.
 
@@ -56,11 +57,11 @@ Neither layer may be reduced without updating this statement to name the resulti
 
 | Removed test | CONTRACT | OWNER | TYPE |
 | --- | --- | --- | --- |
-| `tests/tools/collab/registry.py/budget-exempt-action-plan-checklist.test.sh` | `core/collab/contribution-budget.md` `action-plan-checklist` exempt class accepts oversized checklist-only Action Plan contributions and rejects oversized non-exempt prose | `central-checker: tests/tools/collab/registry.py/contribution-budget-exempt-classes.test.sh` | `structure` |
-| `tests/tools/collab/registry.py/budget-exempt-conclusion-ratification.test.sh` | `core/collab/contribution-budget.md` `conclusion-ratification` exempt class accepts oversized ratification-only Conclusion contributions and rejects oversized non-exempt prose | `central-checker: tests/tools/collab/registry.py/contribution-budget-exempt-classes.test.sh` | `structure` |
-| `tests/tools/collab/registry.py/budget-exempt-effort-override-line.test.sh` | `core/collab/contribution-budget.md` `effort-override-line` exempt class accepts at-limit prose with an override line and rejects oversized non-exempt prose after stripping the override line | `central-checker: tests/tools/collab/registry.py/contribution-budget-exempt-classes.test.sh` | `structure` |
-| `tests/tools/collab/registry.py/budget-exempt-moderator-verbatim.test.sh` | `core/collab/contribution-budget.md` `moderator-verbatim` exempt class accepts oversized moderator-role content and rejects oversized non-moderator content | `central-checker: tests/tools/collab/registry.py/contribution-budget-exempt-classes.test.sh` | `structure` |
-| `tests/tools/collab/registry.py/execute-spawn-returned-path.test.sh` | `commands/collab/run-plan/index.md` parent-owned subagent integration rejects returned paths outside the assigned `execute-spawn --scope` | `central-checker: tests/tools/collab/registry.py/handoff-structured-state.test.sh` | `structure` |
+| `tests/commands/collab/registry.py/budget-exempt-action-plan-checklist.test.sh` | `commands/collab/reference/contribution-budget.md` `action-plan-checklist` exempt class accepts oversized checklist-only Action Plan contributions and rejects oversized non-exempt prose | `central-checker: tests/commands/collab/registry.py/contribution-budget-exempt-classes.test.sh` | `structure` |
+| `tests/commands/collab/registry.py/budget-exempt-conclusion-ratification.test.sh` | `commands/collab/reference/contribution-budget.md` `conclusion-ratification` exempt class accepts oversized ratification-only Conclusion contributions and rejects oversized non-exempt prose | `central-checker: tests/commands/collab/registry.py/contribution-budget-exempt-classes.test.sh` | `structure` |
+| `tests/commands/collab/registry.py/budget-exempt-effort-override-line.test.sh` | `commands/collab/reference/contribution-budget.md` `effort-override-line` exempt class accepts at-limit prose with an override line and rejects oversized non-exempt prose after stripping the override line | `central-checker: tests/commands/collab/registry.py/contribution-budget-exempt-classes.test.sh` | `structure` |
+| `tests/commands/collab/registry.py/budget-exempt-moderator-verbatim.test.sh` | `commands/collab/reference/contribution-budget.md` `moderator-verbatim` exempt class accepts oversized moderator-role content and rejects oversized non-moderator content | `central-checker: tests/commands/collab/registry.py/contribution-budget-exempt-classes.test.sh` | `structure` |
+| `tests/commands/collab/registry.py/execute-spawn-returned-path.test.sh` | `commands/collab/run-plan/index.md` parent-owned subagent integration rejects returned paths outside the assigned `execute-spawn --scope` | `central-checker: tests/commands/collab/registry.py/handoff-structured-state.test.sh` | `structure` |
 
 ## Output
 

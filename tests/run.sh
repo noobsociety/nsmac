@@ -4,10 +4,35 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-./tools/command-system/audit.sh
-./tools/command-system/audit-role-prose.sh
+SUITE_BASELINE_REF="bcb4d6e"
+SUITE_BASELINE_DATE="2026-06-07"
+SUITE_BASELINE_TEST_SCRIPTS=62
+SUITE_BASELINE_SECONDS="107.17"
+SUITE_BUDGET_TEST_SCRIPTS=80
+SUITE_BUDGET_SECONDS="125.00"
+
+run_timed() {
+  local label="$1"
+  shift
+
+  printf 'RUN: %s\n' "$label"
+  TIMEFORMAT="TIME: ${label}: %3R seconds"
+  time "$@"
+}
+
+script_count=0
+suite_start=$SECONDS
+
+# audit.sh owns audit-role-prose.sh; keep the full-suite runner from duplicating it.
+run_timed "audit ./platform/tooling/audit.sh" ./platform/tooling/audit.sh
 
 while IFS= read -r test_script; do
   [[ -n "$test_script" ]] || continue
-  bash "$test_script"
+  script_count=$((script_count + 1))
+  run_timed "test $test_script" bash "$test_script"
 done < <(find tests -name "*.test.sh" -type f | sort)
+
+suite_seconds=$((SECONDS - suite_start))
+printf 'SUMMARY: tests/run.sh completed %d test script(s) in %d seconds.\n' "$script_count" "$suite_seconds"
+printf 'BASELINE: %s (%s): %d test script(s), %s seconds real.\n' "$SUITE_BASELINE_REF" "$SUITE_BASELINE_DATE" "$SUITE_BASELINE_TEST_SCRIPTS" "$SUITE_BASELINE_SECONDS"
+printf 'BUDGET: next weekly target <= %d test script(s), <= %s seconds real; advisory only.\n' "$SUITE_BUDGET_TEST_SCRIPTS" "$SUITE_BUDGET_SECONDS"
