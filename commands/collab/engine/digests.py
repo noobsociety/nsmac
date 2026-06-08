@@ -137,14 +137,98 @@ def active_execution_entries(entry: dict) -> list[dict]:
         rows.append(row)
     return rows
 
+def carried_execution_entries(entry: dict) -> list[dict]:
+    coverage = entry.get('reopenCoverage')
+    if not isinstance(coverage, dict):
+        return []
+    entries = coverage.get('executionEntries', [])
+    if not isinstance(entries, list):
+        return []
+    return [item for item in entries if isinstance(item, dict)]
+
+def path_digest_at_ref(work_repo: Path, ref: str, path: str) -> dict[str, str] | None:
+    result = subprocess.run(
+        ['git', '-C', str(work_repo), 'ls-tree', ref, '--', path],
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if result.returncode != 0:
+        detail = result.stderr.strip() or result.stdout.strip() or 'unknown git error'
+        die(f'SEAL-CONTENT-INCOMPLETE: carried coverage digest failed for {path}: {detail}')
+    line = result.stdout.strip()
+    if not line:
+        return None
+    meta, _tab, _name = line.partition('\t')
+    parts = meta.split()
+    if len(parts) < 3 or parts[1] != 'blob':
+        return None
+    return {'mode': parts[0], 'blob': parts[2]}
+
+def content_digest_from_path_digests(path_digests: dict[str, dict[str, str]]) -> str:
+    canonical = json.dumps(path_digests, sort_keys=True, separators=(',', ':'))
+    return hashlib.sha256(canonical.encode()).hexdigest()
+
+def valid_carried_execution_entries(entry: dict, ref: str = 'HEAD') -> list[dict]:
+    from commands.collab.engine.git_repo import work_repo_root
+
+    rows: list[dict] = []
+    repo_root = work_repo_root(entry)
+    active_paths = {
+        item
+        for row in active_execution_entries(entry)
+        for item in row.get('touchedPaths', [])
+        if isinstance(item, str)
+    }
+    for carried in carried_execution_entries(entry):
+        path_digests = carried.get('pathDigests')
+        if not isinstance(path_digests, dict):
+            continue
+        valid_paths: list[str] = []
+        valid_digests: dict[str, dict[str, str]] = {}
+        for item in carried.get('touchedPaths', []):
+            if not isinstance(item, str) or item in active_paths:
+                continue
+            expected = path_digests.get(item)
+            if not isinstance(expected, dict):
+                continue
+            current = path_digest_at_ref(repo_root, ref, item)
+            if current is None:
+                continue
+            normalized_expected = {
+                'mode': str(expected.get('mode', '')),
+                'blob': str(expected.get('blob', '')),
+            }
+            if current != normalized_expected:
+                continue
+            valid_paths.append(item)
+            valid_digests[item] = current
+        if not valid_paths:
+            continue
+        row = {
+            key: value
+            for key, value in carried.items()
+            if key not in {'touchedPaths', 'pathDigests', 'contentDigest'}
+        }
+        row['touchedPaths'] = valid_paths
+        row['pathDigests'] = valid_digests
+        row['contentDigest'] = content_digest_from_path_digests(valid_digests)
+        row['carriedFromReopen'] = True
+        rows.append(row)
+    return rows
+
+def execution_coverage_entries(entry: dict) -> list[dict]:
+    return [*active_execution_entries(entry), *valid_carried_execution_entries(entry)]
+
 def execution_signature(entry: dict) -> str:
-    entries = active_execution_entries(entry)
+    entries = execution_coverage_entries(entry)
     encoded = json.dumps(entries, sort_keys=True, separators=(',', ':'))
     return base64.urlsafe_b64encode(encoded.encode()).decode().rstrip('=')
 
 def validation_scopes_for_execution(entry: dict) -> list[str]:
     scopes: list[str] = []
-    for state in entry.get('execution', {}).values():
+    for state in execution_coverage_entries(entry):
         scope = state.get('validationScope') if isinstance(state, dict) else None
         if isinstance(scope, str) and scope not in scopes:
             scopes.append(scope)
@@ -152,9 +236,7 @@ def validation_scopes_for_execution(entry: dict) -> list[str]:
 
 def touched_paths_for_execution(entry: dict) -> list[str]:
     touched: list[str] = []
-    for state in entry.get('execution', {}).values():
-        if not isinstance(state, dict):
-            continue
+    for state in execution_coverage_entries(entry):
         for item in state.get('touchedPaths', []):
             if isinstance(item, str) and item not in touched:
                 touched.append(item)
@@ -221,6 +303,6 @@ def content_digest_for_touched_paths(work_repo: Path, ref: str, touched_paths: l
             path_digests[path] = {'mode': parts[0], 'blob': parts[2]}
     canonical = json.dumps(path_digests, sort_keys=True, separators=(',', ':'))
     return {
-        'contentDigest': hashlib.sha256(canonical.encode()).hexdigest(),
+        'contentDigest': content_digest_from_path_digests(path_digests),
         'pathDigests': path_digests,
     }

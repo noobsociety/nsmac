@@ -12,7 +12,7 @@ Command argument contract for command routes. Routes adopt named flags by declar
 
 ## `route-flag` Block Schema
 
-Every route that supports or explicitly rejects a named flag must carry a fenced `route-flag` block. The block is machine-readable and validated by the route-flag lint in `platform/tooling/`.
+Every route that supports or explicitly rejects a named flag must carry a fenced `route-flag` block. The block is machine-readable and validated by `platform/tooling/audit-flag-scope.sh` (eligibility schema declared below; cross-scope override declarations governed by [`platform/tooling/flag-scope-validator-contract.md`](../tooling/flag-scope-validator-contract.md)).
 
 **Required fields**
 
@@ -28,6 +28,7 @@ Every route that supports or explicitly rejects a named flag must carry a fenced
 - `eligibility: eligible` + a `guard-class` listed in the ineligibility table -> lint error.
 - `eligibility: ineligible` + empty or absent `ineligibility-reason` -> lint error.
 - At most one `route-flag` block per `flag` value per route.
+- Unknown fields, missing required fields, unknown guard classes, and duplicate flag declarations fail the lint.
 
 **Example — eligible**
 

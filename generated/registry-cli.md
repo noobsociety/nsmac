@@ -124,6 +124,21 @@ Arguments and flags:
 - `--json` optional; flag
 - `--caller-role` optional; value
 
+### `export-issues`
+
+Usage: `registry.py export-issues [-h] --evidence-file EVIDENCE_FILE
+                                 [--timestamp TIMESTAMP] [--json]
+                                 [--caller-role CALLER_ROLE]
+                                 target role`
+
+Arguments and flags:
+- `target` required; required
+- `role` required; required
+- `--evidence-file` required; value
+- `--timestamp` optional; value
+- `--json` optional; flag
+- `--caller-role` optional; value
+
 ### `flag-inventory`
 
 Usage: `registry.py flag-inventory [-h] [--spec SPEC]`

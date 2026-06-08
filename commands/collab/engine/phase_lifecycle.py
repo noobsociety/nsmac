@@ -51,7 +51,7 @@ def discussion_turn_notice(entry: dict, contributors: list[str]) -> dict | None:
         'message': 'Run /compact before issuing your next collab command.',
     }
 
-def terminal_notice(status: str) -> dict:
+def lifecycle_status_notice(status: str) -> dict:
     return {
         'notice': 'clear',
         'status': status,

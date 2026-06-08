@@ -25,6 +25,28 @@ def issue_bridge_declared(config_root: Path) -> bool:
 
 def issue_bridge_prerequisite_gaps(config_root: Path, include_issue_route: bool = False) -> list[str]:
     gaps: list[str] = []
+    if include_issue_route:
+        workflow_models = source_text(config_root / 'commands/collab/reference/workflow-models.md')
+        workflow_model_required = {
+            'workflow models doctrine': '## Issue workflow model (`--terminal issue`)',
+            'issue lifecycle doctrine': '### Issue lifecycle',
+            'seal-free close doctrine': '### Seal-free close',
+            'replacement close-gate doctrine': '### Replacement close-gate',
+        }
+        for label, needle in workflow_model_required.items():
+            if needle not in workflow_models:
+                gaps.append(label)
+
+        glossary = source_text(config_root / 'commands/collab/reference/glossary.md')
+        glossary_required = {
+            'terminal glossary entry': '**terminal**',
+            'workflow model glossary entry': '**workflow model**',
+            'issue terminal glossary entry': '**issue terminal**',
+        }
+        for label, needle in glossary_required.items():
+            if needle not in glossary:
+                gaps.append(label)
+
     helper_output = source_text(config_root / 'commands/collab/reference/helper-output.md')
     helper_required = {
         'helper-output abort families': '## Abort families',

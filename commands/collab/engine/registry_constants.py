@@ -41,10 +41,6 @@ ALLOWED_CAP_EXITS = {'reopen-action-plan', 'reopen-handoff', 'follow-up-collab',
 ALLOWED_TERMINALS = {'seal', 'issue'}
 DEFAULT_TERMINAL = 'seal'
 TERMINAL_CHOICES_MESSAGE = 'seal, issue'
-RESERVED_ISSUE_TERMINAL_MESSAGE = (
-    '--terminal issue is reserved and not yet implemented; '
-    'use --terminal seal or omit --terminal'
-)
 DEFAULT_VERIFICATION_CAP = 3
 DISALLOWED_VERSION_FIELD = 'schema' + 'Version'
 MAX_HANDOFF_SCOPE_COUNT = 32

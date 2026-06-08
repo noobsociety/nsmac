@@ -21,6 +21,8 @@ assert not c.GLOB_PATTERN_RE.search('commands/collab/engine/registry.py')
 
 assert c.MODERATOR_ONLY_ACTIONS >= {'advance', 'archive', 'close', 'delete', 'reopen', 'restore', 'set', 'unset'}
 assert c.ALLOWED_STATUSES == {'open', 'closed', 'archived'}
+assert c.ALLOWED_TERMINALS == {'seal', 'issue'}
+assert c.TERMINAL_CHOICES_MESSAGE == 'seal, issue'
 assert c.ALLOWED_COMPLETION_SUBSTATES == {'execution', 'verification'}
 assert c.ALLOWED_VERIFICATION_SUBSTATES == {'participant', 'seal', 'assessment'}
 assert c.ALLOWED_VERDICT_RESTORE_TARGETS == {'Action Plan', 'Handoff'}

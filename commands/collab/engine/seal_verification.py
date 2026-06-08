@@ -72,6 +72,7 @@ from commands.collab.engine.registry_constants import (
 from commands.collab.engine.digests import (
     active_execution_entries,
     content_digest_for_touched_paths,
+    execution_coverage_entries,
     execution_signature,
     full_body_signature_for_transcript,
     participant_execution_signature,
@@ -102,7 +103,7 @@ from commands.collab.engine.participants import (
     reviewer_role,
     reviewer_state,
 )
-from commands.collab.engine.phase_lifecycle import print_notice_diagnostic, terminal_notice
+from commands.collab.engine.phase_lifecycle import lifecycle_status_notice, print_notice_diagnostic
 from commands.collab.engine.registry_io import load_registry, registry_lock, registry_revision, resolve_collab, save_registry
 from commands.collab.engine.transcript_render import (
     print_header_overwrite,
@@ -851,7 +852,7 @@ def seal_snapshot(
     digest = content_digest_for_execution(entry)
     seal = {
         'observedRevision': observed_revision,
-        'executionEntries': active_execution_entries(entry),
+        'executionEntries': execution_coverage_entries(entry),
         'validationScopes': validation_scopes_for_execution(entry),
         'touchedPaths': touched_paths_for_execution(entry),
         'contentDigest': digest['contentDigest'],
@@ -895,6 +896,8 @@ def seal_state(path: Path, target: str, role: str | None = None, resume: bool = 
             die('record is closed')
         if entry['activePhase'] != 'Completion':
             die('/collab seal verification is valid only in the Completion phase')
+        if entry.get('terminal') == 'issue':
+            die('seal verification is not used for issue-terminal collabs; close with /collab export-issues')
         if reviewer_backed(entry):
             initialize_completion_state(entry, verification_substate(entry))
         if reviewer_backed(entry) and all_execution_completed(entry):
@@ -1193,7 +1196,7 @@ def apply_cap_exit(entry: dict, data: dict, cap_exit: str | None) -> dict | None
         set_verification_review_substate(entry, 'assessment')
         if data.get('activeCollabId') == entry['id']:
             data['activeCollabId'] = None
-        return terminal_notice('archived')
+        return lifecycle_status_notice('archived')
     if cap_exit == 'reopen-action-plan':
         entry['activePhase'] = 'Action Plan'
         normalize_turn_order_for_phase(entry, 'Action Plan')
@@ -1359,7 +1362,7 @@ def insert_reopen_pointer(transcript: str, phase: str, findings_anchor: str | No
 def assessment_notice(verdict: dict) -> dict | None:
     outcome = verdict.get('outcome')
     if outcome == 'success':
-        return terminal_notice('closed')
+        return lifecycle_status_notice('closed')
     target = verdict.get('restoreTarget', 'Action Plan')
     return {
         'notice': 'assessment',
@@ -1412,6 +1415,8 @@ def render_seal(
             die('record is closed')
         if entry['activePhase'] != 'Completion':
             die('/collab seal verification is valid only in the Completion phase')
+        if entry.get('terminal') == 'issue':
+            die('seal verification is not used for issue-terminal collabs; close with /collab export-issues')
         live_revision = registry_revision(data)
         if observed_revision != live_revision:
             die(

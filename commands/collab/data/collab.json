@@ -129,6 +129,12 @@
       "rationale": "Implements role-assigned action-plan items in source; scoped validation gates the execution record."
     },
     {
+      "route": "export-issues",
+      "capabilityTier": "execution",
+      "effortTier": "high",
+      "rationale": "Records issue-terminal handoff evidence and may close the collab without reviewer seal state."
+    },
+    {
       "route": "rewrite execution",
       "capabilityTier": "execution",
       "effortTier": "medium",

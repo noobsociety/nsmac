@@ -14,7 +14,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 root = Path(sys.argv[1]).resolve()
+source_root = Path(__file__).resolve().parents[2]
 commands_dir = root / "commands"
+validate_schema_for_root = root == source_root
 
 
 @dataclass(frozen=True)
@@ -23,7 +25,12 @@ class FlagBlock:
     scope: str
     path: Path
     line: int
+    fields: dict[str, str]
+    eligibility: str | None
+    guard_class: str | None
+    ineligibility_reason: str | None
     override: str | None
+    validate_schema: bool
 
     @property
     def field(self) -> str:
@@ -47,6 +54,7 @@ def parse_route_flags(path: Path) -> list[FlagBlock]:
     if scope is None:
         return []
     lines = path.read_text().splitlines()
+    validate_schema = validate_schema_for_root and any(line.startswith("**Slash:**") for line in lines)
     blocks: list[FlagBlock] = []
     in_block = False
     start_line = 0
@@ -67,7 +75,12 @@ def parse_route_flags(path: Path) -> list[FlagBlock]:
                         scope=scope,
                         path=path,
                         line=start_line,
+                        fields=dict(fields),
+                        eligibility=fields.get("eligibility"),
+                        guard_class=fields.get("guard-class"),
+                        ineligibility_reason=fields.get("ineligibility-reason"),
                         override=fields.get("override"),
+                        validate_schema=validate_schema,
                     )
                 )
             in_block = False
@@ -76,6 +89,24 @@ def parse_route_flags(path: Path) -> list[FlagBlock]:
             key, value = line.split(":", 1)
             fields[key.strip()] = value.strip()
     return blocks
+
+
+ELIGIBLE_GUARD_CLASSES = {"hard-abort", "gated-overwrite", "recovery-only"}
+INELIGIBLE_GUARD_CLASSES = {
+    "registry-integrity",
+    "lifecycle-gate",
+    "role-gate",
+    "schema-validation",
+    "unreadable-context",
+    "destructive-delete",
+}
+ALLOWED_FIELDS = {
+    "flag",
+    "eligibility",
+    "guard-class",
+    "ineligibility-reason",
+    "override",
+}
 
 
 def valid_override(text: str | None, parent: str) -> bool:
@@ -113,13 +144,55 @@ system_flags = {block.flag: block for block in blocks_by_scope["system"]}
 namespace_flags: dict[str, dict[str, FlagBlock]] = {}
 command_flags: dict[tuple[str, str], dict[str, FlagBlock]] = {}
 
+
+def report_schema(block: FlagBlock, message: str) -> None:
+    global failures
+    print("ERROR: malformed route-flag block", file=sys.stderr)
+    print(f"  field: {block.field}", file=sys.stderr)
+    print(f"  reason: {message}", file=sys.stderr)
+    failures += 1
+
+
+def validate_block_schema(block: FlagBlock) -> None:
+    unknown = sorted(set(block.fields) - ALLOWED_FIELDS)
+    if unknown:
+        report_schema(block, f"unknown field(s): {', '.join(unknown)}")
+    if block.eligibility not in {"eligible", "ineligible"}:
+        report_schema(block, "eligibility must be eligible or ineligible")
+        return
+    if not block.guard_class:
+        report_schema(block, "guard-class is required")
+        return
+    if block.eligibility == "eligible":
+        if block.guard_class not in ELIGIBLE_GUARD_CLASSES:
+            report_schema(block, f"eligible guard-class is not allowed: {block.guard_class}")
+        if block.ineligibility_reason:
+            report_schema(block, "eligible blocks must not declare ineligibility-reason")
+    if block.eligibility == "ineligible":
+        if block.guard_class not in INELIGIBLE_GUARD_CLASSES:
+            report_schema(block, f"ineligible guard-class is not allowed: {block.guard_class}")
+        if not block.ineligibility_reason or not block.ineligibility_reason.strip():
+            report_schema(block, "ineligibility-reason is required when eligibility is ineligible")
+
+
+for scope_blocks in blocks_by_scope.values():
+    for block in scope_blocks:
+        if block.validate_schema:
+            validate_block_schema(block)
+
 for block in blocks_by_scope["namespace"]:
     ns = block.path.relative_to(commands_dir).parts[0]
-    namespace_flags.setdefault(ns, {})[block.flag] = block
+    route_flags = namespace_flags.setdefault(ns, {})
+    if block.flag in route_flags:
+        report_schema(block, f"duplicate route-flag for {block.flag} in route")
+    route_flags[block.flag] = block
 
 for block in blocks_by_scope["command"]:
     ns, cmd, _ = block.path.relative_to(commands_dir).parts
-    command_flags.setdefault((ns, cmd), {})[block.flag] = block
+    route_flags = command_flags.setdefault((ns, cmd), {})
+    if block.flag in route_flags:
+        report_schema(block, f"duplicate route-flag for {block.flag} in route")
+    route_flags[block.flag] = block
 
 
 def report_missing(narrow: FlagBlock, broad_scope: str) -> None:

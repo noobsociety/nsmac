@@ -82,5 +82,3 @@ ERROR: unresolved inherited flag origin for flag '<name>' at <narrow-scope> scop
 ## Implementation Target
 
 `platform/tooling/audit-flag-scope.sh`
-
-The validator is listed as a step in the restructure pilot sequence and must pass before any bulk namespace moves begin.

@@ -40,6 +40,10 @@ Files under `generated/` are produced by scripts in `platform/tooling/`. Edit th
 
 The state root is excluded from git — it is never source, never deployed, and never committed. It is the durable runtime side of the collab system: what the registry writes, agents read, and seals are computed against.
 
+## Prerequisites
+
+Before running the tooling, ensure the host satisfies [`platform/standards/runtime-contract.md`](platform/standards/runtime-contract.md): Python ≥ 3.9, bash ≥ 3.2, `git` and `python3` on `$PATH`, and stdlib-only Python tooling (no third-party packages).
+
 ## Setup
 
 Run `platform/tooling/install-git-hooks.sh` to install pre-commit and pre-push hooks that run the full test suite before history moves. Pass `--no-verify` to `git commit` or `git push` to skip the hooks. Force-push blocking and deletion blocking on `main` are manual GitHub repository settings, not a source patch.
@@ -50,6 +54,6 @@ Run `platform/tooling/audit.sh` to verify the framework surface. The audit exits
 
 - Runtime paths (`$HOME/.collabs/<projectId>/`, `.claude/`, `projects/`) are excluded from git
 - No accidental untracked payload
-- Every tracked file is reachable from an adapter, core, or catalog
+- Every tracked file is reachable from an adapter, platform document, or catalog entry
 - Framework-generated output is distinguishable from generated output
 - Reference graph has no broken links

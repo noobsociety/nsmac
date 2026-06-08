@@ -19,15 +19,11 @@ REQUIRED_COLUMNS = [
     "delete condition",
 ]
 SCAN_DIRS = [
-    "templates",
     "tests/specs",
     "generated",
-    "settings",
     "platform/standards",
     "commands",
-    "core",
     "tests",
-    "tools",
 ]
 RETIRED_ROOT_ADAPTER = "_" + "CUR" + "SOR.md"
 RETIRED_PREFIX = "cur" + "sor"

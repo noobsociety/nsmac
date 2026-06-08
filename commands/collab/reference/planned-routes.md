@@ -13,7 +13,7 @@
 
 ## Notes
 
-Spec for `commands/collab/engine/planned_routes.py` — the planned-route prerequisite gate. This module guards against enabling routes that would change the committed workflow model (seal-terminal as default; see `REPOSITORY.md § 10`) before the required contract surface is present in the repository.
+Spec for `commands/collab/engine/planned_routes.py` — the planned-route prerequisite gate. This module guards against enabling routes that would change the committed workflow model (seal-terminal as default; see [`workflow-models.md` § Committed workflow model](workflow-models.md#committed-workflow-model); see also [`REPOSITORY.md` § Collab Workflow Models](../../../REPOSITORY.md#6-collab-workflow-models)) before the required contract surface is present in the repository.
 
 ### Public entry
 

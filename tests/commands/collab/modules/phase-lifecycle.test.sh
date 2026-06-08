@@ -33,32 +33,32 @@ assert p.discussion_turn_notice(entry, ['pe'])['compactBeforeNextCommand'] is Tr
 assert p.discussion_turn_notice(entry, ['mod']) is None
 assert p.discussion_turn_notice({'activePhase': 'Audit', 'moderatorRole': 'mod'}, ['pe']) is None
 
-terminal = p.terminal_notice('closed')
-assert terminal['notice'] == 'clear'
+lifecycle = p.lifecycle_status_notice('closed')
+assert lifecycle['notice'] == 'clear'
 assert p.notice_message({'message': ' custom '}) == 'custom'
 assert p.notice_message({'notice': 'fallback'}) == 'fallback'
 assert p.notice_message({}) == 'Lifecycle notice emitted.'
 
 buffer = io.StringIO()
 with contextlib.redirect_stdout(buffer):
-    p.print_notice_diagnostic(terminal, emit_json=False)
+    p.print_notice_diagnostic(lifecycle, emit_json=False)
 assert buffer.getvalue().startswith('NOTICE: Run /clear')
 
 buffer = io.StringIO()
 with contextlib.redirect_stdout(buffer):
-    p.print_notice_diagnostic(terminal, emit_json=True)
+    p.print_notice_diagnostic(lifecycle, emit_json=True)
 assert json.loads(buffer.getvalue())['status'] == 'closed'
 
 buffer = io.StringIO()
 with contextlib.redirect_stdout(buffer):
-    p.print_lifecycle_diagnostic({'phaseState': 'Completion', 'notice': terminal}, emit_json=True)
+    p.print_lifecycle_diagnostic({'phaseState': 'Completion', 'notice': lifecycle}, emit_json=True)
 lines = buffer.getvalue().splitlines()
 assert lines[0] == 'PHASE: Completion'
 assert json.loads(lines[-1])['phaseState'] == 'Completion'
 
 buffer = io.StringIO()
 with contextlib.redirect_stdout(buffer):
-    p.print_phase_result('Completion', terminal, emit_json=False)
+    p.print_phase_result('Completion', lifecycle, emit_json=False)
 assert buffer.getvalue().splitlines()[0] == 'Completion'
 
 print('OK: phase_lifecycle module is directly exercised')

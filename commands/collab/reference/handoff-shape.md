@@ -49,6 +49,10 @@ When `execute-spawn` rejects a returned Completion patch or the execution record
 1. **Re-Handoff:** the assigned role issues a revised Handoff via `/collab speak` in a new or restored Handoff phase.
 2. **`/collab rewrite execution`:** when the patch is otherwise valid and scope widening is the only issue, use `/collab rewrite execution` to revise the execution record.
 
+**Reopen and narrowed scope**
+
+When a collab is reopened after a non-success verdict and the coverage carry-forward fix is in place, the coverage system preserves prior broad coverage at reopen time. A contributor whose scope narrows on the reopen round does not need to re-declare prior broader chartered paths through the `writeScope` fence; those paths are carried forward by the reopen snapshot, not by re-submission. `writeScope` fences the Completion execution write — it does not determine what paths count as covered at seal; carry-forward coverage is contributed by the reopen snapshot, which is separate from the per-round execution record. If carry-forward behavior is absent (registries predating 2026-06-08), the contributor must re-declare all required paths to avoid a CHARTERED-DELIVERABLE-MISSING failure at seal.
+
 **Grandfather policy**
 
 Existing closed collabs are not migrated. `writeScope` and `validationCommands` are required only for Handoff contributions appended after this schema is implemented.

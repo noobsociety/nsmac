@@ -169,6 +169,18 @@ Post-write advisories in order:
 
 Exit 0 on success. Exit 1 when the collab is closed, the role is not a participant, unchecked assigned Action Plan items remain (for `completed` status), or touched paths fall outside the role's declared `writeScope`.
 
+### `export-issues`
+
+Post-write advisories in order:
+
+1. `NEXT: <state guidance>`
+2. `EFFORT: <phase> · <role> · <level> · <scale phrase>`
+3. `EFFICIENCY:` (only when the export closes the record)
+4. `<status>` — registry status after the write
+5. Terminal close notice JSON when the export closes the record: `{"notice": "clear", "status": "closed", "message": "..."}`
+
+Exit 0 on success. Exit 1 when the collab is closed, the active phase is not `Completion`, the terminal is not `issue`, the caller is not the platform-engineer role, assigned execution remains pending, or the evidence file is unreadable or malformed.
+
 ## Abort families
 
 Named abort classes that close spec-to-helper gaps not covered by the per-command required-lines tables above. Each entry names the logical module, the triggering condition, and the exact exit-1 message or protocol constraint.

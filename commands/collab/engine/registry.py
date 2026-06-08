@@ -77,7 +77,6 @@ from commands.collab.engine.registry_constants import (
     MODERATOR_ONLY_ACTIONS,
     ONE_SPEAK_PHASES,
     PHASES,
-    RESERVED_ISSUE_TERMINAL_MESSAGE,
     REGISTRY_EVENT_DIR,
     REGISTRY_EVENT_IGNORED_ROOT_KEYS,
     REGISTRY_EVENT_SCHEMA,
@@ -99,6 +98,7 @@ from commands.collab.engine.digests import (
     active_execution_entries,
     content_digest_for_touched_paths,
     details_block_end,
+    execution_coverage_entries,
     execution_identity,
     execution_signature,
     full_body_signature_for_transcript,
@@ -202,12 +202,12 @@ from commands.collab.engine.participants import (
 )
 from commands.collab.engine.phase_lifecycle import (
     discussion_turn_notice,
+    lifecycle_status_notice,
     next_phase_name,
     notice_message,
     print_lifecycle_diagnostic,
     print_notice_diagnostic,
     print_phase_result,
-    terminal_notice,
     transition_notice,
 )
 from commands.collab.engine.registry_io import (
@@ -678,6 +678,30 @@ def completed_execution_unchecked_items(entry: dict, transcript: str) -> list[di
     return violations
 
 
+def terminal_value(entry: dict) -> str:
+    terminal = entry.get('terminal')
+    if isinstance(terminal, str) and terminal in ALLOWED_TERMINALS:
+        return terminal
+    return DEFAULT_TERMINAL
+
+
+def seal_terminal(entry: dict) -> bool:
+    return terminal_value(entry) == 'seal'
+
+
+def issue_terminal(entry: dict) -> bool:
+    return terminal_value(entry) == 'issue'
+
+
+def exported_issue_handoff_present(entry: dict) -> bool:
+    exported = entry.get('exportedIssues')
+    return (
+        isinstance(exported, dict)
+        and isinstance(exported.get('issues'), list)
+        and bool(exported.get('issues'))
+    )
+
+
 def invalidate_verification_seal(entry: dict, reason: str) -> None:
     original_reviewer_backed = _seal_verification.reviewer_backed
     original_incomplete = _seal_verification.participant_verification_incomplete
@@ -1130,6 +1154,38 @@ def validate_registry(data: dict, path: Path | None = None) -> None:
                     die(f'{source}: verificationSeal.followUp.evidence must be an object')
                 if not isinstance(failure_category, str) or not failure_category.strip():
                     die(f'{source}: verificationSeal.followUp.failureCategory must be a non-empty string')
+
+        exported_issues = entry.get('exportedIssues')
+        if exported_issues is not None:
+            if not isinstance(exported_issues, dict):
+                die(f'{source}: exportedIssues must be an object when present')
+            exported_at = exported_issues.get('exportedAt')
+            exported_by = exported_issues.get('exportedBy')
+            if not isinstance(exported_at, str) or not exported_at.strip():
+                die(f'{source}: exportedIssues.exportedAt must be a non-empty string')
+            if not isinstance(exported_by, str) or not exported_by.strip():
+                die(f'{source}: exportedIssues.exportedBy must be a non-empty string')
+            if exported_by not in participant_role_keys:
+                die(f'{source}: exportedIssues.exportedBy must already be a participant')
+            issues = exported_issues.get('issues')
+            if not isinstance(issues, list) or not issues:
+                die(f'{source}: exportedIssues.issues must be a non-empty list')
+            for issue in issues:
+                if not isinstance(issue, dict):
+                    die(f'{source}: exportedIssues.issues entries must be objects')
+                title = issue.get('title')
+                if not isinstance(title, str) or not title.strip():
+                    die(f'{source}: exportedIssues issue title must be a non-empty string')
+                for optional in ('url', 'body', 'owner', 'delivery'):
+                    value = issue.get(optional)
+                    if value is not None and (not isinstance(value, str) or not value.strip()):
+                        die(f'{source}: exportedIssues issue {optional} must be a non-empty string when present')
+                requires = issue.get('requires')
+                if requires is not None:
+                    if not isinstance(requires, list) or any(
+                        not isinstance(item, str) or not item.strip() for item in requires
+                    ):
+                        die(f'{source}: exportedIssues issue requires must be a list of non-empty strings')
 
         verdict = entry.get('verdict')
         if verdict is not None:
@@ -1701,7 +1757,7 @@ def apply_speak_lifecycle_to_entry(
     entry['activePhase'] = next_phase
     if next_phase in MOD_EXCLUDED_PHASES:
         remove_moderator_from_turn_order(entry, order)
-    if next_phase == 'Completion':
+    if next_phase == 'Completion' and seal_terminal(entry):
         initialize_completion_state(entry, 'execution', reset_rounds=True)
     return True
 
@@ -1727,6 +1783,8 @@ def close_eligible_after_execution(entry: dict, assigned_roles: list[str]) -> bo
     completed = all(execution.get(role, {}).get('status') == 'completed' for role in roles)
     if not completed:
         return False
+    if issue_terminal(entry):
+        return exported_issue_handoff_present(entry)
     if reviewer_backed(entry):
         seal = entry.get('verificationSeal')
         return isinstance(seal, dict) and not seal.get('stale') and successful_verdict(entry)
@@ -1742,6 +1800,17 @@ def next_line_after_execution(entry: dict, assigned_roles: list[str]) -> str:
             continue
         if execution.get(assigned_role, {}).get('status') != 'completed':
             return f'NEXT: Run /collab run plan for role {assigned_role}.'
+    if issue_terminal(entry):
+        if not exported_issue_handoff_present(entry):
+            export_role = 'pe' if has_participant(entry, 'pe') else next(
+                (
+                    role for role in effective_turn_order(entry)
+                    if role != entry['moderatorRole']
+                ),
+                'pe',
+            )
+            return f'NEXT: Run /collab export-issues for role {export_role}.'
+        return next_line_for_state(entry)
     if reviewer_backed(entry):
         if participant_verification_enabled(entry):
             pending_role = first_pending_participant_verification_role(entry)
@@ -2819,10 +2888,16 @@ def record_execution(
             execution_state['touchedPaths'] = normalized_touched_paths
         previous_signature = execution_signature(entry)
         entry.setdefault('execution', {})[role] = execution_state
-        if reviewer_backed(entry) and previous_signature != execution_signature(entry):
+        if seal_terminal(entry) and reviewer_backed(entry) and previous_signature != execution_signature(entry):
             invalidate_verification_seal(entry, f'execution changed for {role}')
         closed = False
-        if reviewer_backed(entry) and entry['activePhase'] == 'Completion':
+        if issue_terminal(entry) and entry['activePhase'] == 'Completion':
+            if auto_close and close_eligible_after_execution(entry, assigned_roles):
+                entry['status'] = 'closed'
+                closed = True
+                if data.get('activeCollabId') == entry['id']:
+                    data['activeCollabId'] = None
+        elif seal_terminal(entry) and reviewer_backed(entry) and entry['activePhase'] == 'Completion':
             if close_eligible_after_execution(entry, assigned_roles):
                 if auto_close:
                     entry['status'] = 'closed'
@@ -2847,7 +2922,7 @@ def record_execution(
             if data.get('activeCollabId') == entry['id']:
                 data['activeCollabId'] = None
 
-        notice = terminal_notice('closed') if closed else None
+        notice = lifecycle_status_notice('closed') if closed else None
         next_line = next_line_after_execution(entry, assigned_roles)
         transcript_path = Path(entry['transcriptPath'])
         if closed and transcript_path.exists():
@@ -2863,6 +2938,101 @@ def record_execution(
         else:
             save_registry(path, data)
     print_post_action_advisories(entry, role, 'Completion', notice, next_line)
+    print(entry['status'])
+    print_notice_diagnostic(notice, emit_json)
+    return 0
+
+
+def normalize_issue_export_evidence(evidence_path: Path) -> list[dict]:
+    try:
+        raw = json.loads(evidence_path.read_text())
+    except FileNotFoundError:
+        die(f'issue export evidence file missing: {evidence_path}')
+    except json.JSONDecodeError as exc:
+        die(f'issue export evidence file invalid JSON: {evidence_path}: {exc}')
+    if not isinstance(raw, dict):
+        die('issue export evidence must be a JSON object')
+    issues = raw.get('issues')
+    if not isinstance(issues, list) or not issues:
+        die('issue export evidence requires a non-empty issues list')
+    normalized: list[dict] = []
+    for index, issue in enumerate(issues, start=1):
+        if not isinstance(issue, dict):
+            die(f'issue export evidence issue {index} must be an object')
+        title = issue.get('title')
+        if not isinstance(title, str) or not title.strip():
+            die(f'issue export evidence issue {index} requires title')
+        item = {'title': title.strip()}
+        for optional in ('url', 'body', 'owner', 'delivery'):
+            value = issue.get(optional)
+            if value is None:
+                continue
+            if not isinstance(value, str) or not value.strip():
+                die(f'issue export evidence issue {index} {optional} must be a non-empty string')
+            item[optional] = value.strip()
+        requires = issue.get('requires')
+        if requires is not None:
+            if not isinstance(requires, list) or any(
+                not isinstance(value, str) or not value.strip() for value in requires
+            ):
+                die(f'issue export evidence issue {index} requires must be a list of non-empty strings')
+            item['requires'] = [value.strip() for value in requires]
+        normalized.append(item)
+    return normalized
+
+
+def export_issues(
+    path: Path,
+    target: str,
+    role: str,
+    evidence_file: Path,
+    timestamp: str | None = None,
+    emit_json: bool = False,
+    caller_role: str | None = None,
+) -> int:
+    issues = normalize_issue_export_evidence(evidence_file)
+    with registry_lock(path):
+        data = load_registry(path)
+        entry = resolve_collab(data, target)
+        assert_caller_role(entry, caller_role, 'export-issues', role)
+        if entry['status'] in {'closed', 'archived'}:
+            die('record is closed')
+        if entry['activePhase'] != 'Completion':
+            die('/collab export-issues is valid only in Completion')
+        if not issue_terminal(entry):
+            die('/collab export-issues requires terminal issue')
+        if role != 'pe':
+            die('issue export must be authored by platform engineer role pe')
+        if not has_participant(entry, role):
+            die(f'issue export role must already be a participant: {role}')
+        if not all_execution_completed(entry):
+            die('issue export blocked: pending execution role(s) remain')
+        entry['exportedIssues'] = {
+            'exportedAt': timestamp or dt.datetime.now().astimezone().isoformat(timespec='seconds'),
+            'exportedBy': role,
+            'issues': issues,
+        }
+        closed = close_eligible_after_execution(entry, effective_turn_order(entry))
+        if closed:
+            entry['status'] = 'closed'
+            if data.get('activeCollabId') == entry['id']:
+                data['activeCollabId'] = None
+        notice = lifecycle_status_notice('closed') if closed else None
+        transcript_path = Path(entry['transcriptPath'])
+        if closed and transcript_path.exists():
+            transcript = transcript_path.read_text()
+            rendered, header_changed = render_managed_header_text(transcript, entry, DEFAULT_ROLES_DIR)
+            if completion_summary_empty(rendered):
+                rendered = append_completion_summary(
+                    rendered,
+                    default_close_summary(entry),
+                    summary_date_from_timestamp(entry['exportedIssues']['exportedAt']),
+                )
+            print_header_overwrite(header_changed)
+            commit_registry_and_transcript(path, data, transcript_path, rendered)
+        else:
+            save_registry(path, data)
+    print_post_action_advisories(entry, role, 'Completion', notice, next_line_for_state(entry))
     print(entry['status'])
     print_notice_diagnostic(notice, emit_json)
     return 0
@@ -3043,6 +3213,12 @@ def reopen_collab(
         transcript = transcript_path.read_text()
         findings_anchor = latest_reviewer_findings_anchor(transcript)
         derived_turn_order = assert_turn_order_not_drifted(entry, phase)
+        coverage_entries = execution_coverage_entries(entry)
+        if coverage_entries:
+            entry['reopenCoverage'] = {
+                'createdAt': dt.datetime.now().astimezone().isoformat(timespec='seconds'),
+                'executionEntries': coverage_entries,
+            }
         entry['status'] = 'open'
         entry['archived'] = False
         entry['activePhase'] = phase
@@ -3305,8 +3481,6 @@ def init_collab(
     opener: Callable[[str], bool] = webbrowser.open_new_tab,
 ) -> int:
     title, agent_id, reviewer, open_requested, participant_verification, terminal, work_repo_raw = parse_init_tokens(tokens)
-    if terminal == 'issue':
-        die(RESERVED_ISSUE_TERMINAL_MESSAGE)
     with registry_lock(path):
         data = load_registry_or_bootstrap(path)
         date = dt.date.today().isoformat()
@@ -3357,7 +3531,7 @@ def init_collab(
             entry['reviewerRole'] = reviewer
             entry['reviewerMode'] = DEFAULT_REVIEWER_MODE
             entry['reviewerOptionalPhases'] = list(DEFAULT_REVIEWER_OPTIONAL_PHASES)
-        if participant_verification:
+        if participant_verification and terminal == 'seal':
             entry['verification'] = {
                 'rounds': 0,
                 'cap': DEFAULT_VERIFICATION_CAP,
@@ -3487,7 +3661,7 @@ def archive_collab(
             commit_registry_and_transcript(path, data, transcript_path, rendered)
         else:
             save_registry(path, data)
-    notice = terminal_notice('archived')
+    notice = lifecycle_status_notice('archived')
     print_post_action_advisories(entry, None, None, notice, next_line_for_state(entry))
     print(entry['id'])
     print_notice_diagnostic(notice, emit_json)
@@ -3519,7 +3693,12 @@ def close_collab(
                 'close blocked: completed execution has unchecked assigned Action Plan item(s): '
                 f'{details}; loop target: Handoff for missing execution evidence'
             )
-        if reviewer_backed(entry) and entry['activePhase'] == 'Completion':
+        if issue_terminal(entry) and entry['activePhase'] == 'Completion':
+            if not all_execution_completed(entry):
+                die('close blocked: issue terminal requires completed execution')
+            if not exported_issue_handoff_present(entry):
+                die('close blocked: issue terminal requires exported issue handoff evidence')
+        elif seal_terminal(entry) and reviewer_backed(entry) and entry['activePhase'] == 'Completion':
             seal = entry.get('verificationSeal')
             if not isinstance(seal, dict):
                 die('close blocked: reviewer-backed Completion requires verificationSeal')
@@ -3535,7 +3714,7 @@ def close_collab(
         rendered, header_changed = render_managed_header_text(transcript, entry, DEFAULT_ROLES_DIR)
         print_header_overwrite(header_changed)
         commit_registry_and_transcript(path, data, transcript_path, rendered)
-    notice = terminal_notice('closed')
+    notice = lifecycle_status_notice('closed')
     print_post_action_advisories(entry, None, None, notice, next_line_for_state(entry))
     print(entry['id'])
     print_notice_diagnostic(notice, emit_json)
@@ -3930,6 +4109,14 @@ def build_parser() -> argparse.ArgumentParser:
     execution_parser.add_argument('--json', action='store_true')
     execution_parser.add_argument('--caller-role')
 
+    export_issues_parser = subparsers.add_parser('export-issues')
+    export_issues_parser.add_argument('target')
+    export_issues_parser.add_argument('role')
+    export_issues_parser.add_argument('--evidence-file', required=True)
+    export_issues_parser.add_argument('--timestamp')
+    export_issues_parser.add_argument('--json', action='store_true')
+    export_issues_parser.add_argument('--caller-role')
+
     repair_execution_parser = subparsers.add_parser('repair-execution-provenance')
     repair_execution_parser.add_argument('target')
     repair_execution_parser.add_argument('role')
@@ -4056,7 +4243,7 @@ def main(argv: list[str]) -> int:
                 if item.startswith('--'):
                     die(f'unknown flag: {item}')
         parser.error(f'unrecognized arguments: {" ".join(unknown_args)}')
-    for path_arg in ('content_file', 'full_body_file', 'summary_file'):
+    for path_arg in ('content_file', 'full_body_file', 'summary_file', 'evidence_file'):
         if hasattr(args, path_arg) and getattr(args, path_arg):
             setattr(args, path_arg, str(Path(getattr(args, path_arg)).resolve()))
 
@@ -4181,6 +4368,16 @@ def main(argv: list[str]) -> int:
             args.validation_scope,
             args.touched_path,
             args.agent_id,
+            args.json,
+            args.caller_role,
+        )
+    if args.command == 'export-issues':
+        return export_issues(
+            path,
+            args.target,
+            args.role,
+            Path(args.evidence_file),
+            args.timestamp,
             args.json,
             args.caller_role,
         )
