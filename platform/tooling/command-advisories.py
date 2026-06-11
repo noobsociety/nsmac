@@ -264,7 +264,7 @@ def validate_advisory(
     if role is not None:
         role = validate_string(role, "role", path, index)
         if role not in role_keys:
-            raise AdvisoryError(f"{path}: advisory {index} role override is not a known role: {role}")
+            raise AdvisoryError(f"{path}: advisory {index} role override is not a known joinable role: {role}")
 
     rationale = validate_string(raw.get("rationale"), "rationale", path, index)
     recommendation = raw.get("recommendation")

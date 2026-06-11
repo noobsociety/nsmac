@@ -83,7 +83,29 @@
             "type": "array",
             "items": {"enum": ["Audit", "Discussion", "Conclusion", "Action Plan", "Handoff", "Completion"]}
           },
-          "transcriptPath": {"type": "string"},
+          "transcriptPath": {
+            "type": "string",
+            "description": "Moderator project transcript path (records/<slug>.md). Written exclusively by the aggregate subcommand; read by the moderator only. Agents and lifecycle operations must not write here directly."
+          },
+          "aggregate": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Optional aggregate subcommand metadata. Runtime defaults derive sibling paths from transcriptPath when these fields are absent.",
+            "properties": {
+              "contributionStorePath": {
+                "type": "string",
+                "description": "Contribution-store path used as aggregate input, defaulting to records/<slug>-contributions.json."
+              },
+              "moderatorProjectTranscriptPath": {
+                "type": "string",
+                "description": "Moderator project transcript output path for the aggregate subcommand (moderator-read only). Defaults to transcriptPath. Lifecycle operations must not write to this path."
+              },
+              "rawTranscriptPath": {
+                "type": "string",
+                "description": "Raw transcript path (records/<slug>-raw.md). Written by lifecycle operations (speak, advance, reopen); read by agents and participants. The aggregate subcommand must not write here. Defaults to records/<slug>-raw.md."
+              }
+            }
+          },
           "archived": {"type": "boolean"},
           "execution": {
             "type": "object",

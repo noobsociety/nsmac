@@ -67,7 +67,7 @@ require_dir() {
 
 is_source_path() {
   case "$1" in
-    .gitignore|.collab.json|CLAUDE.md|AGENTS.md|README.md|REPOSITORY.md|registry.schema.json) return 0 ;;
+    .gitignore|.collab.json|CLAUDE.md|AGENTS.md|GEMINI.md|README.md|REPOSITORY.md|registry.schema.json) return 0 ;;
     .github/*) return 0 ;;
     platform/standards/*|platform/data/*|platform/tooling/*|generated/*|platform/templates/*|tests/specs/*|commands/*|tests/*) return 0 ;;
     *) return 1 ;;
@@ -77,6 +77,7 @@ is_source_path() {
 check_required_surface() {
   require_file CLAUDE.md
   require_file AGENTS.md
+  require_file GEMINI.md
   require_file README.md
   require_file .collab.json
   require_file commands/commands.md
@@ -89,6 +90,7 @@ check_required_surface() {
 
 check_adapters() {
   grep -Fq 'AGENTS.md' CLAUDE.md || fail "CLAUDE.md does not route to AGENTS.md"
+  grep -Fq 'AGENTS.md' GEMINI.md || fail "GEMINI.md does not route to AGENTS.md"
   grep -Fq 'commands/commands.md' AGENTS.md || fail "AGENTS.md does not route to commands/commands.md"
   ok "adapter entry surfaces are named"
 }

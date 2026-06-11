@@ -18,6 +18,7 @@ TARGET="$RUN_DATE-$SLUG"
 "$ROOT/commands/collab/engine/registry.py" join-participants "$TARGET" pa --agent-id opus >/dev/null
 "$ROOT/commands/collab/engine/registry.py" set "$TARGET" turn-order "tw pe" --caller-role mod >/dev/null
 "$ROOT/commands/collab/engine/registry.py" set "$TARGET" active-phase Completion --force --caller-role mod >/dev/null
+bind_lib_work_repo "$TARGET"
 REGISTRY="$(registry_path)"
 
 # Seed handoff write scopes for both assigned roles.

@@ -32,6 +32,7 @@ reg join-participants "$TARGET" pe --agent-id gpt >/dev/null
 reg join-participants "$TARGET" pa --agent-id opus >/dev/null
 reg set "$TARGET" turn-order pe --caller-role mod >/dev/null
 reg set "$TARGET" active-phase Completion --force --caller-role mod >/dev/null
+bind_lib_work_repo "$TARGET"
 REGISTRY="$(registry_path)"
 
 python3 - "$SLUG" "$REGISTRY" "$PE_PATH" <<'PY'

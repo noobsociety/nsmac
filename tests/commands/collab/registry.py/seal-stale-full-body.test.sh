@@ -37,7 +37,7 @@ from pathlib import Path
 registry = Path(sys.argv[1])
 data = json.loads(registry.read_text())
 entry = next(item for item in data['collabs'] if item['slug'] == 'seal-stale-full-body')
-transcript_path = registry.parent / entry['transcriptPath']
+transcript_path = registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")
 text = transcript_path.read_text()
 assert 'Stable excerpt.' in text
 transcript_path.write_text(text.replace('Original full body bytes.', 'Changed full body bytes.'))

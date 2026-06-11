@@ -28,9 +28,38 @@ run_case() {
   "$ROOT/commands/collab/engine/registry.py" join-participants "$target" pa --agent-id opus >/dev/null
   "$ROOT/commands/collab/engine/registry.py" set "$target" turn-order "tw pe" --caller-role mod >/dev/null
   "$ROOT/commands/collab/engine/registry.py" set "$target" active-phase Completion --force --caller-role mod >/dev/null
+  python3 - "$target" "$("$ROOT/commands/collab/engine/registry.py" registry-path)" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+target = sys.argv[1]
+registry = Path(sys.argv[2])
+data = json.loads(registry.read_text())
+entry = next(item for item in data['collabs'] if item['id'] == target)
+entry['completion'] = {'subState': 'execution'}
+entry.setdefault('verification', {})['subState'] = 'participant'
+registry.write_text(json.dumps(data, indent=2) + '\n')
+PY
+
+  if [[ "$participant_verification" == "true" ]]; then
+    state="$("$ROOT/commands/collab/engine/registry.py" speak-state "$target" pe --resume)"
+    STATE="$state" python3 - <<'PY'
+import json
+import os
+
+state = json.loads(os.environ['STATE'])
+assert state['completionSubState'] == 'execution', state
+assert state['expectedRole'] == 'tw', state
+assert state['allowedRoles'] == ['tw', 'pe'], state
+assert state['readyToWrite'] is True, state
+assert state['policyBlockers'] == [], state
+PY
+  fi
 
   output="$("$ROOT/commands/collab/engine/registry.py" execution "$target" tw completed "2026-05-17T12:00:00+02:00" \
     --assigned-role tw \
+    --assigned-role pe \
     --validation-result passed \
     --validation-scope scoped \
     --touched-path commands/collab/engine/registry.py \
@@ -51,6 +80,21 @@ run_case() {
   if [[ "$output" == *"NEXT: Run /collab participant verify"* ]]; then
     printf 'FAIL: execution NEXT skipped pending execution and named participant verification for %s\n%s\n' "$slug" "$output" >&2
     exit 1
+  fi
+
+  if [[ "$participant_verification" == "true" ]]; then
+    state="$("$ROOT/commands/collab/engine/registry.py" speak-state "$target" pe --resume)"
+    STATE="$state" python3 - <<'PY'
+import json
+import os
+
+state = json.loads(os.environ['STATE'])
+assert state['completionSubState'] == 'execution', state
+assert state['expectedRole'] == 'pe', state
+assert state['allowedRoles'] == ['tw', 'pe'], state
+assert state['readyToWrite'] is True, state
+assert state['policyBlockers'] == [], state
+PY
   fi
 }
 

@@ -42,7 +42,7 @@ COMMAND_SYSTEM_DIR = ROOT / 'platform' / 'tooling'
 if str(COMMAND_SYSTEM_DIR) not in sys.path:
     sys.path.insert(0, str(COMMAND_SYSTEM_DIR))
 
-from roles import load_role, participant_row  # noqa: E402
+from roles import load_projector, load_role, participant_row, projectors_dir_for_roles  # noqa: E402
 
 from commands.collab.engine.errors import die  # noqa: E402
 from commands.collab.engine.handoff_shape import render_content_for_transcript, validate_handoff_state  # noqa: E402
@@ -73,8 +73,97 @@ from commands.collab.engine.transcript_readers import (  # noqa: E402
 ANCHOR_RE = re.compile(r'^<a name="(?P<anchor>[A-Za-z0-9_-]+)"></a>$')
 DETAILS_CONTROL_LINE_RE = re.compile(r'^</?details(?:\s+[^>]*)?\s*>$')
 PROHIBITION_SEPARATOR = ' \u00b7 '
-PROJECTION_STANCES = {'converges', 'dissents', 'qualifies'}
+AUTHOR_DECLARED_STANCES = {'converges', 'dissents', 'qualifies'}
+MISSING_PROJECTION_STANCE = 'missing-stance'
+PROJECTION_STANCES = AUTHOR_DECLARED_STANCES | {MISSING_PROJECTION_STANCE}
 PROJECTION_FOOTER_PREFIX = '<!-- collab:projection-source '
+STANCE_DECLARATION_RE = re.compile(r'^\s*STANCE:\s*(converges|dissents|qualifies)\s*$', re.IGNORECASE)
+TIMESTAMP_WRAPPER_RE = re.compile(r'^\s*<p><em>.*</em></p>\s*$')
+CONTENT_ONLY_GUARD_RE = re.compile(r'^\s*<!--\s*collab:content-only;\s*do-not-execute\s*-->\s*$')
+EFFORT_OVERRIDE_LINE_RE = re.compile(r'^\s*EFFORT OVERRIDE:\s*.+$', re.IGNORECASE)
+EFFORT_OVERRIDE_COMMENT_RE = re.compile(
+    r'^\s*<!--\s*collab:effort-override b64:[A-Za-z0-9_-]+={0,2}\s*-->\s*$'
+)
+STANCE_COMMENT_RE = re.compile(r'^\s*<!--\s*collab:stance\s+(?:converges|dissents|qualifies)\s*-->\s*$', re.IGNORECASE)
+DIRECTIVE_DECLARATION_RE = re.compile(r'^\s*\*\*Directive:\*\*\s+"[^"]+"\s*$', re.IGNORECASE)
+DIRECTIVE_ACTION_PLAN_RE = re.compile(
+    r'^\s*\*\*Action Plan:\s*(?:satisfies|partially satisfies|defers)\*\*.*$',
+    re.IGNORECASE,
+)
+DIRECTIVE_GAP_COMMENT_RE = re.compile(r'^\s*<!--\s*collab:directive-gap\b.*-->\s*$', re.IGNORECASE)
+INLINE_TIMESTAMP_WRAPPER_RE = re.compile(r'\s*(?:<p><em>.*?</em></p>|&lt;p&gt;&lt;em&gt;.*?&lt;/em&gt;&lt;/p&gt;)\s*')
+INLINE_CONTENT_ONLY_GUARD_RE = re.compile(
+    r'\s*(?:<!--\s*collab:content-only;\s*do-not-execute\s*-->|'
+    r'&lt;!--\s*collab:content-only;\s*do-not-execute\s*--&gt;)\s*',
+    re.IGNORECASE,
+)
+
+
+def declared_stance_for_content(content: str) -> str | None:
+    for line in content.splitlines():
+        match = STANCE_DECLARATION_RE.match(line)
+        if match:
+            return match.group(1).lower()
+    return None
+
+
+def projection_stance_for_content(content: str) -> str:
+    return declared_stance_for_content(content) or MISSING_PROJECTION_STANCE
+
+
+def is_projection_structural_scaffold_line(line: str) -> bool:
+    stripped = line.strip()
+    normalized = html.unescape(stripped)
+    return any(
+        pattern.match(normalized)
+        for pattern in (
+            TIMESTAMP_WRAPPER_RE,
+            CONTENT_ONLY_GUARD_RE,
+            EFFORT_OVERRIDE_COMMENT_RE,
+        )
+    )
+
+
+def is_projection_hidden_metadata_line(line: str) -> bool:
+    stripped = line.strip()
+    if not stripped:
+        return True
+    normalized = html.unescape(stripped)
+    return is_projection_structural_scaffold_line(stripped) or any(
+        pattern.match(normalized)
+        for pattern in (
+            STANCE_DECLARATION_RE,
+            STANCE_COMMENT_RE,
+            EFFORT_OVERRIDE_LINE_RE,
+            DIRECTIVE_DECLARATION_RE,
+            DIRECTIVE_ACTION_PLAN_RE,
+            DIRECTIVE_GAP_COMMENT_RE,
+        )
+    )
+
+
+def projection_excerpt_source(value: str) -> str:
+    cleaned = INLINE_TIMESTAMP_WRAPPER_RE.sub('\n', value)
+    cleaned = INLINE_CONTENT_ONLY_GUARD_RE.sub('\n', cleaned)
+    lines = [
+        line
+        for line in cleaned.splitlines()
+        if not is_projection_structural_scaffold_line(line)
+    ]
+    index = 0
+    while index < len(lines) and is_projection_hidden_metadata_line(lines[index]):
+        index += 1
+    return '\n'.join(lines[index:]).strip()
+
+
+def load_participant_metadata(roles_dir: Path, role: str) -> dict:
+    try:
+        return load_role(roles_dir, role)
+    except SystemExit as exc:
+        try:
+            return load_projector(projectors_dir_for_roles(roles_dir), role)
+        except SystemExit:
+            raise exc
 
 
 def section_bounds(lines: list[str], heading: str) -> tuple[int, int]:
@@ -144,6 +233,11 @@ def append_phase_block(lines: list[str], phase: str, block: list[str]) -> list[s
 
 
 def raw_transcript_path_for_entry(entry: dict) -> str:
+    aggregate = entry.get('aggregate')
+    if isinstance(aggregate, dict):
+        configured = aggregate.get('rawTranscriptPath')
+        if isinstance(configured, str) and configured.strip():
+            return configured.strip()
     transcript_path = Path(entry['transcriptPath'])
     return str(transcript_path.with_name(f'{transcript_path.stem}-raw.md'))
 
@@ -178,8 +272,8 @@ def _projection_store_record(record: dict, index: int) -> dict:
     anchor = _required_projection_field(record, 'anchor', index)
     if not re.match(r'^[A-Za-z0-9_-]+$', anchor):
         die(f'contribution store record {index} has invalid anchor: {anchor}')
-    stance = _required_projection_field(record, 'stance', index)
-    if stance not in PROJECTION_STANCES:
+    stored_stance = _required_projection_field(record, 'stance', index)
+    if stored_stance not in PROJECTION_STANCES:
         die(
             f'ABORT: stance token missing or invalid for {anchor}. '
             'Add a valid stance declaration to the source contribution before aggregating.'
@@ -194,6 +288,8 @@ def _projection_store_record(record: dict, index: int) -> dict:
     content = record.get('content')
     if content is not None and not isinstance(content, str):
         die(f'contribution store record {index} has invalid content')
+    content_source = content if isinstance(content, str) else excerpt
+    stance = declared_stance_for_content(content_source) or MISSING_PROJECTION_STANCE
     return {
         'phase': phase,
         'role': role,
@@ -234,7 +330,7 @@ def _projection_table_cell(value: str) -> str:
 
 
 def _projection_excerpt(value: str, limit: int = 220) -> str:
-    compact = re.sub(r'\s+', ' ', value).strip()
+    compact = re.sub(r'\s+', ' ', projection_excerpt_source(value)).strip()
     if len(compact) <= limit:
         return compact
     return compact[:limit - 1].rstrip() + '\u2026'
@@ -279,7 +375,7 @@ def render_moderator_project_transcript(
             source = f'[{anchor}]({raw_path}#{anchor})'
             role = _projection_table_cell(record['role'])
             stance = _projection_table_cell(record['stance'])
-            excerpt = _projection_table_cell(_projection_excerpt(record['excerpt']))
+            excerpt = _projection_table_cell(_projection_excerpt(record['content']))
             lines.append(f'| {source} | {role} | {stance} | {excerpt} |')
         lines.append('')
     lines.append(
@@ -520,7 +616,7 @@ def rendered_participants_table(entry: dict, roles_dir: Path) -> str:
         '|---|-----|------|-------|------------------|',
     ]
     for index, p in enumerate(entry['participants'], start=1):
-        rows.append(participant_row(load_role(roles_dir, p['role']), index, p['agentId']))
+        rows.append(participant_row(load_participant_metadata(roles_dir, p['role']), index, p['agentId']))
     return '\n'.join(rows)
 
 
@@ -530,7 +626,7 @@ def rendered_prohibitions_block(entry: dict, roles_dir: Path) -> str | None:
         '|------|-------------|',
     ]
     for participant in entry['participants']:
-        role_data = load_role(roles_dir, participant['role'])
+        role_data = load_participant_metadata(roles_dir, participant['role'])
         prohibitions = role_data.get('prohibitions') or []
         if not prohibitions:
             continue

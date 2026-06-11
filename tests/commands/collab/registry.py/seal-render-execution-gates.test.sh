@@ -61,6 +61,7 @@ init_target() {
   "$ROOT/commands/collab/engine/registry.py" init --agent-id codex --reviewer pa --no-participant-verification "$title" >/dev/null
   "$ROOT/commands/collab/engine/registry.py" join-participants "$RUN_DATE-$slug" pa --agent-id opus >/dev/null
   "$ROOT/commands/collab/engine/registry.py" set "$RUN_DATE-$slug" active-phase Completion --force --caller-role mod >/dev/null
+  "$ROOT/commands/collab/engine/registry.py" set "$RUN_DATE-$slug" work-repo "$WORK_REPO" >/dev/null
 }
 
 FIXTURE_PATHS=(
@@ -69,24 +70,38 @@ FIXTURE_PATHS=(
   "platform/tooling/audit.sh"
 )
 
+# Hermetic work repo so the seal git-state gate checks a controlled tree, not the
+# ambient framework checkout (which fails whenever these tooling paths are dirty).
+# It owns committed copies of the fixture paths; all git plumbing below targets it.
+WORK_REPO="$TMPDIR/work-repo"
+for path in "${FIXTURE_PATHS[@]}"; do
+  mkdir -p "$WORK_REPO/$(dirname "$path")"
+  printf 'fixture %s\n' "$path" >"$WORK_REPO/$path"
+done
+git -C "$WORK_REPO" init -q
+git -C "$WORK_REPO" config user.email test@example.invalid
+git -C "$WORK_REPO" config user.name test
+git -C "$WORK_REPO" add -A
+git -C "$WORK_REPO" -c commit.gpgsign=false commit -q -m 'seal-render fixture base'
+
 fixture_commit() {
   local index="$TMPDIR/fixture.index"
   local mode blob tree path
   rm -f "$index"
-  GIT_INDEX_FILE="$index" git -C "$ROOT" read-tree --empty
+  GIT_INDEX_FILE="$index" git -C "$WORK_REPO" read-tree --empty
   for path in "${FIXTURE_PATHS[@]}"; do
-    mode="$(git -C "$ROOT" ls-files -s -- "$path" | awk '{print $1}')"
-    blob="$(git -C "$ROOT" hash-object -w -- "$ROOT/$path")"
-    GIT_INDEX_FILE="$index" git -C "$ROOT" update-index --add --cacheinfo "$mode" "$blob" "$path"
+    mode="$(git -C "$WORK_REPO" ls-files -s -- "$path" | awk '{print $1}')"
+    blob="$(git -C "$WORK_REPO" hash-object -w -- "$WORK_REPO/$path")"
+    GIT_INDEX_FILE="$index" git -C "$WORK_REPO" update-index --add --cacheinfo "$mode" "$blob" "$path"
   done
-  tree="$(GIT_INDEX_FILE="$index" git -C "$ROOT" write-tree)"
+  tree="$(GIT_INDEX_FILE="$index" git -C "$WORK_REPO" write-tree)"
   GIT_AUTHOR_NAME="test" \
     GIT_AUTHOR_EMAIL="test@example.invalid" \
     GIT_AUTHOR_DATE="2026-05-23T18:00:00+02:00" \
     GIT_COMMITTER_NAME="test" \
     GIT_COMMITTER_EMAIL="test@example.invalid" \
     GIT_COMMITTER_DATE="2026-05-23T18:00:00+02:00" \
-    git -C "$ROOT" commit-tree "$tree" -m "seal-render fixture"
+    git -C "$WORK_REPO" commit-tree "$tree" -m "seal-render fixture"
 }
 
 HEAD_COMMIT="$(fixture_commit)"
@@ -179,7 +194,7 @@ CONFLATION_TARGET="$RUN_DATE-seal-render-agent-conflation"
   --validation-scope scoped \
   --agent-id codex \
   --caller-role pe >/dev/null
-python3 - "$REGISTRY" "$CONFLATION_TARGET" "$HEAD_COMMIT" "$ROOT" <<'PY'
+python3 - "$REGISTRY" "$CONFLATION_TARGET" "$HEAD_COMMIT" "$WORK_REPO" <<'PY'
 import json
 import subprocess
 import sys
@@ -235,7 +250,7 @@ COMBINED_TARGET="$RUN_DATE-seal-render-combined-commit"
   --validation-scope scoped \
   --agent-id gpt \
   --caller-role pe >/dev/null
-python3 - "$REGISTRY" "$COMBINED_TARGET" "$HEAD_COMMIT" "$ROOT" <<'PY'
+python3 - "$REGISTRY" "$COMBINED_TARGET" "$HEAD_COMMIT" "$WORK_REPO" <<'PY'
 import json
 import subprocess
 import sys

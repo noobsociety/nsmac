@@ -1,6 +1,6 @@
 # QA — command roles
 
-Deterministic QA for shared role JSON sources projected to `~/.cursor/commands/collab/reference/roles/`.
+Deterministic QA for shared joinable-role JSON sources projected to `~/.cursor/commands/collab/reference/roles/`.
 
 ## Procedure
 
@@ -10,6 +10,7 @@ Deterministic QA for shared role JSON sources projected to `~/.cursor/commands/c
 4. Validate each filename stem equals its `key`.
 5. Validate keys are globally unique.
 6. Validate runtime mode copies `commands/collab/reference/roles/` to `~/.cursor/commands/collab/reference/roles/`.
+7. Validate projector metadata under `commands/collab/reference/projectors/` is excluded from the joinable-role roster.
 
 ## Required roster
 

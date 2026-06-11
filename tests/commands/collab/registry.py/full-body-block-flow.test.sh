@@ -38,7 +38,7 @@ from pathlib import Path
 registry = Path(sys.argv[1])
 target = sys.argv[2]
 entry = next(item for item in json.loads(registry.read_text())['collabs'] if item['id'] == target)
-print(registry.parent / entry['transcriptPath'])
+print(registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md"))
 PY
 )"
 

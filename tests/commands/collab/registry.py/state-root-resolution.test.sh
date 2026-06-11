@@ -49,7 +49,7 @@ assert f"Project: {identity['label']} · {identity['projectId']}" in list_output
 entry = data['collabs'][0]
 assert entry['id'] == target
 assert entry['transcriptPath'] == f'records/{target}.md'
-assert (registry.parent / entry['transcriptPath']).exists()
+assert (registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")).exists()
 PY
 
 python3 - <<'PY'

@@ -45,7 +45,7 @@ from pathlib import Path
 
 registry = Path(sys.argv[1])
 entry = next(item for item in json.loads(registry.read_text())['collabs'] if item['slug'] == 'verification-assessment-flow')
-transcript = (registry.parent / entry['transcriptPath']).read_text()
+transcript = (registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")).read_text()
 assert entry['status'] == 'open'
 assert entry['activePhase'] == 'Completion'
 assert entry['completion']['subState'] == 'verification'

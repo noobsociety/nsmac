@@ -10,6 +10,7 @@ Each agent reads files in this order before acting:
 - Codex: `AGENTS.md` → `~/.cursor/commands/commands.md`
 - GPT: `AGENTS.md` → `~/.cursor/commands/commands.md`
 - Claude: `CLAUDE.md` → `AGENTS.md` → `~/.cursor/commands/commands.md`
+- Gemini: `GEMINI.md` → `AGENTS.md` → `~/.cursor/commands/commands.md`
 
 After reading this file, read `~/.cursor/commands/commands.md`.
 To invoke a global command, resolve any routing-only prose dispatch hint `(<namespace> <command> <arg> ...)` through `~/.cursor/commands/commands.md`, then execute the matching slash command. Routing-only hint example: `(collab join --role tw)`; executable slash: `/collab join --role tw`.
@@ -32,6 +33,10 @@ Any file referenced from this repository or a project-local overlay must be read
 - Core policy files (`platform/standards/`) → linked route or helper files
 
 If any file in the chain cannot be reached or read, halt immediately and name the missing path before continuing.
+
+## Fail-Fast discipline
+
+Halt when the required command or source-of-truth cannot be resolved. Verify command availability in `commands/collab/engine/registry.py` before exploring implementation files. Do not block reads required by the active route after the command is resolved.
 
 ## Agent profile
 

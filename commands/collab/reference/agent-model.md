@@ -62,6 +62,20 @@ At `Completion.verification`, the reviewer operates in two ordered modes:
 
 Both modes are part of the reviewer's `Completion.verification` turn (`xhigh`, mandatory-declaration). Assessment is budget-exempt when opened by a cap-exit trigger. The reviewer writes verdict fields only (evaluation); all correction work at the restored phase belongs to participants.
 
+## Non-role components
+
+### Projection renderer
+
+The projection renderer (`/collab aggregate`) is a deterministic, non-role component operating under `registry.project.label`. It is not assigned a collab role and does not earn convergence turns. It:
+
+- Derives output strictly from registry state and the contribution store.
+- Labels all projection blocks from `registry.project.label` (not from any role key or informal alias).
+- Appends a staleness footer with the registry revision and content digest from which it was rendered.
+
+The projection renderer is subject to the prohibition inventory in [`role-prohibitions.md`](role-prohibitions.md).
+
+**Dual identity.** The Gemini CLI harness (informally `dp`) has two operating modes: (1) **Aggregator mode** — when executing `/collab aggregate`, it acts as the non-role projection renderer described above; it holds no participant slot and operates under `registry.project.label`. (2) **Collab-participant mode** — the same harness can join any collab under a registered joinable role (see the role roster in `platform/standards/agent-role.md`) via `/collab join --role <key>`; in that mode it follows the joined role's turn order, effort policy, and reviewer behavior. `dp.json` in `projectors/` governs aggregator mode only; it is not a joinable role key.
+
 ## Caveats
 
 **Declared bias.** The join-model recommendations for tw, pe, and pa were authored in the collab that produced these values by candidates for those roles: tw by `sonnet`, pe by `gpt`, pa by `opus`. The Conclusion accepted the self-recommendations and declared the bias explicitly. The `mod` Harness recommendation (`codex-spark`) was made by Codex-family agents in Discussion; declared per quarterly-rotation principle.

@@ -17,15 +17,28 @@ TARGET="$RUN_DATE-participant-verify-flow"
 "$ROOT/commands/collab/engine/registry.py" set "$TARGET" turn-order pe --caller-role mod >/dev/null
 "$ROOT/commands/collab/engine/registry.py" set "$TARGET" active-phase Completion --force --caller-role mod >/dev/null
 
+# Hermetic work repo: bind the collab's git-state/seal gates to a throwaway repo
+# that owns the touched path. Without an explicit workRepo, work_repo_root() falls
+# back to the framework checkout (ROOT), so the seal-git-state gate would read the
+# ambient worktree and fail whenever platform/tooling/audit.sh is uncommitted.
+WORK_REPO="$TMPDIR/work-repo"
+mkdir -p "$WORK_REPO/platform/tooling"
+printf '#!/usr/bin/env bash\necho audit\n' > "$WORK_REPO/platform/tooling/audit.sh"
+git -C "$WORK_REPO" init -q
+git -C "$WORK_REPO" -c user.email=test@example.com -c user.name=test add platform/tooling/audit.sh
+git -C "$WORK_REPO" -c user.email=test@example.com -c user.name=test -c commit.gpgsign=false commit -q -m 'fixture: audit.sh'
+
 REGISTRY="$("$ROOT/commands/collab/engine/registry.py" registry-path)"
-python3 - "$REGISTRY" <<'PY'
+python3 - "$REGISTRY" "$WORK_REPO" <<'PY'
 import json
 import sys
 from pathlib import Path
 
 registry = Path(sys.argv[1])
+work_repo = sys.argv[2]
 data = json.loads(registry.read_text())
 entry = next(item for item in data['collabs'] if item['slug'] == 'participant-verify-flow')
+entry['workRepo'] = work_repo
 entry['handoff'] = {
     'roles': {
         'pe': {
@@ -105,7 +118,7 @@ from pathlib import Path
 
 registry = Path(sys.argv[1])
 entry = next(item for item in json.loads(registry.read_text())['collabs'] if item['slug'] == 'participant-verify-flow')
-transcript = (registry.parent / entry['transcriptPath']).read_text()
+transcript = (registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")).read_text()
 state = entry['verification']['participants']['pe']
 assert state['stage'] == 'completed', state
 assert state['attempts'] == 1, state
@@ -143,7 +156,7 @@ from pathlib import Path
 
 registry = Path(sys.argv[1])
 entry = next(item for item in json.loads(registry.read_text())['collabs'] if item['slug'] == 'participant-verify-flow')
-transcript = (registry.parent / entry['transcriptPath']).read_text()
+transcript = (registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")).read_text()
 assert entry['status'] == 'closed', entry
 assert entry['verdict']['outcome'] == 'success', entry.get('verdict')
 assert transcript.count('### Summary — ') == 1, transcript

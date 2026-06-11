@@ -30,6 +30,7 @@ EFFORT_OVERRIDE_RE = re.compile(
 EFFORT_OVERRIDE_COMMENT_RE = re.compile(
     r'^<!-- collab:effort-override b64:(?P<payload>[A-Za-z0-9_-]+={0,2}) -->$'
 )
+STANCE_DECLARATION_RE = re.compile(r'^\s*STANCE:\s*(converges|dissents|qualifies)\s*$', re.IGNORECASE)
 
 
 def effort_override_metadata_comment(line: str) -> str:
@@ -41,6 +42,10 @@ def render_content_for_transcript(content: str) -> list[str]:
     rendered: list[str] = []
     for line in content.splitlines():
         stripped = line.strip()
+        stance = STANCE_DECLARATION_RE.match(stripped)
+        if stance:
+            rendered.append(f'<!-- collab:stance {stance.group(1).lower()} -->')
+            continue
         if EFFORT_OVERRIDE_RE.match(stripped):
             rendered.append(effort_override_metadata_comment(stripped))
         else:

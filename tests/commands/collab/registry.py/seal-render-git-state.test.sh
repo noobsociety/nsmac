@@ -47,8 +47,23 @@ seal_without_execution() {
   "$ROOT/commands/collab/engine/registry.py" seal-render "$target" pa --observed-revision "$revision" --caller-role pa "$@"
 }
 
+# Hermetic work repo for the committed-path accept cases, so they gate against a
+# controlled tree instead of the ambient framework checkout (whose fixture paths
+# can be uncommitted mid-collab). Seeded with the committed fixtures the accept
+# cases need; also reused by the cross-repo cases below.
+WORK_REPO="$TMPDIR/work-repo"
+mkdir -p "$WORK_REPO/platform/tooling"
+printf 'projected config\n' >"$WORK_REPO/projected-file"
+printf '#!/usr/bin/env bash\necho audit\n' >"$WORK_REPO/platform/tooling/audit.sh"
+git -C "$WORK_REPO" init -q
+git -C "$WORK_REPO" config user.email tester@example.com
+git -C "$WORK_REPO" config user.name tester
+git -C "$WORK_REPO" add -A
+git -C "$WORK_REPO" -c commit.gpgsign=false commit -qm 'seed work repo'
+
 init_completion_target "Seal Render Committed Git State" "seal-render-committed-git-state"
 COMMITTED_TARGET="$RUN_DATE-seal-render-committed-git-state"
+"$ROOT/commands/collab/engine/registry.py" set "$COMMITTED_TARGET" work-repo "$WORK_REPO" >/dev/null
 complete_execution_with_path "$COMMITTED_TARGET" "platform/tooling/audit.sh"
 seal_without_execution "$COMMITTED_TARGET" >/dev/null
 
@@ -119,16 +134,8 @@ if [[ "$status" -eq 0 || "$output" != *"SEAL-GIT-STATE: implementation not in gi
 fi
 
 # Work-repo resolution: a collab that declares `workRepo` is gated against THAT
-# git tree, not the framework checkout — the cross-repo seal path.
-WORK_REPO="$TMPDIR/work-repo"
-mkdir -p "$WORK_REPO"
-git -C "$WORK_REPO" init -q
-git -C "$WORK_REPO" config user.email tester@example.com
-git -C "$WORK_REPO" config user.name tester
-printf 'projected config\n' >"$WORK_REPO/projected-file"
-git -C "$WORK_REPO" add -A
-git -C "$WORK_REPO" -c commit.gpgsign=false commit -qm 'seed work repo'
-
+# git tree, not the framework checkout — the cross-repo seal path. WORK_REPO was
+# seeded above (projected-file + platform/tooling/audit.sh committed).
 init_completion_target "Seal Render Work Repo Committed" "seal-render-work-repo-committed"
 WORK_REPO_TARGET="$RUN_DATE-seal-render-work-repo-committed"
 "$ROOT/commands/collab/engine/registry.py" set "$WORK_REPO_TARGET" work-repo "$WORK_REPO" >/dev/null

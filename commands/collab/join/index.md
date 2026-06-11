@@ -1,6 +1,6 @@
 # /collab join
 
-Register one participant in the active collaboration record from command-owned role JSON.
+Register one joinable participant in the active collaboration record from command-owned role JSON.
 
 ## Trigger
 
@@ -37,7 +37,7 @@ Register one participant in the active collaboration record from command-owned r
 - **Helper enforcement boundary:** The helper enforces presence, the exact `unknown` token, and whitespace stripping. The precedence preference (model ID over harness name) is an agent obligation; the helper cannot verify which tier an agent chose.
 - **Pending reviewer display:** When `reviewerRole` is set in the registry but that role is not yet in `participants`, the transcript **Reviewer** section marks the role as `(pending)`. The `(pending)` state is registry-owned — derived from `reviewerRole` not being in `participants` — not from transcript prose. Once the reviewer joins via `/collab join`, the `(pending)` label is replaced with the active reviewer notice.
 - **Pending-reviewer speak gate:** A pending `reviewerRole` blocks all participant speaks. `speak-state` aborts before turn-order checks when `reviewerRole` is set and absent from `participants`. The reviewer must join via `/collab join --role <reviewer>` or be cleared via `/collab set reviewer --clear` before any participant may contribute.
-- **Role data boundary:** Role JSON files live under `commands/collab/reference/roles/` as shared command-owned data, not route playbooks.
+- **Role data boundary:** Joinable role JSON files live under `commands/collab/reference/roles/` as shared command-owned data, not route playbooks. Projector metadata under `commands/collab/reference/projectors/` is projection-only and must not satisfy `/collab join --role <role>`.
 - **Section-targeting convention:** A `render-*` helper owns exactly one transcript section identified by its visible heading, takes registry state and role JSON as its only inputs, and fails before any write when input validation fails.
 - **`render-participants` boundary:** `render-participants` is a repair and diagnostics subcommand. Do not call it in route prose; the normal join path uses `join-participants`.
 - **Recovery path:** If `join-participants` aborts due to a missing or unreadable role file, remove the orphaned key from registry `participants` or restore the role file, then re-run `/collab join`.

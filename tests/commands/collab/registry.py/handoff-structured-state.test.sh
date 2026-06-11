@@ -52,7 +52,7 @@ registry = Path(sys.argv[1])
 data = json.loads(registry.read_text())
 entry = next(item for item in data['collabs'] if item['slug'] == 'structured-handoff')
 assert 'handoff' not in entry
-assert 'handoff-pe-1' not in (registry.parent / entry['transcriptPath']).read_text()
+assert 'handoff-pe-1' not in (registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")).read_text()
 PY
 
 state="$("$ROOT/commands/collab/engine/registry.py" speak-state "$TARGET" pe)"
@@ -85,7 +85,7 @@ assert 'schema' + 'Version' not in state
 assert state['writeScope'] == ['commands/collab/engine/registry.py', 'tests/commands/collab/registry.py']
 assert state['validationCommands'] == [['./platform/tooling/audit.sh'], ['./tests/run.sh']]
 assert '_requires: #1_' in state['body']
-transcript = (registry.parent / entry['transcriptPath']).read_text()
+transcript = (registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")).read_text()
 assert 'handoff-pe-1' in transcript
 assert '_requires: #1_' in transcript
 assert '["./platform/tooling/audit.sh"]' in transcript
@@ -106,7 +106,7 @@ from pathlib import Path
 registry = Path(sys.argv[1])
 target = sys.argv[2]
 entry = next(item for item in json.loads(registry.read_text())['collabs'] if item['id'] == target)
-print(registry.parent / entry['transcriptPath'])
+print(registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md"))
 PY
 )"
 "$ROOT/commands/collab/engine/registry.py" render-status "$TARGET" >/dev/null

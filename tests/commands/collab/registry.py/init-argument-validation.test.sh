@@ -54,7 +54,7 @@ if [[ "$none_terminal_status" -eq 0 || "$none_terminal_output" != *'--terminal r
 fi
 
 issue_terminal_output="$("$ROOT/commands/collab/engine/registry.py" init --agent-id codex --terminal issue "Issue Terminal" 2>&1)"
-if [[ "$issue_terminal_output" != records/*issue-terminal.md* ]]; then
+if [[ "$issue_terminal_output" != records/*issue-terminal-raw.md* ]]; then
   printf 'FAIL: init did not create an issue-terminal transcript\n%s\n' "$issue_terminal_output" >&2
   exit 1
 fi
@@ -69,7 +69,7 @@ if [[ "$slug_empty_status" -eq 0 || "$slug_empty_output" != *'slug is empty'* ]]
 fi
 
 default_output="$("$ROOT/commands/collab/engine/registry.py" init --agent-id codex "Default Seal" 2>&1)"
-if [[ "$default_output" != records/*default-seal.md* ]]; then
+if [[ "$default_output" != records/*default-seal-raw.md* ]]; then
   printf 'FAIL: init did not create a default-seal transcript\n%s\n' "$default_output" >&2
   exit 1
 fi

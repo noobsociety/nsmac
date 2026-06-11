@@ -10,6 +10,7 @@ Each adapter is a thin routing-only file that points to `commands/commands.md` a
 |---|---|---|
 | `CLAUDE.md` | Claude Code CLI | `CLAUDE.md` → `AGENTS.md` → `commands/commands.md` |
 | `AGENTS.md` | Codex, GPT, and other agent harnesses | `AGENTS.md` → `commands/commands.md` |
+| `GEMINI.md` | Gemini CLI | `GEMINI.md` → `AGENTS.md` → `commands/commands.md` |
 
 ## Directory layout
 

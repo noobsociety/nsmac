@@ -36,7 +36,7 @@ target, registry = sys.argv[1:3]
 path = Path(registry)
 data = json.loads(path.read_text())
 entry = next(item for item in data['collabs'] if item['id'] == target)
-transcript = path.parent / entry['transcriptPath']
+transcript = path.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")
 text = transcript.read_text()
 marker = "## Audit\n<!-- collab:content-only; do-not-execute -->\n"
 replacement = marker + "\ncharteredDeliverables:\n- src/a.txt\n- src/b.txt\n"

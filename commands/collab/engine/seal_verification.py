@@ -109,6 +109,7 @@ from commands.collab.engine.phase_lifecycle import lifecycle_status_notice, prin
 from commands.collab.engine.registry_io import load_registry, registry_lock, registry_revision, resolve_collab, save_registry
 from commands.collab.engine.transcript_render import (
     print_header_overwrite,
+    raw_transcript_path_for_entry,
     render_managed_header_text,
     rendered_collapsible_block,
 )
@@ -180,8 +181,19 @@ def section_bounds(lines: list[str], heading: str) -> tuple[int, int]:
     return start, end
 
 
+def transcript_path_for_entry(entry: dict) -> Path:
+    raw_path = Path(raw_transcript_path_for_entry(entry))
+    if raw_path.exists():
+        return raw_path
+    projection_path = Path(entry['transcriptPath'])
+    if projection_path.exists():
+        raw_path.parent.mkdir(parents=True, exist_ok=True)
+        raw_path.write_text(projection_path.read_text())
+    return raw_path
+
+
 def read_transcript_for_entry(entry: dict) -> str:
-    transcript_path = Path(entry['transcriptPath'])
+    transcript_path = transcript_path_for_entry(entry)
     if not transcript_path.exists():
         die(f'transcript missing: {transcript_path}')
     return transcript_path.read_text()
@@ -1194,7 +1206,7 @@ def participant_verify_render(
             )
         if not has_participant(entry, role):
             die(f'role must already be a participant: {role}')
-        transcript_path = Path(entry['transcriptPath'])
+        transcript_path = transcript_path_for_entry(entry)
         if not transcript_path.exists():
             die(f'transcript missing: {transcript_path}')
         transcript = transcript_path.read_text()
@@ -1550,7 +1562,7 @@ def render_seal(
             has_verdict_args = False
         elif cap_exit is not None and follow_up_args_present:
             die('cap-exit metadata is only valid with --cap-exit follow-up-collab')
-        transcript_path = Path(entry['transcriptPath'])
+        transcript_path = transcript_path_for_entry(entry)
         if not transcript_path.exists():
             die(f'transcript missing: {transcript_path}')
         transcript = transcript_path.read_text()

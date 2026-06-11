@@ -12,6 +12,7 @@ export COLLAB_STATE_HOME="$TMPDIR/state-home"
 
 init_reviewer_target "Verification Reopen Rerun Flow" "verification-reopen-rerun-flow"
 TARGET="$RUN_DATE-verification-reopen-rerun-flow"
+bind_lib_work_repo "$TARGET"
 REGISTRY="$(registry_path)"
 
 "$ROOT/commands/collab/engine/registry.py" set "$TARGET" active-phase Handoff --force --caller-role mod >/dev/null
@@ -63,7 +64,7 @@ from pathlib import Path
 
 registry = Path(sys.argv[1])
 entry = next(item for item in json.loads(registry.read_text())['collabs'] if item['slug'] == 'verification-reopen-rerun-flow')
-transcript = (registry.parent / entry['transcriptPath']).read_text()
+transcript = (registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")).read_text()
 start = transcript.index('<a name="reviewer-findings-1"></a>')
 end = transcript.index('</details>', start) + len('</details>')
 block = transcript[start:end]
@@ -105,7 +106,7 @@ assert state['validationCommands'] == [['./platform/tooling/audit.sh'], ['./test
 assert 'Scope revised after verification' in state['body']
 assert 'Previous revision,' in state['body']
 assert 'verdict' not in entry
-transcript = (registry.parent / entry['transcriptPath']).read_text()
+transcript = (registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")).read_text()
 assert Path('findings-block.txt').read_text() in transcript
 assert '> Reopened from [reviewer findings](#reviewer-findings-1); next expected role: `pe`.' in transcript
 assert 'commands/collab/reopen/index.md' in transcript
@@ -120,7 +121,7 @@ from pathlib import Path
 
 registry = Path(sys.argv[1])
 entry = next(item for item in json.loads(registry.read_text())['collabs'] if item['slug'] == 'verification-reopen-rerun-flow')
-transcript = (registry.parent / entry['transcriptPath']).read_text()
+transcript = (registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")).read_text()
 assert 'Previous revision,' in transcript
 assert 'commands/collab/reopen/index.md' in transcript
 PY

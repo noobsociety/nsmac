@@ -60,6 +60,12 @@ Keys are globally reserved as a 1:1 primary key mapping to a specific role. No t
 
 A role registered as `reviewerRole` with `reviewerMode: last-in-convergent-phases` must, before approving close, verify that every assigned role's Action Plan checklist items are fully checked and consistent with that role's execution history. The `speak-state` helper surfaces this check via the `uncheckedAssignedItemsByRole` field (present when a reviewer is configured): a non-zero count for any role whose execution is recorded `completed` is a coherence contradiction that must be resolved before close. The helper also blocks close directly when such a contradiction exists (`commands/collab/engine/registry.py close`).
 
+## Projectors
+
+`commands/collab/reference/projectors/` holds non-roster aggregator metadata. Files in this directory describe projection-only components that are not joinable collab participants. `dp.json` lives in `projectors/`, not in `roles/`, because dp is a deterministic projector — it never joins as a participant eligible for turn order, effort policy, or reviewer behavior.
+
+`roles/` encodes joinable-participant metadata only. No command path may derive participant eligibility, turn order, effort policy, or reviewer behavior from projector metadata.
+
 ## Role roster
 
 **Tool boundary.** The spec accepts any valid role JSON; the roster is open. Tools and test fixtures that enumerate a specific key set (such as the registered role keys) may need updating when a new role is added — the spec does not enforce this automatically. Check `commands/collab/engine/registry.py` snapshot fixtures and generated surfaces such as `generated/command-reference.md` when adding a role.

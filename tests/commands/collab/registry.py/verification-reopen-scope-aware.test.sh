@@ -83,6 +83,7 @@ setup_through_first_round() {
   reg join-participants "$TARGET" pa --agent-id opus >/dev/null
   reg set "$TARGET" turn-order "tw pe" --caller-role mod >/dev/null
   reg set "$TARGET" active-phase Completion --force --caller-role mod >/dev/null
+  bind_lib_work_repo "$TARGET"
   REGISTRY="$(registry_path)"
   python3 - "$SLUG" "$REGISTRY" "$TW_PATH" "$PE_PATH" <<'PY'
 import json

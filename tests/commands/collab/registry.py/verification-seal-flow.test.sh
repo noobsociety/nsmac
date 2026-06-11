@@ -53,6 +53,16 @@ path.write_text(json.dumps(data, indent=2) + '\n')
 PY
 }
 
+# Hermetic work repo so the seal git-state gate checks a controlled tree, not the
+# ambient framework checkout (which fails whenever platform/tooling/audit.sh is dirty).
+WORK_REPO="$TMPDIR/work-repo"
+mkdir -p "$WORK_REPO/platform/tooling"
+printf '#!/usr/bin/env bash\necho audit\n' >"$WORK_REPO/platform/tooling/audit.sh"
+git -C "$WORK_REPO" init -q
+git -C "$WORK_REPO" -c user.email=test@example.com -c user.name=test add platform/tooling/audit.sh
+git -C "$WORK_REPO" -c user.email=test@example.com -c user.name=test -c commit.gpgsign=false \
+  commit -q -m 'fixture: audit.sh'
+
 init_target() {
   local title="$1"
   local slug="$2"
@@ -61,6 +71,7 @@ init_target() {
   "$ROOT/commands/collab/engine/registry.py" join-participants "$RUN_DATE-$slug" pa --agent-id opus >/dev/null
   "$ROOT/commands/collab/engine/registry.py" set "$RUN_DATE-$slug" turn-order pe --caller-role mod >/dev/null
   "$ROOT/commands/collab/engine/registry.py" set "$RUN_DATE-$slug" active-phase Completion --force --caller-role mod >/dev/null
+  "$ROOT/commands/collab/engine/registry.py" set "$RUN_DATE-$slug" work-repo "$WORK_REPO" >/dev/null
 }
 
 init_target "Verification Seal Flow" "verification-seal-flow"
@@ -160,7 +171,7 @@ import sys
 from pathlib import Path
 registry = Path(sys.argv[1])
 entry = json.loads(registry.read_text())['collabs'][0]
-transcript = (registry.parent / entry['transcriptPath']).read_text()
+transcript = (registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")).read_text()
 assert entry['status'] == 'open'
 assert entry['verificationSeal']['sealedBy'] == 'pa'
 assert entry['verificationSeal']['stale'] is False
@@ -192,7 +203,7 @@ import sys
 from pathlib import Path
 registry = Path(sys.argv[1])
 entry = json.loads(registry.read_text())['collabs'][0]
-transcript = (registry.parent / entry['transcriptPath']).read_text()
+transcript = (registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")).read_text()
 assert entry['status'] == 'closed'
 assert entry['verdict']['outcome'] == 'success'
 assert '**pa:** assessed' in transcript

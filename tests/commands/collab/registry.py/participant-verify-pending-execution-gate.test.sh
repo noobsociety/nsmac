@@ -33,7 +33,7 @@ entry['handoff'] = {
         'tw': {'writeScope': ['REPOSITORY.md'], 'validationCommands': [['./platform/tooling/audit.sh']]},
     }
 }
-transcript = registry.parent / entry['transcriptPath']
+transcript = registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")
 text = transcript.read_text()
 marker = '## Action Plan\n<!-- collab:content-only; do-not-execute -->\n'
 replacement = marker + '\n- [x] **pe:** [execute] Complete platform migration.\n- [ ] **tw:** [execute] Rewrite repository contract.\n'

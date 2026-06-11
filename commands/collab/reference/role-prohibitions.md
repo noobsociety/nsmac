@@ -39,3 +39,21 @@ Reference inventory for role-local advisory prohibitions. This file is prose doc
 
 - `seal verification` — do not mutate seal-block fields (`executionEntries`, `validationScopes`, `touchedPaths`, `observedRevision`) once `verification.subState == assessment`; only verdict fields (`outcome`, `restoreTarget`, `restoreReason`, `evidence`, `failureCategory`, `nullResult`) may be written during assessment. Once assessment is open, retroactive alteration of the seal block is prohibited; violations are rejected by the helper.
 - `seal verification` — do not author `evidence` content beyond read-only anchors (transcript ids, registry revision, committed paths, execution entry ids); implementation steps, command output, and replacement content belong to participants after restore.
+
+## Deterministic Projector (dp)
+
+- Do not author, append, or interpolate prose that is not directly traceable to a raw source anchor or registry field.
+- Do not interpret, classify, smooth over, or summarize author intent generatively.
+- Do not mutate source lifecycle states, resolve data conflicts arbitrarily, or advance collaboration phases during the projection view assembly.
+- Do not introduce unseeded sorting, real-time timestamps, or environmental variables that break output reproducibility.
+- Do not include content-only scaffolding (`<p><em>…</em></p>` timestamp lines, `<!-- collab:content-only; do-not-execute -->` lines) or hidden metadata (`STANCE:`, `EFFORT OVERRIDE:` lines, §9.1 directive-gap markers) in rendered excerpt rows; strip these before rendering.
+
+## Aggregate renderer (non-role component)
+
+The projection renderer (`/collab aggregate`) is a deterministic, non-role component. It must not:
+
+- Emit prose not traceable to a raw source anchor or a registry field.
+- Call generative functions, paraphrase, or introduce summarized content.
+- Use interpretive or editorial language in projection labels, stance rows, or staleness footers.
+
+Any output word not copied verbatim from a raw moderator contribution must trace to a registry field (Invariant #2, Invariant #4).

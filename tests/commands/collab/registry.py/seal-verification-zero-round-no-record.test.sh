@@ -46,7 +46,7 @@ entry = next(
     for item in json.loads(registry.read_text())['collabs']
     if item['slug'] == 'seal-verification-zero-round-no-record'
 )
-transcript = (registry.parent / entry['transcriptPath']).read_text()
+transcript = (registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")).read_text()
 
 assert entry['status'] == 'open', entry
 assert entry['activePhase'] == 'Completion', entry

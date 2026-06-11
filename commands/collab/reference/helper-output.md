@@ -465,7 +465,7 @@ Exit-1 messages (exact):
 - `contribution budget spec missing word limit: <path>`
 - `contribution budget spec missing exempt class: <class_name>`
 
-`<class_name>` is the alphabetically first missing required key among: `action-plan-checklist`, `conclusion-ratification`, `contribution-full-body`, `effort-override-line`, `moderator-verbatim`.
+`<class_name>` is the alphabetically first missing required key among: `action-plan-checklist`, `conclusion-ratification`, `contribution-full-body`, `effort-override-line`, `moderator-verbatim`, `stance-declaration-line`.
 
 **Word count enforcement**
 

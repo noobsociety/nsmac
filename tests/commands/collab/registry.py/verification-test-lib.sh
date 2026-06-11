@@ -31,8 +31,33 @@ init_reviewer_target() {
   "$ROOT/commands/collab/engine/registry.py" set "$RUN_DATE-$slug" turn-order pe --caller-role mod >/dev/null
 }
 
+# Hermetic work repo for the git-state/seal gates. Without a declared workRepo,
+# work_repo_root() falls back to the framework checkout (ROOT), so the
+# seal-git-state gate reads the ambient worktree and fails whenever a fixture
+# touched-path is uncommitted there. A clean HEAD clone of the framework repo is
+# behaviorally identical to ROOT for provenance/history but has a clean worktree,
+# so every committed path a consumer records (audit.sh or its own file) is clean.
+LIB_WORK_REPO=""
+ensure_lib_work_repo() {
+  if [[ -n "$LIB_WORK_REPO" ]]; then return 0; fi
+  : "${TMPDIR:?TMPDIR must be set before complete_execution}"
+  LIB_WORK_REPO="$TMPDIR/verification-lib-work-repo"
+  git clone --quiet --local "$ROOT" "$LIB_WORK_REPO"
+}
+
+# Bind a collab to the hermetic clone work repo so its seal git-state gate checks
+# the clean HEAD checkout, not the ambient (possibly dirty) framework tree. Call
+# after creating a collab whose execution touched-paths are real repo paths
+# recorded directly (i.e. not through complete_execution, which binds on its own).
+bind_lib_work_repo() {
+  ensure_lib_work_repo
+  "$ROOT/commands/collab/engine/registry.py" set "$1" work-repo "$LIB_WORK_REPO" >/dev/null
+}
+
 complete_execution() {
   local target="$1"
+  ensure_lib_work_repo
+  "$ROOT/commands/collab/engine/registry.py" set "$target" work-repo "$LIB_WORK_REPO" >/dev/null
   "$ROOT/commands/collab/engine/registry.py" execution "$target" pe completed "2026-05-15T21:00:00+02:00" \
     --assigned-role pe \
     --validation-result passed \

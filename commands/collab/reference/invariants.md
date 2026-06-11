@@ -32,7 +32,7 @@ Maintainer check: `git grep -rn 'agent-honor-system' commands/collab/` shows eve
 
 For the audit inventory of current agent-honor-system clauses, see [`honor-system-audit.md`](honor-system-audit.md).
 
-Maintainer check: `git grep -rnP '(?<![A-Za-z0-9_])(mod|pa|pe|tw)(?![A-Za-z0-9_])' -- '*.md' '*rule file'` is the broad review sweep for role-key prose drift. Every prose match must either be covered by the documented carve-outs in `platform/tooling/audit-role-prose.sh` or rewritten to function-bound prose.
+Maintainer check: `git grep -rnP '(?<![A-Za-z0-9_])(mod|pa|pe|tw)(?![A-Za-z0-9_])' -- '*.md' '*rule file'` is the broad review sweep for role-key prose drift. Every prose match must either be covered by the documented carve-outs in `platform/tooling/audit-role-prose.sh` or rewritten to function-bound prose. This pattern covers joinable-participant role keys (`commands/collab/reference/roles/`) only; projector-only roles in `commands/collab/reference/projectors/` are excluded. Update the pattern when the joinable-role roster changes.
 
 **2. Registry as source of truth; transcript as human ledger**
 
@@ -79,7 +79,7 @@ Every Action Plan contribution must consist entirely of flat checklist assignmen
 1. HTML comments (whole block, including the rendered `<!-- collab:effort-override … -->` form)
 2. Blank lines
 3. Markdown headings (`#` through `######`)
-4. `EFFORT OVERRIDE:` first-line literal (the raw override declaration)
+4. Leading hidden metadata literals (`STANCE:` and `EFFORT OVERRIDE:`)
 
 **ABORT anchor:** `speak-render-action-plan-shape`
 
