@@ -65,19 +65,19 @@ PY
     --touched-path commands/collab/engine/registry.py \
     --caller-role tw 2>&1)"
 
-  if [[ "$output" != *"NEXT: Run /collab run plan for role pe."* ]]; then
+  if [[ "$output" != *"NEXT: Run (collab run plan) for role pe."* ]]; then
     printf 'FAIL: execution NEXT did not name the pending peer role for %s\n%s\n' "$slug" "$output" >&2
     exit 1
   fi
-  if [[ "$output" == *"NEXT: Run /collab run plan for role tw."* ]]; then
+  if [[ "$output" == *"NEXT: Run (collab run plan) for role tw."* ]]; then
     printf 'FAIL: execution NEXT named the role that just completed for %s\n%s\n' "$slug" "$output" >&2
     exit 1
   fi
-  if [[ "$output" == *"NEXT: Run /collab seal verification"* ]]; then
+  if [[ "$output" == *"NEXT: Run (collab seal verification)"* ]]; then
     printf 'FAIL: execution NEXT skipped pending execution and named seal verification for %s\n%s\n' "$slug" "$output" >&2
     exit 1
   fi
-  if [[ "$output" == *"NEXT: Run /collab participant verify"* ]]; then
+  if [[ "$output" == *"NEXT: Run (collab participant verify)"* ]]; then
     printf 'FAIL: execution NEXT skipped pending execution and named participant verification for %s\n%s\n' "$slug" "$output" >&2
     exit 1
   fi

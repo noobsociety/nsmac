@@ -28,9 +28,9 @@ def write(rel: str, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text)
 
-write('commands/collab/export-issues/index.md', '# /collab export-issues\n')
-write('commands/collab/index.md', '# /collab\n')
-write('commands/commands.md', '# /commands\n')
+write('commands/collab/export-issues/index.md', '# (collab export-issues)\n')
+write('commands/collab/index.md', '# (collab)\n')
+write('commands/commands.md', '# (commands)\n')
 write(
     'commands/collab/reference/helper-output.md',
     '\n'.join([
@@ -95,7 +95,7 @@ write(
 write(
     'commands/collab/init/index.md',
     '\n'.join([
-        '# /collab init',
+        '# (collab init)',
         'Use --terminal seal|issue.',
         '```route-arg',
         'param: name=--terminal; values=seal|issue; default=seal',
@@ -105,7 +105,7 @@ write(
 write(
     'commands/collab/reference/registry.md',
     '\n'.join([
-        '# /collab registry',
+        '# Collab registry',
         '| `terminal` | string | Workflow-model terminal selector: seal|issue. |',
     ]),
 )
@@ -129,7 +129,7 @@ except SystemExit as exc:
     assert 'issue requires preservation' in message, message
     assert 'issue implement handoff shape' in message, message
 else:
-    raise AssertionError('planned route gate accepted missing /git issue contract')
+    raise AssertionError('planned route gate accepted missing (git issue) contract')
 
 write(
     'commands/git/issue/index.md',

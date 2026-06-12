@@ -33,20 +33,20 @@ Run `/effort` (harness slash command, not a collab route) before every speak tur
 
 Effort changes per phase per role as defined in `agent-effort.md` and `agent-model.md`. The join-time model does not change; only effort adjusts between phases.
 
-## `/collab join`
+## `(collab join)`
 
-`/collab join` is metadata-only admission work. It does not produce a phase contribution and runs at `low` for any role. The per-phase effort matrix governs speak turns only.
+`(collab join)` is metadata-only admission work. It does not produce a phase contribution and runs at `low` for any role. The per-phase effort matrix governs speak turns only.
 
 ## `Completion.verification`
 
 `Completion.verification` has two ordered sub-phases:
 
-1. **`verification.seal`** — Reviewer calls `/collab seal verification`; mechanical execution-truth check. Run at the current effort level for `Completion.verification` (`xhigh` for the reviewer role).
+1. **`verification.seal`** — Reviewer calls `(collab seal verification)`; mechanical execution-truth check. Run at the current effort level for `Completion.verification` (`xhigh` for the reviewer role).
 2. **`verification.assessment`** — Reviewer evaluates goal achievement and records a verdict. Opens after a successful seal; also re-enters when the seal becomes stale or a cap-exit is recorded. Assessment is budget-exempt when a cap-exit trigger opened it.
 
 ## Subagents
 
-Subagents belong in the **Completion** phase only, after Handoff has declared disjoint write scopes and validation commands. Spawning is helper-driven (`execute-spawn`) under `/collab run plan`. Subagents never author a collab turn and must not mutate registry or transcript state independently.
+Subagents belong in the **Completion** phase only, after Handoff has declared disjoint write scopes and validation commands. Spawning is helper-driven (`execute-spawn`) under `(collab run plan)`. Subagents never author a collab turn and must not mutate registry or transcript state independently.
 
 ## `/clear`
 
@@ -66,7 +66,7 @@ Token consumption during collab participation is visible through harness command
 
 **Snapshot-and-diff recipe:**
 
-1. Run `/status` (Codex) or `/usage` (Claude Code) immediately after `/collab join`.
+1. Run `/status` (Codex) or `/usage` (Claude Code) immediately after `(collab join)`.
 2. After each `(collab speak)` or other collab command, take another snapshot.
 3. Report `command delta = snapshot_after − snapshot_before` and `collab delta = snapshot_current − snapshot_at_join` as user-measured context percentages.
 

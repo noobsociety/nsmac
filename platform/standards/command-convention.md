@@ -1,14 +1,14 @@
 # Naming
 
-CLI naming convention for command commands: namespaces, verbs, targets, and flags. Authoritative source for the reserved-form table and migration rules.
+Dispatch naming convention for command routes: namespaces, verbs, targets, and flags. Authoritative source for the reserved-form table and migration rules.
 
 ## Grammar
 
 ```
-/<namespace> <verb> [<target>] [--<flag> [<value>]]
+(<namespace> <verb> [<target>] [--<flag> [<value>]])
 ```
 
-Every token is lowercase kebab-case. All positions are positional; flag-positional interleaving is not supported.
+Public command documentation and runtime advisory output present dispatch forms only. A dispatch form is routing-only notation, not shell syntax. Slash-prefixed command examples are not valid invocation surfaces in command docs, route titles, generated advisory text, or engine runtime output. Every token is lowercase kebab-case. All positions are positional; flag-positional interleaving is not supported.
 
 ## Rules
 
@@ -16,11 +16,11 @@ Every token is lowercase kebab-case. All positions are positional; flag-position
 
 **Rule 2 — Verb**: Lowercase kebab-case imperative drawn from the reserved-form table. No namespace-owned allowlist. Every route verb must map to a reserved form; when a live route needs a verb absent from the table, add one operation class row and migrate every route performing that operation before use.
 
-**Rule 3 — Target**: Optional lowercase kebab-case noun. Specifies the artifact or resource the verb acts on. Routes with two apparent verb tokens restructure as verb + target: `/git create issue`, not `/git issue create`.
+**Rule 3 — Target**: Optional lowercase kebab-case noun. Specifies the artifact or resource the verb acts on. Routes with two apparent verb tokens restructure as verb + target: `(git create issue)`, not `(git issue create)`.
 
 **Rule 4 — Flags**: `--kebab-case-name [value]`. Flags modify behavior only. State mutation always routes through an explicit verb. No flag may replicate a reserved-form verb's function.
 
-**Rule 5 — `_` prefix**: Reserved for private directories and private implementation data. Route names may carry a `_` prefix only when the target intentionally identifies an underscore-prefixed private tree. `/test` is the only currently-permitted exception; any additional exception requires a convention review.
+**Rule 5 — `_` prefix**: Reserved for private directories and private implementation data. Route names may carry a `_` prefix only when the target intentionally identifies an underscore-prefixed private tree. `(test)` is the only currently-permitted exception; any additional exception requires a convention review.
 
 **Rule 6 — `rewrite <target>`**: Canonical in-place-rewrite route. The `re-<verb>` prefix is retired. New routes must not use `re-`.
 
@@ -56,23 +56,27 @@ Every token is lowercase kebab-case. All positions are positional; flag-position
 | Compact artifact | `compact <target>` |
 | Compare artifacts | `compare <target>` |
 
-**`init` vs `create <target>`**: Use `init` when the namespace is its own artifact and there is no named sub-resource (e.g., `/collab init` creates a collab; the collab *is* the namespace target). Use `create <target>` when the artifact is a sub-resource of a domain (e.g., `/git create issue`). "Chosen per domain" is not a valid choice; one of these two forms must be selected at route definition time.
+**`init` vs `create <target>`**: Use `init` when the namespace is its own artifact and there is no named sub-resource (e.g., `(collab init)` creates a collab; the collab *is* the namespace target). Use `create <target>` when the artifact is a sub-resource of a domain (e.g., `(git create issue)`). "Chosen per domain" is not a valid choice; one of these two forms must be selected at route definition time.
 
 ## Named exceptions
 
-1. **`/test` private-surface targets** (Rule 5): Route names under `/test` may carry a `_` prefix when they name underscore-prefixed private trees. Scope is limited to the `/test` namespace. No other namespace may claim this exception without a convention review.
+1. **`(test)` private-surface targets** (Rule 5): Route names under `(test)` may carry a `_` prefix when they name underscore-prefixed private trees. Scope is limited to the `test` namespace. No other namespace may claim this exception without a convention review.
 2. **Tool-domain namespaces**: `git` is permitted as a namespace because the tool name *is* the domain. No other tool name may serve as a namespace without a convention review.
 
 ## Helper subcommand grammar
 
-`commands/collab/engine/registry.py` subcommands follow the same kebab-case imperative discipline and are migrated in the same pass as their slash counterparts. `re-*` subcommands retire alongside their slash counterparts. Subcommand grammar must not drift from slash-surface grammar into a separate vocabulary.
+`commands/collab/engine/registry.py` subcommands follow the same kebab-case imperative discipline and are migrated in the same pass as their dispatch counterparts. `re-*` subcommands retire alongside their dispatch counterparts. Subcommand grammar must not drift from the public dispatch grammar into a separate vocabulary. Helper argv paths such as `commands/collab/engine/registry.py speak-state` are executable implementation details; any helper text that tells an agent which routed command to call must use dispatch notation.
 
 ## Migration ledger boundary
 
-- No compat bridges; breaking changes are permitted. All slash routes, helper subcommands, and command route paths are in scope.
+- No compat bridges; breaking changes are permitted. All dispatch routes, helper subcommands, route titles, engine advisory text, and command route paths are in scope.
 - Closed transcript anchors are not rewritten. Open work uses the new grammar from the date of migration.
 - Each rename is atomic: one PR per namespace containing the route file rename, the helper recognition update, and the test-fixture update together. Piecemeal renames are not permitted.
 
 ## Validator
 
 A naming validator under `platform/tooling/` enforces this table. It runs in CI on every PR that touches `commands/` or `commands/collab/engine/registry.py`, and blocks merge on unknown verbs, invalid namespace tokens, and `re-`-prefixed routes. The validator is authoritative at PR time; runtime rejection is too late. Any route that fails the validator must be fixed or must add an operation class row to this table before the PR lands; local exceptions are not permitted.
+
+## Paren-form grammar extension
+
+The `(namespace route arg...)` dispatch form is the canonical public command grammar. Any future grammar expansion extends this file — do not create `platform/standards/command-grammar.md`. That file is explicitly prohibited; it would duplicate this standard. Slash-generated projections are not part of the public command contract.

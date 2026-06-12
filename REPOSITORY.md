@@ -47,12 +47,12 @@ Authority is strict and ordered:
 
 This repo projects the following root outputs, with deepest dependency chains and validation:
 
-- **Adapter routing surface** — `CLAUDE.md`, `AGENTS.md` route into `commands/commands.md` → `commands/<ns>/index.md` → `commands/<ns>/<route>/index.md`, with cross-references into `platform/standards/*.md`. Validated by `./platform/tooling/audit.sh` and the Markdown harness via `/test commands` and `/test core`.
+- **Adapter routing surface** — `CLAUDE.md`, `AGENTS.md` route into `commands/commands.md` → `commands/<ns>/index.md` → `commands/<ns>/<route>/index.md`, with cross-references into `platform/standards/*.md`. Validated by `./platform/tooling/audit.sh` and the Markdown harness via `(test commands)` and `(test core)`.
 - **Generated mirrors** — `generated/collab-lifecycle.md`, `generated/command-reference.md`, `generated/content-invariants.tsv`, `generated/registry-cli.md` are derived from `commands/*`, `commands/collab/reference/*`, central advisory files under `platform/data/advisories/*.json`, and per-slice advisory files under `commands/<ns>/data/<ns>.json` such as `commands/collab/data/collab.json`. Regenerated through `commands/collab/engine/lifecycle-doc.py`, `platform/tooling/command-reference.py`, `platform/tooling/sync-framework-boundaries.sh`, and `commands/collab/engine/registry.py registry-cli-doc`.
 - **Collab support contracts** — helper output, identity binding, planned-route gates, registry-state rules, and workflow-model doctrine live in [`helper-output.md`](commands/collab/reference/helper-output.md), [`identity-contract.md`](commands/collab/reference/identity-contract.md), [`planned-routes.md`](commands/collab/reference/planned-routes.md), [`registry-state.md`](commands/collab/reference/registry-state.md), and [`workflow-models.md`](commands/collab/reference/workflow-models.md).
 - **Commands roster block** — the `BEGIN GENERATED:COMMANDS_ROSTER` block in `commands/commands.md` is derived from filesystem state under `commands/`. Validated by `./platform/tooling/sync-commands-catalog.sh --check`.
-- **Scaffold templates for downstream repos** — `platform/templates/{CLAUDE,AGENTS,REPOSITORY}.md` are copied into target repos by `/agent install` and patched in place by `/agent patch`. Validated by `tests/platform/agent/agent-routes-contract.test.sh`.
-- **QA harness surface** — `tests/specs/*.md` and `tests/**/*.test.sh` are the executable proof layer. Validated by `/test all` and `./tests/run.sh`.
+- **Scaffold templates for downstream repos** — `platform/templates/{CLAUDE,AGENTS,REPOSITORY}.md` are copied into target repos by `(agent install)` and patched in place by `(agent patch)`. Validated by `tests/platform/agent/agent-routes-contract.test.sh`.
+- **QA harness surface** — `tests/specs/*.md` and `tests/**/*.test.sh` are the executable proof layer. Validated by `(test all)` and `./tests/run.sh`.
 
 ## 4) Mutation Protocol and Ownership
 
@@ -64,7 +64,7 @@ This repo projects the following root outputs, with deepest dependency chains an
 - Ownership boundaries:
   - `commands/<ns>/index.md` owns public routing; route bodies belong in `commands/<ns>/<route>/index.md`.
   - `platform/standards/*.md` owns cross-route invariants and standards; routes cite them rather than restating them.
-  - `platform/templates/*` is the only source for scaffold files installed by `/agent install`; installed copies in target repos are edited only via `/agent patch` and `/agent upgrade`.
+  - `platform/templates/*` is the only source for scaffold files installed by `(agent install)`; installed copies in target repos are edited only via `(agent patch)` and `(agent upgrade)`.
   - `tests/specs/*.md` owns Markdown-layer harness policy; `tests/**/*.test.sh` owns the shell-executable harness.
   - Command-advisory vocabulary: `platform/data/*.json` owns shared policy and schema; a namespace's caller recommendations live at `platform/data/advisories/<ns>.json` (central) or `commands/<ns>/data/<ns>.json` (per-slice — use when the namespace owns a `commands/<ns>/data/` directory, as collab does at `commands/collab/data/collab.json`). `platform/tooling/command-advisories.py` resolves both locations and validates coverage, duplicate sources, and leakage.
   - `platform/tooling/*` and `commands/collab/engine/*` are the only mutators of `generated/*` and the roster block.
@@ -85,7 +85,7 @@ This repo projects runtime state under `~/.cursor/*` and generated mirrors under
 - `./platform/tooling/sync-commands-catalog.sh --check`
 - `./platform/tooling/sync-framework-boundaries.sh` (run and diff `generated/` if `--check` is unsupported)
 - `./platform/tooling/sync-roles-roster.sh` (run and diff `generated/` if `--check` is unsupported)
-- `/test all` (Markdown-harness sweep over `tests/specs/`)
+- `(test all)` (Markdown-harness sweep over `tests/specs/`)
 
 ### Overlay Mode (optional)
 

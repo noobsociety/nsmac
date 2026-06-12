@@ -1,14 +1,14 @@
 # QA — command commands
 
-Deterministic QA for slash routers and route playbooks in `~/.cursor/commands/**/*.md`.
+Deterministic QA for command routers and route playbooks in `~/.cursor/commands/**/*.md`.
 
 ## Procedure
 
 1. Load every `*.md` under `~/.cursor/commands/`.
 2. Validate each file has exactly one `#` title, and exactly one `## Trigger`, `## Steps`, and `## Notes` in that order.
-3. Validate P9: every public command and private function file except `commands.md` declares exactly one `**Slash:**`, `**Prose dispatch:**`, and `**Search phrases:**` line in that order.
-4. Validate trigger boundaries: invocable slash/prose forms do not appear under `Search phrases`, search phrases do not replace slash/prose entries, and legacy `**Phrases:**` blocks fail.
-5. Validate phrase-to-route exactness for invocable entries only: no slash or prose-dispatch value appears in more than one command/function route file, except the documented `/test` router and `commands/test/index.md` implementation mirror. `Search phrases` may repeat because they are non-invocable discovery aids.
+3. Validate P9: every public command and private function file except `commands.md` declares exactly one `**Dispatch:**` and `**Search phrases:**` line in that order, declares no legacy `**Slash:**`, `**Signature:**`, or `**Prose dispatch:**` lines, and contains no user-facing slash command invocation prose.
+4. Validate trigger boundaries: invocable dispatch forms do not appear under `Search phrases`, search phrases do not replace dispatch entries, and legacy `**Phrases:**` blocks fail.
+5. Validate phrase-to-route exactness for invocable entries only: no dispatch value appears in more than one command/function route file, except the documented `(test)` router and `commands/test/index.md` implementation mirror. `Search phrases` may repeat because they are non-invocable discovery aids.
 6. Validate quote shape for declared invocation forms: single-quoted wrappers fail with `invalid quote: single quotes are not a valid wrapper; use double quotes`.
 7. Validate each file is <= 250 lines.
 8. Validate namespace routers resolve routes to grouped route playbook paths.

@@ -2,8 +2,8 @@
 
 ## Trigger
 
-**Slash:** (reference only — not an invocable route)
-**Prose dispatch:** (reference only — not an invocable route)
+**Dispatch:** (reference only — not an invocable route)
+**Reference surface:** collab flag taxonomy
 **Search phrases:** collab flag taxonomy, flag inventory source, helper enforced flags
 
 ## Steps
@@ -27,21 +27,21 @@ A flag belongs to exactly one class. When a flag's enforcement changes, the entr
 
 ## Flag inventory
 
-### `/collab join`
+### `(collab join)`
 
 | Flag | Class | Notes |
 |---|---|---|
 | `--role <role>` | `helper-enforced` | Required; helper rejects missing or unreadable role file |
 | `--agent-id <id>` | `helper-enforced` | Required; helper rejects blank value; `unknown` is the only permitted fallback |
 
-### `/collab speak`
+### `(collab speak)`
 
 | Flag | Class | Notes |
 |---|---|---|
 | `<message>` | `helper-enforced` | Required for moderator-role contributions; helper aborts when absent |
 | `--turn-order <key>...` | `helper-enforced` | Recovery-only; all keys must be registered; helper rejects unknown or duplicate keys |
 
-### `/collab set`
+### `(collab set)`
 
 | Flag | Class | Notes |
 |---|---|---|
@@ -49,7 +49,7 @@ A flag belongs to exactly one class. When a flag's enforcement changes, the entr
 | `turn-order <keys>` | `helper-enforced` | Aliases `--turn-order` write path; same validation as speak-time |
 | `--force` | `helper-enforced` | Recovery-only; bypasses normal gate checks; helper logs use; requires explicit declaration in route |
 
-### `/collab run plan`
+### `(collab run plan)`
 
 | Flag | Class | Notes |
 |---|---|---|
@@ -57,7 +57,7 @@ A flag belongs to exactly one class. When a flag's enforcement changes, the entr
 | `--sibling-scope <path>...` | `helper-enforced` | Declared sibling scopes; conflict check against `--scope` |
 | `--returned-path <path>` | `advisory` | Returned subagent paths; helper logs but does not enforce scope boundaries at return time |
 
-### `/collab show`
+### `(collab show)`
 
 | Flag | Class | Notes |
 |---|---|---|

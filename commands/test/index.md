@@ -1,12 +1,10 @@
-# /test
+# (test)
 
 Run QA harnesses by target so maintainers can execute canonical test checklists without prompt copy-paste.
 
 ## Trigger
 
-**Slash:** `/test`
-**Signature:** `/test <commands | core | roles | settings | repo | all>`
-**Prose dispatch:** `(test <commands | core | roles | settings | repo | all>)` — prose routing hint; not a terminal command.
+**Dispatch:** `(test <commands | core | roles | settings | repo | all>)` — routing-only command form; not a shell command.
 **Search phrases:** `run tests`, `qa run`, `harness run`, `test target`
 
 ## Steps
@@ -27,10 +25,10 @@ Run QA harnesses by target so maintainers can execute canonical test checklists 
 
 - **Route:** `commands` | `core` | `roles` | `settings` | `repo` | `all`.
 - **Parameters:** `<commands | core | roles | settings | repo | all>` — required QA target selector.
-- **Missing target help:** A bare `/test` invocation aborts before any harness command and emits the allowed target set.
+- **Missing target help:** A bare `(test)` invocation aborts before any harness command and emits the allowed target set.
 - **Required authorities:** `~/.cursor/tests/specs/commands.md`, `~/.cursor/tests/specs/core.md`, `~/.cursor/tests/specs/roles.md`, `~/.cursor/tests/specs/settings.md`, and `REPOSITORY.md` at repo root.
 - **Dependencies:** If any required harness context is unreadable, **ABORT** per **`context-gate.md`**.
-- **Internal harness specs:** `tests/specs/generated.md`, `tests/specs/templates.md`, and `tests/specs/tests.md` are intentionally not exposed as `/test <target>` routing targets; they are harness-internal specifications swept by `./tests/run.sh`'s Markdown harness sweep.
+- **Internal harness specs:** `tests/specs/generated.md`, `tests/specs/templates.md`, and `tests/specs/tests.md` are intentionally not exposed as `(test) <target>` routing targets; they are harness-internal specifications swept by `./tests/run.sh`'s Markdown harness sweep.
 
 ```route-arg
 dispatch: (test <commands | core | roles | settings | repo | all>)

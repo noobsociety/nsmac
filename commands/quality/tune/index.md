@@ -1,19 +1,17 @@
-# /quality tune
+# (quality tune)
 
 Run a named specialist evaluation command on a target, then audit cross-cutting **Criteria** and apply rubric learning via [quality-learning](../../../platform/standards/quality-learning.md).
 
 ## Trigger
 
-**Slash:** `/quality tune`
-**Signature:** `/quality tune <interface | web | game | operations>`
-**Prose dispatch:** `(quality tune <interface | web | game | operations>)` — prose routing hint; not a terminal command.
+**Dispatch:** `(quality tune <interface | web | game | operations>)` — routing-only command form; not a shell command.
 **Search phrases:** tune, rubric tune, quality with learning
 
 ## Steps
 
-1. Resolve `<target>` from the first argument after the slash; must be one of `interface`, `web`, `game`, or `operations`. If missing or invalid, **ABORT** with the token received.
+1. Resolve `<target>` from the first argument after the route name; must be one of `interface`, `web`, `game`, or `operations`. If missing or invalid, **ABORT** with the token received.
 2. **Route — non-interface:** When `<target>` is one of `web`, `game`, or `operations`, resolve `<project>` from the next positional argument or attachment per that specialist playbook. If missing, **ABORT**: `<project>` is required.
-3. **Route — interface:** When `<target>` is `interface`, resolve `<image>` and `<project>` from remaining tokens and attachments using the same order as **`/quality assess interface`** **Parameters** in [assess-interface](../assess-interface/index.md). If either is missing after resolution, **ABORT** naming the missing argument.
+3. **Route — interface:** When `<target>` is `interface`, resolve `<image>` and `<project>` from remaining tokens and attachments using the same order as **`(quality assess interface)`** **Parameters** in [assess-interface](../assess-interface/index.md). If either is missing after resolution, **ABORT** naming the missing argument.
 4. Read this file and [quality-learning](../../../platform/standards/quality-learning.md). If either is not directly readable, **ABORT** per **`context-gate.md`**.
 5. Run the resolved specialist playbook (`assess-interface.md`, `assess-web.md`, `assess-game.md`, or `assess-operations.md`) through its **Steps** in full, passing the resolved arguments.
 6. After the specialist review, audit against **Criteria** in **Notes**. For each finding record path (and line when applicable), severity `critical` | `major` | `minor` | `info`, description, and fix. Group by severity then category.
@@ -25,8 +23,8 @@ Run a named specialist evaluation command on a target, then audit cross-cutting 
 
 ## Notes
 
-- **Route (interface vs non-interface).** Non-interface (`web`, `game`, `operations`): next positional arg is `<project>` (specialist root path). Interface: next args are `<image>` then `<project>` per **`/quality assess interface`** **Parameters**.
-- **Parameters:** `<target>` — one of `interface`, `web`, `game`, or `operations` (required). **Non-interface route:** `<project>` — specialist root path (required); same meaning as in **`/quality assess web`**, **`/quality assess game`**, or **`/quality assess operations`**. **Interface route:** `<image>` and `<project>` — screenshot or image path and vocabulary project root (both required); resolution matches **`/quality assess interface`**.
+- **Route (interface vs non-interface).** Non-interface (`web`, `game`, `operations`): next positional arg is `<project>` (specialist root path). Interface: next args are `<image>` then `<project>` per **`(quality assess interface)`** **Parameters**.
+- **Parameters:** `<target>` — one of `interface`, `web`, `game`, or `operations` (required). **Non-interface route:** `<project>` — specialist root path (required); same meaning as in **`(quality assess web)`**, **`(quality assess game)`**, or **`(quality assess operations)`**. **Interface route:** `<image>` and `<project>` — screenshot or image path and vocabulary project root (both required); resolution matches **`(quality assess interface)`**.
 - **No-learn mode:** `no-learn`, `static`, `one-off`, or `do not adapt` ends the run after step **8**; skips steps **9–11** (no notes prompt, no **Protocol** proposal pass, no rubric append).
 - **Response order:** Specialist findings first; cross-cutting Criteria audit next; adaptation candidates last.
 - **Learning:** At most 2 accepted adaptation candidates applied per run; remaining deferred to next run per [quality-learning](../../../platform/standards/quality-learning.md) batch cap.

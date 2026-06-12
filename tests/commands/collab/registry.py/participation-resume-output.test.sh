@@ -19,7 +19,7 @@ if [[ "$join_output" != *"RESUME: commands/collab/engine/registry.py speak-state
   printf 'FAIL: join advisory did not include exact resume command\n%s\n' "$join_output" >&2
   exit 1
 fi
-if [[ "$join_output" != *"TRANSCRIPT: commands/collab/engine/registry.py transcript-view $TARGET Audit"* ]]; then
+if [[ "$join_output" != *"TRANSCRIPT: commands/collab/engine/registry.py transcript-view $TARGET Audit --raw"* ]]; then
   printf 'FAIL: join advisory did not include active-phase transcript pointer\n%s\n' "$join_output" >&2
   exit 1
 fi
@@ -36,13 +36,25 @@ import sys
 
 target = sys.argv[1]
 state = json.loads(os.environ['STATE'])
-assert state['nextCommand'] == f'/collab speak {target}', state
-assert state['nextTranscriptCommand'] == f'commands/collab/engine/registry.py transcript-view {target} Audit', state
+assert state['nextCommand'] == f'(collab speak {target})', state
+assert state['nextTranscriptCommand'] == f'commands/collab/engine/registry.py transcript-view {target} Audit --raw', state
 assert state['policyBlockers'] == [], state
 assert state['phaseSummary']['activePhase'] == 'Audit', state
 assert state['phaseSummary']['status'] == 'open', state
 assert state['phaseSummary']['expectedRole'] == 'pe', state
 assert 'excerptAnchors' not in state, state
+PY
+
+state="$("$ROOT/commands/collab/engine/registry.py" speak-state "$TARGET" mod --resume)"
+STATE="$state" python3 - "$TARGET" <<'PY'
+import json
+import os
+import sys
+
+target = sys.argv[1]
+state = json.loads(os.environ['STATE'])
+assert state['nextTranscriptCommand'] == f'commands/collab/engine/registry.py transcript-view {target} Audit', state
+assert not state['nextTranscriptCommand'].endswith('--raw'), state
 PY
 
 "$ROOT/commands/collab/engine/registry.py" set "$TARGET" active-phase Discussion --force --caller-role mod >/dev/null
@@ -68,7 +80,7 @@ import sys
 target = sys.argv[1]
 state = json.loads(os.environ['STATE'])
 assert state['nextCommand'], state
-assert '/collab speak' in state['nextCommand'], state
+assert state['nextCommand'].startswith('(collab speak '), state
 assert target in state['nextCommand'], state
 assert state['phaseSummary']['activePhase'] == 'Discussion', state
 assert 'discussion-pe-1' in state['excerptAnchors'], state
@@ -84,7 +96,7 @@ import sys
 target = sys.argv[1]
 state = json.loads(os.environ['STATE'])
 assert state['nextCommand'], state
-assert '/collab speak' in state['nextCommand'], state
+assert state['nextCommand'].startswith('(collab speak '), state
 assert target in state['nextCommand'], state
 assert state['phaseSummary']['activePhase'] == 'Conclusion', state
 PY
@@ -99,7 +111,7 @@ import sys
 target = sys.argv[1]
 state = json.loads(os.environ['STATE'])
 assert state['nextCommand'], state
-assert '/collab speak' in state['nextCommand'], state
+assert state['nextCommand'].startswith('(collab speak '), state
 assert target in state['nextCommand'], state
 assert state['phaseSummary']['activePhase'] == 'Handoff', state
 PY
@@ -125,8 +137,8 @@ import sys
 
 target = sys.argv[1]
 state = json.loads(os.environ['STATE'])
-assert state['nextCommand'] == f'/collab speak {target}', state
-assert state['nextTranscriptCommand'] == f"commands/collab/engine/registry.py transcript-view {target} 'Action Plan'", state
+assert state['nextCommand'] == f'(collab speak {target})', state
+assert state['nextTranscriptCommand'] == f"commands/collab/engine/registry.py transcript-view {target} 'Action Plan' --raw", state
 assert state['policyBlockers'] == [], state
 assert state['phaseSummary']['activePhase'] == 'Action Plan', state
 assert 'excerptAnchors' not in state, state
@@ -143,7 +155,7 @@ target = sys.argv[1]
 state = json.loads(os.environ['STATE'])
 assert state['readyToWrite'] is False, state
 assert state['expectedRole'] == 'tw', state
-assert state['nextCommand'] == f'/collab speak {target}', state
+assert state['nextCommand'] == f'(collab speak {target})', state
 assert state['policyBlockers'] == [{'code': 'expected-role', 'expectedRole': 'tw'}], state
 PY
 
@@ -204,8 +216,9 @@ import sys
 target = sys.argv[1]
 state = json.loads(os.environ['STATE'])
 assert state['nextCommand'], state
-assert '/collab seal verification' in state['nextCommand'], state
+assert state['nextCommand'].startswith('(collab seal verification '), state
 assert target in state['nextCommand'], state
+assert state['nextTranscriptCommand'] == f'commands/collab/engine/registry.py transcript-view {target} Completion --raw', state
 assert state['phaseSummary']['activePhase'] == 'Completion', state
 assert state['verificationReviewSubState'] == 'seal', state
 PY
@@ -229,6 +242,7 @@ import json
 import os
 
 state = json.loads(os.environ['STATE'])
+assert state['nextTranscriptCommand'].endswith(' Completion --raw'), state
 assert state['verificationReviewSubState'] == 'assessment', state
 assert state['phaseSummary']['activePhase'] == 'Completion', state
 assert 'nextCommand' not in state, state

@@ -1,6 +1,6 @@
 # Collab message formatting
 
-Format-preservation policy for moderator and other user-authored prose appended to collab records under `/collab speak`. The key invariant: a formatting pass must never change what was said, only how it is presented.
+Format-preservation policy for moderator and other user-authored prose appended to collab records under `(collab speak)`. The key invariant: a formatting pass must never change what was said, only how it is presented.
 
 ## Trigger
 
@@ -11,7 +11,7 @@ Format-preservation policy for moderator and other user-authored prose appended 
 ## When the policy applies
 
 - Apply only when user-authored prose is appended to `$HOME/.collabs/*/records/**/*.md`.
-- Apply after `/collab speak` captures moderator (or other human-supplied) text.
+- Apply after `(collab speak)` captures moderator (or other human-supplied) text.
 - Apply when the user asks to record a statement in a collaboration file.
 
 ## Behavior
@@ -49,7 +49,7 @@ Format rules:
 
 ## References
 
-- [collab/speak/index.md](../speak/index.md) — `/collab speak` route that invokes this formatting policy.
+- [collab/speak/index.md](../speak/index.md) — `(collab speak)` route that invokes this formatting policy.
 - [moderator-polish.md](moderator-polish.md) — structure-only polish transform applied to moderator contributions after append.
 - [style-guide](../../../platform/standards/style-guide.md) — imperative instruction shape and LLM-consumed document constraints.
 - [document-standard](../../../platform/standards/document-standard.md) — rule template and document structure.

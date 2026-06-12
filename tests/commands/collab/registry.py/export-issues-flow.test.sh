@@ -33,7 +33,7 @@ cat >issues.json <<'JSON'
   "issues": [
     {
       "title": "Implement issue terminal close gate",
-      "body": "/git issue implement\n\nrequirements:\n- Preserve exported issue evidence",
+      "body": "(git issue) implement\n\nrequirements:\n- Preserve exported issue evidence",
       "owner": "pe",
       "delivery": "prefill",
       "requires": ["#1"]

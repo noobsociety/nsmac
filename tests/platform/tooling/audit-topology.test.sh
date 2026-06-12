@@ -9,7 +9,7 @@ make_catalog() {
   local root="$1"
   mkdir -p "$root/commands"
   cat >"$root/commands/commands.md" <<'CATALOG'
-# /commands
+# (commands)
 
 <!-- BEGIN GENERATED:COMMANDS_ROSTER -->
 | Slash | Signature | Public router | Private functions |

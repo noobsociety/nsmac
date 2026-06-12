@@ -89,7 +89,7 @@ assessment_output="$("$ROOT/commands/collab/engine/registry.py" seal-render "$TA
   --caller-role pa 2>&1)"
 assessment_status=$?
 set -e
-if [[ "$assessment_status" -eq 0 || "$assessment_output" != *"/collab seal verification is valid only in the Completion phase"* ]]; then
+if [[ "$assessment_status" -eq 0 || "$assessment_output" != *"(collab seal verification) is valid only in the Completion phase"* ]]; then
   printf 'FAIL: post-cap assessment write did not abort at the Completion phase gate\n%s\n' "$assessment_output" >&2
   exit 1
 fi

@@ -1,6 +1,6 @@
 # Command standard
 
-The command standard defines how namespace routers and route playbooks live under `commands/` in `COMMAND_CONFIG_ROOT`. Every playbook follows the [style guide](style-guide.md) and the **Command** (`.md`) template in [document standard](document-standard.md#command-md); this file owns the extended contract: public slash routing, route playbooks, heading order, catalog duties, link hygiene, harness exceptions, and layout rules. Signal, one-action-per-step discipline, and the **250-line** budget live in [context engineering](context-management.md).
+The command standard defines how namespace routers and route playbooks live under `commands/` in `COMMAND_CONFIG_ROOT`. Every playbook follows the [style guide](style-guide.md) and the **Command** (`.md`) template in [document standard](document-standard.md#command-md); this file owns the extended contract: public command routing, route playbooks, heading order, catalog duties, link hygiene, harness exceptions, and layout rules. Signal, one-action-per-step discipline, and the **250-line** budget live in [context engineering](context-management.md).
 
 Contract: [document-standard.md](document-standard.md#command-md), [style-guide.md](style-guide.md), [context-management.md](context-management.md)
 
@@ -12,19 +12,20 @@ Contract: [document-standard.md](document-standard.md#command-md), [style-guide.
 
 ## File naming and invocation
 
-- Namespace routers use `commands/{namespace}/index.md` and expose `/namespace`.
-- Route playbooks use `commands/{namespace}/{route}/index.md` and document the effective invocation as `/namespace route`.
+- Namespace routers use `commands/{namespace}/index.md` and expose `(namespace <route>)`.
+- Route playbooks use `commands/{namespace}/{route}/index.md` and document the effective routed form as `(namespace route)`.
 - One bounded workflow lives in each route playbook. Namespace routers only resolve the route and delegate remaining input.
+- Public-facing command notation is dispatch-only everywhere agents read or act: route titles, Trigger dispatch lines, route prose, generated advisories, and engine runtime output all use `(namespace route ...)`. Slash-prefixed command forms are not valid command labels, examples, or runtime instructions.
 
 ## Document shape
 
 ### Title and opening line
 
 - After fenced-code removal, exactly one column-0 `# ` line that is not `## `.
-- Namespace routers use `# /<namespace>`.
-- Route playbooks use `# /<namespace> <route>`, except `commands/test/index.md` which uses `# /test` because the target selector is the first argument.
+- Namespace routers use `# (<namespace>)`.
+- Route playbooks use `# (<namespace> <route>)`, except `commands/test/index.md` which uses `# (test)` because the target selector is the first argument.
 - `tests/specs/*.md` harness files use their own `#` title line required by the harness spec.
-- The first body paragraph is one declarative sentence that starts with the action verb and states purpose and when to open the playbook, per [document standard](document-standard.md). Only `/quality assess` functions may use the bold-acronym-first opening described there.
+- The first body paragraph is one declarative sentence that starts with the action verb and states purpose and when to open the playbook, per [document standard](document-standard.md). Only `(quality assess ...)` functions may use the bold-acronym-first opening described there.
 
 ### Required sections
 
@@ -32,11 +33,9 @@ Include `## Trigger`, `## Steps`, then `## Notes`, in that order, each exactly o
 
 ### Trigger
 
-The `## Trigger` block declares three labeled sections in this order: **Slash**, **Prose dispatch**, **Search phrases**. Each section carries distinct dispatch semantics; omitting a section or placing them out of order is a structural conformance failure.
+The `## Trigger` block declares two labeled sections in this order: **Dispatch**, then **Search phrases**. Each section carries distinct routing semantics; omitting a section or placing them out of order is a structural conformance failure.
 
-**Slash** — the only terminal-invocable form; matches exactly as written. Lead with `**Slash:** /<namespace>` for namespace routers or `**Slash:** /<namespace> <route>` for route playbooks. Required route choices and positional arguments are declared in the **Signature** line directly after **Slash**.
-
-**Prose dispatch** — the routing-only `(<namespace> <route> <arg>...)` notation for routed agents. These agents follow the bootstrap chain (`CLAUDE.md` / `AGENTS.md` -> `~/.cursor/commands/commands.md`) and then execute the corresponding slash command. It is not terminal-executable; Slash users invoke the slash form directly. Slash entries and prose-dispatch entries must still be unique across routes and must not appear under Search phrases. The `/test` router and `commands/test/index.md` may mirror the same routed form because they describe one command surface and one implementation playbook, not two independently exposed routes.
+**Dispatch** — the routing-only `(<namespace> <route> <arg>...)` notation for routed agents. The line is the public invocation contract and must match the route's machine-readable `route-arg dispatch:` line exactly when a route declares arguments. It is not terminal-executable; copying it into a shell starts subshell syntax in bash and zsh. Dispatch entries must be unique across routes and must not appear under Search phrases. Public command docs, route H1 titles, generated advisory text, and engine runtime output must not present slash-prefixed command examples or trigger prose. The `(test)` router and `commands/test/index.md` may mirror the same routed form because they describe one command surface and one implementation playbook, not two independently exposed routes.
 
 **Search phrases** — discovery aids only; explicitly non-invocable; agents must not dispatch on a phrase match alone. For multi-mode functions, use a labeled group per mode: `**Search phrases (mode):**`.
 
@@ -44,7 +43,7 @@ The `## Trigger` block declares three labeled sections in this order: **Slash**,
 
 **Dequoted-value contract:** Routes receive the dequoted string, not the raw quoted token. This is stated once here; function files must not restate it.
 
-**Trust-model scope:** Dispatch enforces structural conformance of spec files — presence and order of the three sections, quote shape on declared invocation forms. Correctness of invocation intent is honor-system, comparable to `agentId` in `join.md`: the validator names what it checks; it does not claim to verify intent.
+**Trust-model scope:** Dispatch enforces structural conformance of spec files — presence and order of the two sections, quote shape on declared invocation forms. Correctness of invocation intent is honor-system, comparable to `agentId` in `join.md`: the validator names what it checks; it does not claim to verify intent.
 
 **Helper-boundary exemption:** `commands/collab/engine/registry.py` is invoked by argv, not by phrase or shape match, and is intentionally outside the 1:1 dispatch contract. Trigger-section and quote-shape rules do not apply to helper argv calls.
 
@@ -59,7 +58,7 @@ The `## Trigger` block declares three labeled sections in this order: **Slash**,
 
 ### Parameters
 
-Treat every command as a function. Declare the routing signature in **Trigger** and detail each parameter in **Notes**.
+Treat every command as a function. Declare the routed form in **Trigger** and detail each parameter in **Notes**.
 
 **Notation:**
 
@@ -70,11 +69,11 @@ Treat every command as a function. Declare the routing signature in **Trigger** 
 
 Commands either take no arguments or explicitly mark optional arguments with square brackets. Optional target arguments default only when the route states the omitted-target behavior in **Notes**.
 
-**Trigger — Signature line:** Add `**Signature:**` directly after `**Slash:**` showing the full invocation form using the notation above. Namespace signatures usually stop at the route selector; private functions own route-specific remaining arguments.
+**Trigger — Dispatch line:** Add `**Dispatch:**` as the first line under `## Trigger`, showing the full routed form using the notation above. Namespace dispatch forms usually stop at the route selector; private functions own route-specific remaining arguments.
 
 **Notes — Parameters block:** When one or more parameters exist, add `**Parameters:**` as the first bullet in `## Notes`, unless a **Route** block is present. Route-bearing public commands place **Route** first and **Parameters** second.
 
-**Multi-stage routes:** A route playbook may use a stage selector when one bounded workflow has stages with different arity. Its **Signature** line shows the required stage selector only, and `## Notes` must include **Stage signatures:** with one concrete invocation per stage. Each stage must state its own required arguments or explicitly state that no arguments are accepted. This exception belongs only to route playbooks; namespace routers still resolve one route selector.
+**Multi-stage routes:** A route playbook may use a stage selector when one bounded workflow has stages with different arity. Its **Dispatch** line shows the required stage selector only, and `## Notes` must include **Stage signatures:** with one concrete routed form per stage. Each stage must state its own required arguments or explicitly state that no arguments are accepted. This exception belongs only to route playbooks; namespace routers still resolve one route selector.
 
 **Resolution rule:** A typed positional argument and an attached file are equivalent for any parameter that accepts file content. Multi-file commands consume attachments in order.
 
@@ -85,20 +84,18 @@ Commands either take no arguments or explicitly mark optional arguments with squ
 **Public namespace command:**
 
 ```markdown
-# /{namespace}
+# ({namespace})
 
-Route {domain} workflows through one public slash so related commands stay grouped.
+Route {domain} workflows through one public command router so related commands stay grouped.
 
 ## Trigger
 
-**Slash:** `/{namespace}`
-**Signature:** `/{namespace} <route-a | route-b>`
-**Prose dispatch:** `({namespace} route-a ...)` — prose routing hint; not a terminal command.
+**Dispatch:** `({namespace} <route-a | route-b>)` — routing-only command form; not a shell command.
 **Search phrases:** <natural-language alias>, <alias>
 
 ## Steps
 
-1. Resolve `<route>` from the first token after `/{namespace}`. If missing or invalid, **ABORT** naming the token received.
+1. Resolve `<route>` from the first token after `{namespace}`. If missing or invalid, **ABORT** naming the token received.
 2. Load `commands/{namespace}/<route>/index.md` from the command config root.
 3. Execute that playbook with the remaining user input and attachments.
 
@@ -111,15 +108,13 @@ Route {domain} workflows through one public slash so related commands stay group
 **Route playbook:**
 
 ```markdown
-# /{namespace} {route}
+# ({namespace} {route})
 
 One sentence — purpose of the route and when to use it.
 
 ## Trigger
 
-**Slash:** `/{namespace} {route}`
-**Signature:** `/{namespace} {route} <arg1>`
-**Prose dispatch:** `({namespace} {route} ...)` — prose routing hint; not a terminal command.
+**Dispatch:** `({namespace} {route} <arg1>)` — routing-only command form; not a shell command.
 **Search phrases:** <natural-language alias>, <alias>
 
 ## Steps
@@ -135,7 +130,7 @@ One sentence — purpose of the route and when to use it.
 
 ## Catalog
 
-- Keep exactly one index file named `commands.md` with slash `/commands`.
+- Keep exactly one index file named `commands.md` with dispatch `(commands)`.
 - The catalog table must include every namespace router under `commands/`, except `commands.md`.
 - The catalog table must also list every route playbook used by a namespace router.
 - Update the table and invocation notes when behavior or typing constraints change.
@@ -152,9 +147,9 @@ One sentence — purpose of the route and when to use it.
 | **P5** | Link hygiene | Links stay inside allowed command, slice-local, platform, role, and rules paths |
 | **P6** | Required sections | `## Trigger` -> `## Steps` -> `## Notes` in order; each present once |
 | **P7** | Catalog | `commands.md` links every namespace router and route playbook |
-| **P8** | Title and opening line | H1 text is `# /<namespace>` or `# /<namespace> <route>` |
-| **P9** | Trigger contract | Every command route file except `commands.md` declares `**Slash:**`, `**Prose dispatch:**`, and `**Search phrases:**` as three sections in that order |
-| **P10** | Signature and Notes contract | Signature placeholders, stage signatures, and Notes ordering stay consistent |
+| **P8** | Title and opening line | H1 text is `# (<namespace>)` or `# (<namespace> <route>)` |
+| **P9** | Trigger contract | Every command route file except `commands.md` declares `**Dispatch:**` and `**Search phrases:**` as two sections in that order, declares no legacy Slash/Signature/Prose dispatch labels, and contains no user-facing slash command invocation prose in route titles, prose, generated advisories, or engine runtime output |
+| **P10** | Dispatch and Notes contract | Dispatch placeholders, stage signatures, route-arg dispatch values, and Notes ordering stay consistent |
 | **P11** | Self-containment | Required dependencies stay inside `commands/`, namespace-local backing slices, `platform/standards/`, or explicit QA harness targets |
 
 ## Layout and length

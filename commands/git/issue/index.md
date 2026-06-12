@@ -1,12 +1,10 @@
-# /git issue
+# (git issue)
 
 Prefill a tracked issue workflow (**`create`**) or run implementation work (**`implement`**); both the subcommand and the goal are required.
 
 ## Trigger
 
-**Slash:** `/git issue`
-**Signature:** `/git issue <create | implement> <goal>`
-**Prose dispatch:** `(git issue <create | implement> <goal>)` — prose routing hint; not a terminal command.
+**Dispatch:** `(git issue <create | implement> <goal>)` — routing-only command form; not a shell command.
 **Search phrases:** `create issue`, `new issue`, `implement issue`
 
 ## Steps
@@ -57,7 +55,7 @@ Projects: <project>
 - **Handoff:**
 
 ```text
-/git issue implement
+(git issue implement)
 
 <issue title>
 

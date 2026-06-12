@@ -1,12 +1,10 @@
-# /collab participant verify
+# (collab participant verify)
 
 Execute the participant-verification sequence for an assigned role within `Completion.verification`.
 
 ## Trigger
 
-**Slash:** `/collab participant verify`
-**Signature:** `/collab participant verify [<role>]`
-**Prose dispatch:** `(collab participant verify ...)` — prose routing hint; not a terminal command.
+**Dispatch:** `(collab participant verify [<role>])` — routing-only command form; not a shell command.
 **Search phrases:** collab participant verify, participant verification, individual verification, per-role verification sequence
 
 ## Steps
@@ -14,10 +12,10 @@ Execute the participant-verification sequence for an assigned role within `Compl
 1. Read [invariants.md](../../../commands/collab/reference/invariants.md) before executing; call the relevant helper fresh and do not trust prior reads from conversation context (Invariant #4). Resolve the target collab with **Registry targeting** in **Notes**.
 2. Read the resolved registry and the resolved transcript. If either is unreadable, **ABORT**: record unreadable; name the path.
 3. If the registry status is `closed` or `archived`, **ABORT**: closed collaboration records cannot receive participant verification.
-4. Resolve `activePhase` from the registry. If `activePhase` is not `Completion`, **ABORT**: `/collab participant verify` requires `activePhase = Completion`.
+4. Resolve `activePhase` from the registry. If `activePhase` is not `Completion`, **ABORT**: `(collab participant verify)` requires `activePhase = Completion`.
 5. Call `commands/collab/engine/registry.py participant-verify-state <target> <role>` to read the live participant-verification state and acquire the per-role route lock. Capture `registryRevision`, `verificationReviewSubState`, `nextRole`, and `roleState` from the output.
 6. Confirm `verification.subState = "participant"` in the registry. If absent or not `"participant"`, **ABORT**: participant verification is not the active sub-state; name the current value.
-7. Resolve the executing role from the registry `participants` list by matching the current agent to a registered participant. If no match, **ABORT**: role not registered; run `/collab join --role <role>` first.
+7. Resolve the executing role from the registry `participants` list by matching the current agent to a registered participant. If no match, **ABORT**: role not registered; run `(collab join --role <role>)` first.
 8. Confirm the executing role is in the participant-verification assignment list. If not assigned, **ABORT**: role is not assigned to participant verification for this collab.
 9. Check `verification.participants[role].stage` in the registry. If `"completed"`, report that participant verification for this role is already done and stop. Otherwise the helper must have persisted an active `"audit"`, `"remediation"`, or `"final-audit"` stage before render.
 10. Confirm `nextRole` equals the executing role. If another role is next, **ABORT**: participant verification turn lock is held by that role.
@@ -52,7 +50,7 @@ Execute the participant-verification sequence for an assigned role within `Compl
   </details>
   ```
 - **Turn-budget trigger.** If any seal-attempt transcript exceeds 12 turns, open a follow-up DX audit on turn-budget management and `/compact` recovery ergonomics across participant verification.
-- **Post-state resume signal.** After `/collab participant verify` completes, run `commands/collab/engine/registry.py speak-state --resume <target> <role>` to confirm the current state before any further action.
+- **Post-state resume signal.** After `(collab participant verify)` completes, run `commands/collab/engine/registry.py speak-state --resume <target> <role>` to confirm the current state before any further action.
 
 ```route-arg
 dispatch: (collab participant verify [<role>])

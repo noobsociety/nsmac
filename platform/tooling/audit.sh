@@ -399,6 +399,12 @@ PY
   ((status == 0)) || failures=$((failures + 1))
 }
 
+check_public_dispatch_surface() {
+  local status=0
+  python3 platform/tooling/check-public-dispatch-surface.py --root "$ROOT" || status=$?
+  ((status == 0)) || failures=$((failures + 1))
+}
+
 check_route_arg_defaults() {
   local status=0
   python3 - <<'PY' || status=$?
@@ -449,6 +455,7 @@ check_collab_contract_terms
 check_untracked_payload
 check_tracked_source_boundary
 check_collab_registry_lock
+check_public_dispatch_surface
 check_generated_freshness
 check_generated_boundary
 check_links

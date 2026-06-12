@@ -1,12 +1,10 @@
-# /collab write summary
+# (collab write summary)
 
 Write a human-readable reference summary from an existing collaboration record.
 
 ## Trigger
 
-**Slash:** `/collab write summary`
-**Signature:** `/collab write summary`
-**Prose dispatch:** `(collab write summary)` — prose routing hint; not a terminal command.
+**Dispatch:** `(collab write summary)` — routing-only command form; not a shell command.
 **Search phrases:** collab summarize, summarize collaboration, collaboration wrap up
 
 ## Steps

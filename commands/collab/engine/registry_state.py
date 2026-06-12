@@ -8,6 +8,7 @@ import re
 import uuid
 from pathlib import Path
 
+from commands.collab.engine.dispatch_forms import collab_dispatch
 from commands.collab.engine.errors import die
 
 PROJECT_ID_FILENAME = '.collab.json'
@@ -127,7 +128,7 @@ def resolve_default_registry_path(command: str | None) -> tuple[Path, bool]:
         identity = read_project_identity(identity_path)
         project_root = identity_path.parent
     else:
-        die(f'project marker missing: {PROJECT_ID_FILENAME}; run /collab init from the project root')
+        die(f'project marker missing: {PROJECT_ID_FILENAME}; run {collab_dispatch("init")} from the project root')
 
     RESOLVED_PROJECT_IDENTITY = identity
     state_root = state_root_for_project(identity['projectId'])

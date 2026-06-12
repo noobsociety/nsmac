@@ -24,7 +24,7 @@ execution_output="$("$ROOT/commands/collab/engine/registry.py" execution "$TARGE
   --touched-path commands/collab/engine/registry.py \
   --caller-role pe)"
 
-if [[ "$execution_output" != *"NEXT: Run /collab export-issues for role pe."* || "$execution_output" != *"open"* ]]; then
+if [[ "$execution_output" != *"NEXT: Run (collab export-issues) for role pe."* || "$execution_output" != *"open"* ]]; then
   printf 'FAIL: issue terminal execution did not route to export-issues while evidence was absent\n%s\n' "$execution_output" >&2
   exit 1
 fi

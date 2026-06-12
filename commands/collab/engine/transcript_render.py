@@ -44,6 +44,7 @@ if str(COMMAND_SYSTEM_DIR) not in sys.path:
 
 from roles import load_projector, load_role, participant_row, projectors_dir_for_roles  # noqa: E402
 
+from commands.collab.engine.dispatch_forms import collab_dispatch  # noqa: E402
 from commands.collab.engine.errors import die  # noqa: E402
 from commands.collab.engine.handoff_shape import render_content_for_transcript, validate_handoff_state  # noqa: E402
 from commands.collab.engine.normalizers import format_banner_timestamp, phase_slug  # noqa: E402
@@ -359,6 +360,10 @@ def render_moderator_project_transcript(
         f'sourceDigest: `{source_digest}`',
         f'contributionStoreDigest: `{store_digest}`',
         '',
+        '**Status**',
+        '',
+        rendered_status_table(entry),
+        '',
     ]
     for phase in PHASES:
         phase_records = [record for record in records if record['phase'] == phase]
@@ -663,7 +668,7 @@ def rendered_reviewer_section(entry: dict, roles_dir: Path) -> str | None:
         '|------|--------|',
         f'| {reviewer} ({display_name}) | (pending) |',
         '',
-        f'`{reviewer}` is assigned as reviewer but has not yet joined. Run `/collab join --role {reviewer}` before any participant may contribute.',
+        f'`{reviewer}` is assigned as reviewer but has not yet joined. Run `{collab_dispatch("join", "--role", reviewer)}` before any participant may contribute.',
     ])
 
 
@@ -735,7 +740,7 @@ def rendered_managed_header(title: str, entry: dict, roles_dir: Path, timestamp:
     if prohibitions is not None:
         lines.extend([prohibitions, ''])
     lines.extend([
-        'Agents must wait for the moderator to call `/collab speak` before contributing.',
+        f'Agents must wait for the moderator to call `{collab_dispatch("speak")}` before contributing.',
         '',
         '**Reviewer**',
         '',
@@ -858,7 +863,7 @@ def render_initial_transcript_legacy(title: str, entry: dict, roles_dir: Path, t
         '|---|-----|------|-------|------------------|',
         participant,
         '',
-        'Agents must wait for the moderator to call `/collab speak` before contributing.',
+        f'Agents must wait for the moderator to call `{collab_dispatch("speak")}` before contributing.',
         '',
     ]
     reviewer = rendered_reviewer_section(entry, roles_dir)

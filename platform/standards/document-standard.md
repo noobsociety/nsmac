@@ -41,7 +41,7 @@ One sentence — purpose of the command and typical use cases.
 
 Full playbook authoring for files under the config tree’s **`commands/`** directory — catalog sync, heading order, link allowlists, harness exceptions, no manual TOC — lives in [command standard](command-standard.md).
 
-**Opening sentence:** The first sentence is a single declarative statement that opens with the action verb. Exception: routes that define a named evaluation principle may open with a bold acronym label as the subject; mirror the opening line shape in `commands/quality/assess-game/index.md` and reserve it for `/quality assess` routes only. Do not use the acronym-first opening for ordinary slash routes such as `commands/git/commit/index.md`.
+**Opening sentence:** The first sentence is a single declarative statement that opens with the action verb. Exception: routes that define a named evaluation principle may open with a bold acronym label as the subject; mirror the opening line shape in `commands/quality/assess-game/index.md` and reserve it for `(quality assess ...)` routes only. Do not use the acronym-first opening for ordinary command routes such as `commands/git/commit/index.md`.
 
 ### Skill (`SKILL.md`)
 
@@ -95,11 +95,11 @@ One sentence — what steps the manual covers and when to use it instead of the 
 ## Status
 ```
 
-- **Brief description:** ≤120 characters on one line; state what the manual covers and when to use it in place of automation — not what the project is or how to use it; no "this document" filler. Full playbook rules in `/doc write manual`.
+- **Brief description:** ≤120 characters on one line; state what the manual covers and when to use it in place of automation — not what the project is or how to use it; no "this document" filler. Full playbook rules in `(doc write manual)`.
 - **Prerequisites:** tools, environment variables, and setup the automation handles silently; platform branches (**macOS:**, **Linux and others:**) where the host affects the steps; omit if nothing is non-obvious.
 - **Automation entry section:** one `##` per root automation entry, titled by outcome not by script name; sub-steps as sequentially numbered `###` headings when a section covers multiple distinct phases; paths and commands go in fenced blocks or tables, and name script files in step prose only when identifying the automation being replaced or a traced optional helper; add platform-branch labels (**macOS:**, **Linux:**) where automation diverges by OS. A Manual traces what automation does step by step — sections are named by what they achieve (`Clean nested mirrors`, `Link home files`), not by document role (`Setup`, `Usage`).
 - **Verification:** checks that confirm the steps produced the expected result; include the shell reload note when `zshrc` is linked; omit if no checks apply.
-- **Status:** `> Last updated: YYYY-MM-DD` then one or two sentences on what is traced to current scripts and which optional branches may drift; follow the date-sourcing rule in `/doc write manual`.
+- **Status:** `> Last updated: YYYY-MM-DD` then one or two sentences on what is traced to current scripts and which optional branches may drift; follow the date-sourcing rule in `(doc write manual)`.
 
 ### Agent guide (`AGENTS.md`)
 

@@ -16,8 +16,8 @@ Verification runs in two stages. Each participant completes one full turn agains
 
 | Sub-state | Description |
 |-----------|-------------|
-| `Completion.execution` | `/collab run plan` execution for all assigned roles, resulting in `execution.<role>` registry entries. |
-| `Completion.verification` | Assigned participants run `/collab participant verify` (if configured); reviewer then issues `/collab seal verification` and evaluates whether discussion goals were met. |
+| `Completion.execution` | `(collab run plan)` execution for all assigned roles, resulting in `execution.<role>` registry entries. |
+| `Completion.verification` | Assigned participants run `(collab participant verify)` (if configured); reviewer then issues `(collab seal verification)` and evaluates whether discussion goals were met. |
 
 Execution precedes verification. Close is blocked until a current non-stale `verificationSeal` exists and the reviewer has emitted a `verdict` with `outcome == success`.
 
@@ -27,8 +27,8 @@ Within `Completion.verification`, three ordered sub-states apply for reviewer-ba
 
 | Sub-state | Description |
 |-----------|-------------|
-| `verification.participant` | Assigned participants run `/collab participant verify`; per-role three-turn sequence (audit → remediation → final-audit). Precedes `verification.seal`. |
-| `verification.seal` | Reviewer issues `/collab seal verification`; mechanical execution-truth check. Existing seal contract unchanged. |
+| `verification.participant` | Assigned participants run `(collab participant verify)`; per-role three-turn sequence (audit → remediation → final-audit). Precedes `verification.seal`. |
+| `verification.seal` | Reviewer issues `(collab seal verification)`; mechanical execution-truth check. Existing seal contract unchanged. |
 | `verification.assessment` | Reviewer evaluates whether discussion goals were met and emits a `verdict`. |
 
 `verification.participant` precedes `verification.seal`, which precedes `verification.assessment`. Assessment opens after a successful seal. Assessment also re-opens when the seal becomes stale or a cap-exit is recorded, which invalidates the prior seal. Assessment is budget-exempt when a cap-exit trigger opened it.
@@ -57,7 +57,7 @@ The reviewer emits a verdict during `verification.assessment`:
 verdict: { outcome, restoreTarget?, restoreReason?, evidence?, failureCategory? }
 ```
 
-- `outcome`: `success | incomplete | failed`. The reviewer determines this autonomously from execution evidence; soliciting the value from the moderator or user is not permitted. On `success`, helper closes and summarizes. On `incomplete` or `failed`, the helper emits the restore command as a `NEXT:` advisory; moderator runs `/collab reopen <restoreTarget>` to perform the full phase reset. The helper does not auto-execute the restore.
+- `outcome`: `success | incomplete | failed`. The reviewer determines this autonomously from execution evidence; soliciting the value from the moderator or user is not permitted. On `success`, helper closes and summarizes. On `incomplete` or `failed`, the helper emits the restore command as a `NEXT:` advisory; moderator runs `(collab reopen <restoreTarget>)` to perform the full phase reset. The helper does not auto-execute the restore.
 - `evidence`: read-only anchors only — transcript ids, registry revision, committed paths, execution entry ids. The reviewer does not write implementation steps, command output, or replacement content.
 - `restoreTarget`: required when `outcome != success`; must be ≤ current phase in lifecycle order; restricted to registered phases with route support.
 - `restoreReason`: required when `outcome != success`; explains the causal determination.
@@ -67,7 +67,7 @@ Assessment must emit even when no actionable cause is identifiable: `nullResult:
 
 > **Drift (collab #8):** Authorship-bias disclosure (§4.7, verificationSeal.observedRevision 251, verdict revision 253) — see the commit introducing this note.
 
-> **Drift (collab #10):** `assessment_next_line` (was at `registry.py:4097–4101`) previously emitted `NEXT: Moderator should run /collab set active-phase {target} --force.` for non-success verdicts — the wrong primitive. This document reflects the corrected target behavior (`/collab reopen <restoreTarget>`); the implementation fix landed in collab #10's platform-engineer scope.
+> **Drift (collab #10):** `assessment_next_line` (was at `registry.py:4097–4101`) previously emitted `NEXT: Moderator should run (collab set active-phase {target} --force).` for non-success verdicts — the wrong primitive. This document reflects the corrected target behavior (`(collab reopen <restoreTarget>)`); the implementation fix landed in collab #10's platform-engineer scope.
 
 ## Round definition
 
@@ -100,7 +100,7 @@ Each trigger is helper-enforced with a paired shell test asserting invalidation:
 
 | Trigger | Mechanism |
 |---------|-----------|
-| Execution rewrite via `/collab rewrite execution` | `rewrite-execution` helper path invalidates seal |
+| Execution rewrite via `(collab rewrite execution)` | `rewrite-execution` helper path invalidates seal |
 | Transcript repair touching Completion execution evidence | Repair helper path invalidates seal |
 | Out-of-scope patch applied outside declared `writeScope` | `execute-spawn` rejection or explicit helper hook |
 | Content drift (recomputed scope digest ≠ `verificationSeal.contentDigest`) | `invalidate_verification_seal` content-drift path |
@@ -124,23 +124,23 @@ The cap-exit action is passed to `seal-render` as `--cap-exit <action>`. The rev
 
 ## writeScope reopen advisory
 
-When the reviewer discovers during `Completion.verification` that required fixes are outside the executed `writeScope`, the only registered exit is `/collab seal verification --cap-exit reopen-handoff`. This transition reopens `Handoff` for a revised scope declaration; informal scope widening is not permitted.
+When the reviewer discovers during `Completion.verification` that required fixes are outside the executed `writeScope`, the only registered exit is `(collab seal verification) --cap-exit reopen-handoff`. This transition reopens `Handoff` for a revised scope declaration; informal scope widening is not permitted.
 
 The boundary source is `handoff.roles.<role>.writeScope` in the registry.
 
 ## Reviewer obligation
 
-Only the `reviewerRole` participant may author the seal. Non-reviewer roles must not issue `/collab seal verification`. The reviewer's terminal obligation for reviewer-backed collabs is issuing the seal; the reviewer does not run the full test suite as part of verification.
+Only the `reviewerRole` participant may author the seal. Non-reviewer roles must not issue `(collab seal verification)`. The reviewer's terminal obligation for reviewer-backed collabs is issuing the seal; the reviewer does not run the full test suite as part of verification.
 
 ## Auto-close
 
-For reviewer-backed collabs, auto-close from `/collab run plan` alone is removed. Close fires only when all assigned `execution.<role>` entries are `completed` AND a current non-stale `verificationSeal` exists. Both conditions must hold simultaneously.
+For reviewer-backed collabs, auto-close from `(collab run plan)` alone is removed. Close fires only when all assigned `execution.<role>` entries are `completed` AND a current non-stale `verificationSeal` exists. Both conditions must hold simultaneously.
 
 ## Time-of-close attestation
 
 The seal model governs two distinct time domains:
 
-**Seal time (open records):** Content-integrity is enforced when `seal-render` runs. The scope digest and `pathDigests` map are recomputed from `HEAD` and must equal the stored seal values; committed deletions are represented as deletion tombstones in `pathDigests`. The declared scope must also be fully committed at `HEAD`. The exact mechanics are defined in the [Content-integrity gate](../seal-verification/index.md#content-integrity-gate) note in `/collab seal verification`.
+**Seal time (open records):** Content-integrity is enforced when `seal-render` runs. The scope digest and `pathDigests` map are recomputed from `HEAD` and must equal the stored seal values; committed deletions are represented as deletion tombstones in `pathDigests`. The declared scope must also be fully committed at `HEAD`. The exact mechanics are defined in the [Content-integrity gate](../seal-verification/index.md#content-integrity-gate) note in `(collab seal verification)`.
 
 **Post-close exemption:** `closed` and `archived` records are not re-validated after close. History rewrites (amend, rebase, squash) that preserve the content of touched paths do not affect the sealed digest and are expected artifacts in immutable records — not live defects. The state at seal time is the authoritative attestation.
 
@@ -148,8 +148,8 @@ For remediation guidance when `workRepo` binding or reachability issues surface 
 
 ## Related routes
 
-- [`participant-verify.md`](../participant-verify/index.md) — invocable route spec for `/collab participant verify`
-- [`seal-verification.md`](../seal-verification/index.md) — invocable route spec for `/collab seal verification`
+- [`participant-verify.md`](../participant-verify/index.md) — invocable route spec for `(collab participant verify)`
+- [`seal-verification.md`](../seal-verification/index.md) — invocable route spec for `(collab seal verification)`
 - [`registry.md`](registry.md) — `verificationSeal` field schema and `completion.subState` field ownership
 - [`show-policy.md`](../show-policy/index.md) — gate policy and phase-presence overview
 - [`agent-effort.md`](agent-effort.md) — effort matrix row for `Completion.verification`

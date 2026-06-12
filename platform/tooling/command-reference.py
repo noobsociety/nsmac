@@ -39,8 +39,6 @@ class Route:
     path: Path
     namespace: str
     route: str
-    slash: str
-    signature: str
     dispatch: str
     params: list[Param]
 
@@ -117,16 +115,28 @@ def first_code_span(value: str) -> str:
     return uncode(value)
 
 
-def synth_dispatch(slash: str) -> str:
-    if not slash.startswith("/"):
-        raise ReferenceError(f"cannot synthesize prose dispatch from slash value: {slash}")
-    return f"({slash[1:]})"
+def route_name_from_dispatch(path: Path, namespace: str, route_slug: str, dispatch: str) -> str:
+    if not (dispatch.startswith("(") and dispatch.endswith(")")):
+        raise ReferenceError(f"{path}: invalid Dispatch routed form: {dispatch}")
+    tokens = dispatch[1:-1].split()
+    if not tokens or tokens[0] != namespace:
+        raise ReferenceError(f"{path}: Dispatch route does not match namespace {namespace}: {dispatch}")
+    candidate_tokens: list[str] = []
+    for token in tokens[1:]:
+        if token.startswith(("<", "[", "--")) or "<" in token:
+            break
+        candidate_tokens.append(token)
+    candidate = " ".join(candidate_tokens).strip()
+    slug_words = route_slug.replace("-", " ")
+    if candidate == route_slug or candidate == slug_words:
+        return candidate
+    if candidate.startswith(slug_words + " "):
+        return slug_words
+    return candidate or slug_words
 
 
-def route_has_params(slash: str, signature: str) -> bool:
-    if not signature:
-        return False
-    return any(token in signature for token in ("<", "[", "--"))
+def route_has_params(dispatch: str) -> bool:
+    return any(token in dispatch for token in ("<", "[", "--"))
 
 
 def parse_key_values(path: Path, raw: str) -> dict[str, str]:
@@ -166,13 +176,13 @@ def registry_role_keys() -> list[str]:
     return keys
 
 
-def parse_route_arg(path: Path, text: str, slash: str, signature: str) -> tuple[str, list[Param]]:
+def parse_route_arg(path: Path, text: str, public_dispatch: str) -> list[Param]:
     blocks = fenced_blocks(text, "route-arg")
-    has_params = route_has_params(slash, signature)
+    has_params = route_has_params(public_dispatch)
     if not has_params:
         if blocks:
             raise ReferenceError(f"{path}: route-arg block present on parameterless route")
-        return synth_dispatch(signature or slash), []
+        return []
     if len(blocks) != 1:
         raise ReferenceError(f"{path}: expected exactly one route-arg block for parameterized route")
 
@@ -220,15 +230,17 @@ def parse_route_arg(path: Path, text: str, slash: str, signature: str) -> tuple[
 
         name = data["name"]
         placeholder = data["placeholder"]
-        if name not in signature and placeholder not in signature:
-            raise ReferenceError(f"{path}: route-arg param absent from Signature: {name}")
+        if name not in public_dispatch and placeholder not in public_dispatch:
+            raise ReferenceError(f"{path}: route-arg param absent from Dispatch: {name}")
         params.append(Param(name, required, placeholder, value_class, detail))
 
     if not dispatch:
         raise ReferenceError(f"{path}: route-arg block missing dispatch")
+    if dispatch != public_dispatch:
+        raise ReferenceError(f"{path}: route-arg dispatch disagrees with Trigger Dispatch")
     if not params:
         raise ReferenceError(f"{path}: route-arg block has no params")
-    return dispatch, params
+    return params
 
 
 def load_routes() -> list[Route]:
@@ -236,17 +248,15 @@ def load_routes() -> list[Route]:
     if COMMANDS_DIR.exists():
         for path in sorted(COMMANDS_DIR.glob("*/*/index.md")):
             text = path.read_text(encoding="utf-8")
-            slash_label = first_label(text, "Slash")
-            if not slash_label or "reference only" in slash_label:
+            dispatch_label = first_label(text, "Dispatch")
+            if not dispatch_label or "reference only" in dispatch_label:
                 continue
-            slash = first_code_span(slash_label)
-            signature_label = first_label(text, "Signature")
-            signature = signature_label.replace("`", "") if signature_label else slash
-            dispatch, params = parse_route_arg(path, text, slash, signature)
+            dispatch = first_code_span(dispatch_label)
+            params = parse_route_arg(path, text, dispatch)
             rel = path.relative_to(COMMANDS_DIR)
             namespace = rel.parts[0]
             route = path.parent.name
-            routes.append(Route(path, namespace, route, slash, signature, dispatch, params))
+            routes.append(Route(path, namespace, route, dispatch, params))
     return routes
 
 
@@ -264,12 +274,13 @@ def render_block() -> str:
                 lines.append("")
             current_namespace = route.namespace
             lines.append(f"## {current_namespace}")
-        lines.append(f"### `{route.slash}`")
+        route_label = route_name_from_dispatch(route.path, route.namespace, route.route, route.dispatch)
+        lines.append(f"### {route_label}")
         lines.append(f"`{route.dispatch}`")
         try:
-            lines.extend(advisory_module.render_lines_for_slash(advisory_catalog, route.slash))
+            lines.extend(advisory_module.render_lines_for_route(advisory_catalog, route.namespace, route_label))
         except advisory_module.AdvisoryError as exc:
-            raise ReferenceError(f"command advisory render failed for {route.slash}: {exc}") from exc
+            raise ReferenceError(f"command advisory render failed for {route.dispatch}: {exc}") from exc
         if route.params:
             for param in route.params:
                 lines.append(f"  `{param.name}`    {param.required}    {param.value_class}: `{param.detail}`")
@@ -291,8 +302,9 @@ def write_artifact() -> None:
     if not ARTIFACT.exists():
         raise ReferenceError(f"missing artifact shell: {ARTIFACT}")
     current = ARTIFACT.read_text(encoding="utf-8")
+    rendered = replacegenerated_block(current, render_block())
     with ARTIFACT.open("w", encoding="utf-8", newline="\n") as handle:
-        handle.write(replacegenerated_block(current, render_block()))
+        handle.write(rendered)
     print(f"command-reference: rendered {ARTIFACT.relative_to(ROOT)}")
 
 

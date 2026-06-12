@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from commands.collab.engine.dispatch_forms import collab_dispatch
 from commands.collab.engine.errors import die
 
 
@@ -20,7 +21,7 @@ def issue_bridge_declared(config_root: Path) -> bool:
         source_text(config_root / 'commands/collab/index.md'),
         source_text(config_root / 'commands/commands.md'),
     ])
-    return '/collab export-issues' in command_text or 'export issues' in command_text
+    return collab_dispatch('export-issues') in command_text or 'export issues' in command_text
 
 
 def issue_bridge_prerequisite_gaps(config_root: Path, include_issue_route: bool = False) -> list[str]:

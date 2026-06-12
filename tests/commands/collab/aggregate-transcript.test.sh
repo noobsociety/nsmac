@@ -11,7 +11,11 @@ export COLLAB_STATE_HOME="$TMPDIR/state-home"
 RUN_DATE="$(date +%Y-%m-%d)"
 TARGET="$RUN_DATE-aggregate-transcript"
 
-"$ROOT/commands/collab/engine/registry.py" init --agent-id codex "Aggregate Transcript" >/dev/null
+init_output="$("$ROOT/commands/collab/engine/registry.py" init --agent-id codex "Aggregate Transcript")"
+if [[ "$init_output" != "records/$TARGET.md" ]]; then
+  printf 'FAIL: init did not report the moderator project transcript path\n%s\n' "$init_output" >&2
+  exit 1
+fi
 REGISTRY="$("$ROOT/commands/collab/engine/registry.py" registry-path)"
 "$ROOT/commands/collab/engine/registry.py" join-participants "$TARGET" pe --agent-id codex >/dev/null
 "$ROOT/commands/collab/engine/registry.py" set "$TARGET" turn-order pe --caller-role mod >/dev/null
@@ -48,11 +52,34 @@ PROJECTION="$(paths_json | python3 -c 'import json,sys; print(json.load(sys.stdi
 RAW="$(paths_json | python3 -c 'import json,sys; print(json.load(sys.stdin)["raw"])')"
 STORE="$(paths_json | python3 -c 'import json,sys; print(json.load(sys.stdin)["store"])')"
 
+if [[ ! -s "$RAW" ]]; then
+  printf 'FAIL: init did not create raw transcript\n' >&2
+  exit 1
+fi
+if [[ ! -s "$PROJECTION" ]]; then
+  printf 'FAIL: init did not create moderator project transcript\n' >&2
+  exit 1
+fi
+if [[ ! -s "$STORE" ]]; then
+  printf 'FAIL: init did not create contribution store\n' >&2
+  exit 1
+fi
 raw_init_hash="$(shasum -a 256 "$RAW" | awk '{print $1}')"
-if [[ -e "$PROJECTION" ]]; then
+projection_init_hash="$(shasum -a 256 "$PROJECTION" | awk '{print $1}')"
+if cmp -s "$RAW" "$PROJECTION"; then
   printf 'FAIL: init wrote lifecycle bytes to projection path\n' >&2
   exit 1
 fi
+grep -Fq '> Moderator project transcript; raw transcript remains canonical sibling output.' "$PROJECTION"
+grep -Fq '<!-- collab:projection-source observedRevision=' "$PROJECTION"
+python3 - "$STORE" <<'PY'
+import json
+import sys
+from pathlib import Path
+data = json.loads(Path(sys.argv[1]).read_text())
+assert data['contributions'] == [], data
+assert data['metadata']['rawTranscriptTimestamp'], data
+PY
 
 state="$("$ROOT/commands/collab/engine/registry.py" speak-state "$TARGET" pe)"
 revision="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["registryRevision"])' <<<"$state")"
@@ -70,8 +97,9 @@ if [[ ! -s "$RAW" ]]; then
   printf 'FAIL: lifecycle did not produce raw transcript\n' >&2
   exit 1
 fi
-if [[ -e "$PROJECTION" ]]; then
-  printf 'FAIL: lifecycle wrote projection transcript before aggregate\n' >&2
+projection_after_speak_hash="$(shasum -a 256 "$PROJECTION" | awk '{print $1}')"
+if [[ "$projection_init_hash" != "$projection_after_speak_hash" ]]; then
+  printf 'FAIL: lifecycle modified projection transcript before aggregate\n' >&2
   exit 1
 fi
 if [[ ! -s "$STORE" ]]; then
@@ -101,8 +129,9 @@ if [[ "$raw_init_hash" == "$raw_after_speak_hash" ]]; then
 fi
 
 "$ROOT/commands/collab/engine/registry.py" advance "$TARGET" next --caller-role mod >/dev/null
-if [[ -e "$PROJECTION" ]]; then
-  printf 'FAIL: advance wrote projection transcript before aggregate\n' >&2
+projection_after_advance_hash="$(shasum -a 256 "$PROJECTION" | awk '{print $1}')"
+if [[ "$projection_init_hash" != "$projection_after_advance_hash" ]]; then
+  printf 'FAIL: advance modified projection transcript before aggregate\n' >&2
   exit 1
 fi
 python3 - "$REGISTRY" "$TARGET" <<'PY'
@@ -129,6 +158,11 @@ grep -Fq 'records/'"$(basename "${PROJECTION%.md}")"'-raw.md#audit-pe-1' "$PROJE
 grep -Fq 'Projection derives from canonical contribution state.' "$PROJECTION"
 grep -Fq '| qualifies | Projection derives from canonical contribution state.' "$PROJECTION"
 grep -Fq '<!-- collab:projection-source observedRevision=' "$PROJECTION"
+projection_after_aggregate_hash="$(shasum -a 256 "$PROJECTION" | awk '{print $1}')"
+if [[ "$projection_init_hash" == "$projection_after_aggregate_hash" ]]; then
+  printf 'FAIL: aggregate did not refresh projection transcript\n' >&2
+  exit 1
+fi
 raw_after_aggregate_hash="$(shasum -a 256 "$RAW" | awk '{print $1}')"
 if [[ "$raw_before_aggregate_hash" != "$raw_after_aggregate_hash" ]]; then
   printf 'FAIL: aggregate modified raw transcript\n' >&2
@@ -137,15 +171,26 @@ fi
 
 state_after_aggregate="$("$ROOT/commands/collab/engine/registry.py" speak-state --resume "$TARGET" pe)"
 next_transcript_command="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["nextTranscriptCommand"])' <<<"$state_after_aggregate")"
-if [[ "$next_transcript_command" != *'transcript-view '* ]]; then
-  printf 'FAIL: speak-state did not return transcript-view command\n%s\n' "$next_transcript_command" >&2
+if [[ "$next_transcript_command" != *'transcript-view '* || "$next_transcript_command" != *' --raw' ]]; then
+  printf 'FAIL: agent speak-state did not return raw transcript-view command\n%s\n' "$next_transcript_command" >&2
+  exit 1
+fi
+mod_state_after_aggregate="$("$ROOT/commands/collab/engine/registry.py" speak-state --resume "$TARGET" mod)"
+mod_transcript_command="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["nextTranscriptCommand"])' <<<"$mod_state_after_aggregate")"
+if [[ "$mod_transcript_command" != *'transcript-view '* || "$mod_transcript_command" == *' --raw' ]]; then
+  printf 'FAIL: moderator speak-state did not return projection transcript-view command\n%s\n' "$mod_transcript_command" >&2
   exit 1
 fi
 
 "$ROOT/commands/collab/engine/registry.py" transcript-view "$TARGET" Audit --raw >raw-view.md
 "$ROOT/commands/collab/engine/registry.py" transcript-view "$TARGET" Audit >projection-view.md
 grep -Fq 'Projection derives from canonical contribution state.' raw-view.md
-grep -Fq 'Projection derives from canonical contribution state.' projection-view.md
+grep -Fq '| Source | Role | Stance | Excerpt |' projection-view.md
+grep -Fq '| qualifies | Projection derives from canonical contribution state.' projection-view.md
+if grep -Fq '<details id="audit-pe-1">' projection-view.md; then
+  printf 'FAIL: default transcript-view returned raw lifecycle details for moderator projection\n' >&2
+  exit 1
+fi
 
 after_first_render="$(shasum -a 256 "$RAW" | awk '{print $1}')"
 "$ROOT/commands/collab/engine/registry.py" render-raw-transcript "$TARGET" >raw-render-1.json

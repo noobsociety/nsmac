@@ -54,8 +54,8 @@ if [[ "$none_terminal_status" -eq 0 || "$none_terminal_output" != *'--terminal r
 fi
 
 issue_terminal_output="$("$ROOT/commands/collab/engine/registry.py" init --agent-id codex --terminal issue "Issue Terminal" 2>&1)"
-if [[ "$issue_terminal_output" != records/*issue-terminal-raw.md* ]]; then
-  printf 'FAIL: init did not create an issue-terminal transcript\n%s\n' "$issue_terminal_output" >&2
+if [[ "$issue_terminal_output" != records/*issue-terminal.md || "$issue_terminal_output" == *-raw.md* ]]; then
+  printf 'FAIL: init did not report an issue-terminal moderator project transcript\n%s\n' "$issue_terminal_output" >&2
   exit 1
 fi
 
@@ -69,8 +69,8 @@ if [[ "$slug_empty_status" -eq 0 || "$slug_empty_output" != *'slug is empty'* ]]
 fi
 
 default_output="$("$ROOT/commands/collab/engine/registry.py" init --agent-id codex "Default Seal" 2>&1)"
-if [[ "$default_output" != records/*default-seal-raw.md* ]]; then
-  printf 'FAIL: init did not create a default-seal transcript\n%s\n' "$default_output" >&2
+if [[ "$default_output" != records/*default-seal.md || "$default_output" == *-raw.md* ]]; then
+  printf 'FAIL: init did not report a default-seal moderator project transcript\n%s\n' "$default_output" >&2
   exit 1
 fi
 
@@ -85,8 +85,19 @@ assert len(registries) == 1, registries
 data = json.loads(registries[0].read_text())
 entry = next(item for item in data['collabs'] if item['slug'] == 'default-seal')
 assert entry['terminal'] == 'seal', entry
+projection = registries[0].parent / entry['transcriptPath']
+raw = projection.with_name(f'{projection.stem}-raw.md')
+store = projection.with_name(f'{projection.stem}-contributions.json')
+assert projection.exists(), projection
+assert raw.exists(), raw
+assert store.exists(), store
+assert projection.read_text() != raw.read_text()
 issue = next(item for item in data['collabs'] if item['slug'] == 'issue-terminal')
 assert issue['terminal'] == 'issue', issue
+issue_projection = registries[0].parent / issue['transcriptPath']
+assert issue_projection.exists(), issue_projection
+assert issue_projection.with_name(f'{issue_projection.stem}-raw.md').exists()
+assert issue_projection.with_name(f'{issue_projection.stem}-contributions.json').exists()
 assert 'verificationSeal' not in issue, issue
 assert 'verification' not in issue, issue
 PY

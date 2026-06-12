@@ -38,7 +38,7 @@ class AdvisoryError(Exception):
 class Route:
     namespace: str
     name: str
-    slash: str
+    dispatch: str
     path: Path
 
 
@@ -138,13 +138,24 @@ def first_code_span(value: str) -> str:
     return value.strip()
 
 
-def route_name_from_slash(slash: str, namespace: str) -> str:
-    prefix = f"/{namespace}"
-    if slash == prefix:
-        return ""
-    if not slash.startswith(prefix + " "):
-        raise AdvisoryError(f"slash route does not match namespace {namespace}: {slash}")
-    return slash[len(prefix) + 1 :].strip()
+def route_name_from_dispatch(dispatch: str, namespace: str, route_slug: str) -> str:
+    if not (dispatch.startswith("(") and dispatch.endswith(")")):
+        raise AdvisoryError(f"invalid dispatch route: {dispatch}")
+    tokens = dispatch[1:-1].split()
+    if not tokens or tokens[0] != namespace:
+        raise AdvisoryError(f"dispatch route does not match namespace {namespace}: {dispatch}")
+    candidate_tokens: list[str] = []
+    for token in tokens[1:]:
+        if token.startswith(("<", "[", "--")) or "<" in token:
+            break
+        candidate_tokens.append(token)
+    candidate = " ".join(candidate_tokens).strip()
+    slug_words = route_slug.replace("-", " ")
+    if candidate == route_slug or candidate == slug_words:
+        return candidate
+    if candidate.startswith(slug_words + " "):
+        return slug_words
+    return candidate or slug_words
 
 
 def load_routes(commands_dir: Path = COMMANDS_DIR) -> dict[str, dict[str, Route]]:
@@ -152,19 +163,19 @@ def load_routes(commands_dir: Path = COMMANDS_DIR) -> dict[str, dict[str, Route]
     if commands_dir.exists():
         for path in sorted(commands_dir.glob("*/*/index.md")):
             text = path.read_text(encoding="utf-8")
-            slash_label = first_label(text, "Slash")
-            if not slash_label or "reference only" in slash_label:
+            dispatch_label = first_label(text, "Dispatch")
+            if not dispatch_label or "reference only" in dispatch_label:
                 continue
-            slash = first_code_span(slash_label)
+            dispatch = first_code_span(dispatch_label)
             rel = path.relative_to(commands_dir)
             namespace = rel.parts[0]
-            route_name = route_name_from_slash(slash, namespace)
+            route_name = route_name_from_dispatch(dispatch, namespace, path.parent.name)
             if not route_name:
                 continue
             by_namespace = routes.setdefault(namespace, {})
             if route_name in by_namespace:
                 raise AdvisoryError(f"duplicate invocable route name in {namespace}: {route_name}")
-            by_namespace[route_name] = Route(namespace, route_name, slash, path)
+            by_namespace[route_name] = Route(namespace, route_name, dispatch, path)
     return routes
 
 
@@ -429,15 +440,6 @@ def load_catalog(
     return Catalog(defaults=defaults, overrides=overrides)
 
 
-def route_key_from_slash(slash: str) -> tuple[str, str]:
-    parts = slash.split()
-    if not parts or not parts[0].startswith("/"):
-        raise AdvisoryError(f"invalid slash route: {slash}")
-    namespace = parts[0][1:]
-    route = " ".join(parts[1:])
-    return namespace, route
-
-
 def render_advisory(advisory: Advisory) -> str:
     if advisory.role:
         prefix = f"> **Recommended for `{advisory.role}`:**"
@@ -453,8 +455,7 @@ def render_advisory(advisory: Advisory) -> str:
     return line
 
 
-def render_lines_for_slash(catalog: Catalog, slash: str) -> list[str]:
-    namespace, route = route_key_from_slash(slash)
+def render_lines_for_route(catalog: Catalog, namespace: str, route: str) -> list[str]:
     route_key = (namespace, route)
     default = catalog.defaults.get(route_key)
     if default is None:

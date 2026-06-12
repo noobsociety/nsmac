@@ -19,7 +19,7 @@ This document defines the join-time model and harness for each collab role, a ge
 
 ## Join-time model and harness
 
-Join-model recommendations are advisory: the registry records `agentId` at join time as an honest-effort forensic capture, not an enforced constraint. To assign a different agent to a role, pick the intended agent when running `/collab join`.
+Join-model recommendations are advisory: the registry records `agentId` at join time as an honest-effort forensic capture, not an enforced constraint. To assign a different agent to a role, pick the intended agent when running `(collab join)`.
 
 The table below captures recommended defaults. Identifiers name a model family or tier, not a version. They rotate quarterly; a different model family re-evaluates each row on each rotation. When `dcc` is in use, it resolves version pinning for curated launch shortcuts; consult this table for all other harness selection.
 
@@ -57,7 +57,7 @@ Values must match the phase-role matrix in `agent-effort.json`. When the two div
 
 At `Completion.verification`, the reviewer operates in two ordered modes:
 
-1. **seal** — Issues `/collab seal verification`; mechanical execution-truth check. Existing seal contract unchanged.
+1. **seal** — Issues `(collab seal verification)`; mechanical execution-truth check. Existing seal contract unchanged.
 2. **assessment** — Evaluates whether discussion goals were met; emits a `verdict: { outcome, restoreTarget?, restoreReason?, evidence?, failureCategory? }`. Opens after a successful seal or when the seal becomes stale or a cap-exit is recorded.
 
 Both modes are part of the reviewer's `Completion.verification` turn (`xhigh`, mandatory-declaration). Assessment is budget-exempt when opened by a cap-exit trigger. The reviewer writes verdict fields only (evaluation); all correction work at the restored phase belongs to participants.
@@ -66,7 +66,7 @@ Both modes are part of the reviewer's `Completion.verification` turn (`xhigh`, m
 
 ### Projection renderer
 
-The projection renderer (`/collab aggregate`) is a deterministic, non-role component operating under `registry.project.label`. It is not assigned a collab role and does not earn convergence turns. It:
+The projection renderer (`(collab aggregate)`) is a deterministic, non-role component operating under `registry.project.label`. It is not assigned a collab role and does not earn convergence turns. It:
 
 - Derives output strictly from registry state and the contribution store.
 - Labels all projection blocks from `registry.project.label` (not from any role key or informal alias).
@@ -74,7 +74,7 @@ The projection renderer (`/collab aggregate`) is a deterministic, non-role compo
 
 The projection renderer is subject to the prohibition inventory in [`role-prohibitions.md`](role-prohibitions.md).
 
-**Dual identity.** The Gemini CLI harness (informally `dp`) has two operating modes: (1) **Aggregator mode** — when executing `/collab aggregate`, it acts as the non-role projection renderer described above; it holds no participant slot and operates under `registry.project.label`. (2) **Collab-participant mode** — the same harness can join any collab under a registered joinable role (see the role roster in `platform/standards/agent-role.md`) via `/collab join --role <key>`; in that mode it follows the joined role's turn order, effort policy, and reviewer behavior. `dp.json` in `projectors/` governs aggregator mode only; it is not a joinable role key.
+**Dual identity.** The Gemini CLI harness (informally `dp`) has two operating modes: (1) **Aggregator mode** — when executing `(collab aggregate)`, it acts as the non-role projection renderer described above; it holds no participant slot and operates under `registry.project.label`. (2) **Collab-participant mode** — the same harness can join any collab under a registered joinable role (see the role roster in `platform/standards/agent-role.md`) via `(collab join) --role <key>`; in that mode it follows the joined role's turn order, effort policy, and reviewer behavior. `dp.json` in `projectors/` governs aggregator mode only; it is not a joinable role key.
 
 ## Caveats
 

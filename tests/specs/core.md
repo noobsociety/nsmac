@@ -10,7 +10,7 @@ Deterministic QA for `~/.cursor/platform/standards/*.md` canon documents.
 4. Validate links in `platform/standards/` stay self-contained (sibling `platform/standards/*.md` links only).
 5. Validate no platform standard depends on command routes, QA harnesses, host runtime paths, or retired root `core/` / `tools/` paths.
 6. Validate owner consistency: style, document templates, command contract, context model, and voice guide do not conflict.
-7. Validate `route-invariant.md` declares the four floor rules and that the floor-rules lint in `platform/tooling/` covers the `/collab init`, `/collab join`, `/collab speak`, `/collab rewrite speak`, `/collab advance`, and `/collab restore` pilot routes for helper-owned mutations, stop conditions, resume signals, and declared link targets.
+7. Validate `route-invariant.md` declares the four floor rules and that the floor-rules lint in `platform/tooling/` covers the `(collab init)`, `(collab join)`, `(collab speak)`, `(collab rewrite speak)`, `(collab advance)`, and `(collab restore)` pilot routes for helper-owned mutations, stop conditions, resume signals, and declared link targets.
 8. Validate `route-sufficiency.md` declares `## Mechanical sufficiency` and `## Execution sufficiency`, includes the self-application statement, and marks execution sufficiency as fixture-backed rather than lintable.
 
 ## Required roster

@@ -1,12 +1,10 @@
-# /collab log
+# (collab log)
 
-Display the registry changelog for a collaboration record — a sequenced list of explicit registry events sourced from the append-only revision store. This is not the transcript revision history: transcript contribution rewrites (`/collab rewrite speak`, implemented via `prepend_revision_history` in `registry.py`) record per-contribution edit history inside each transcript block and are a distinct surface.
+Display the registry changelog for a collaboration record — a sequenced list of explicit registry events sourced from the append-only revision store. This is not the transcript revision history: transcript contribution rewrites (`(collab rewrite speak)`, implemented via `prepend_revision_history` in `registry.py`) record per-contribution edit history inside each transcript block and are a distinct surface.
 
 ## Trigger
 
-**Slash:** `/collab log`
-**Signature:** `/collab log [<target>]`
-**Prose dispatch:** `(collab log [<target>])` — prose routing hint; not a terminal command.
+**Dispatch:** `(collab log [<target>])` — routing-only command form; not a shell command.
 **Search phrases:** collab log, registry changelog, collab event history, revision log
 
 ## Steps
@@ -31,7 +29,7 @@ Display the registry changelog for a collaboration record — a sequenced list o
 
 - **Naming disambiguation:** "Registry changelog" is the correct framing for this command's output. Do not conflate it with the `<details><summary>Revision history</summary>` blocks in transcript contributions, which record per-contribution rewrites and are written by `prepend_revision_history` (`registry.py:4179`). These are two distinct history surfaces: one for registry state events, one for transcript content edits.
 - **Read-only:** This route does not mutate registry state or transcript text.
-- **Precondition:** `/collab log` requires the append-only revision writer to be present. If the writer is absent, log output is empty for all collabs regardless of activity. The writer is a hard precondition for this route's usefulness; its implementation and `eventIndex` counter are a single deliverable.
+- **Precondition:** `(collab log)` requires the append-only revision writer to be present. If the writer is absent, log output is empty for all collabs regardless of activity. The writer is a hard precondition for this route's usefulness; its implementation and `eventIndex` counter are a single deliverable.
 
 ```route-arg
 dispatch: (collab log [<target>])

@@ -1,12 +1,10 @@
-# /collab advance
+# (collab advance)
 
 Open the next moderator-selected phase in a collaboration record and update the active phase metadata.
 
 ## Trigger
 
-**Slash:** `/collab advance`
-**Signature:** `/collab advance`
-**Prose dispatch:** `(collab advance)` — prose routing hint; not a terminal command.
+**Dispatch:** `(collab advance)` — routing-only command form; not a shell command.
 **Search phrases:** collab next, next collaboration phase, advance collab record
 
 ## Steps
@@ -29,8 +27,8 @@ Open the next moderator-selected phase in a collaboration record and update the 
 - **Registry targeting:** Resolve the target collab from the resolved registry, using `commands/collab/engine/registry.py` as the shared helper. When the first token after the route is present, treat it as a collab slug, id, or stable numeric position. Otherwise use `activeCollabId`. If the registry is unreadable or invalid, the token does not match any entry, or `activeCollabId` is empty, **ABORT**: registry target unavailable; name the registry field or token.
 - **Phase sequence:** `Audit` -> `Discussion` -> `Conclusion` -> `Action Plan` -> `Handoff` -> `Completion`.
 - **Moderator gate:** The moderator decides when this route runs. The route never checks whether participants have said enough.
-- **`NEXT:` guidance:** `advance` emits a `NEXT:` line before the phase line and any structured transition notice. In ordinary speak phases, it names the role that should run `/collab speak` next. When entering `Completion`, it names the role that should run `/collab run plan` next.
-- **Transition notices:** The helper emits structured JSON notices on select transitions after the first-line `NEXT:` guidance and phase line. `{"notice": "compact", "transition": "Discussion->Conclusion", "message": "Run /compact before continuing to Conclusion."}` when entering Conclusion; `{"notice": "subagent", "transition": "Handoff->Completion", "message": "Use a subagent or compacted execution context before /collab run plan."}` when entering Completion. The same notices are emitted when `speak-lifecycle-live` auto-advances through these transitions. Route docs describe this output; they do not duplicate the decision. See [invariants.md](../../../commands/collab/reference/invariants.md).
+- **`NEXT:` guidance:** `advance` emits a `NEXT:` line before the phase line and any structured transition notice. In ordinary speak phases, it names the role that should run `(collab speak)` next. When entering `Completion`, it names the role that should run `(collab run plan)` next.
+- **Transition notices:** The helper emits structured JSON notices on select transitions after the first-line `NEXT:` guidance and phase line. `{"notice": "compact", "transition": "Discussion->Conclusion", "message": "Run /compact before continuing to Conclusion."}` when entering Conclusion; `{"notice": "subagent", "transition": "Handoff->Completion", "message": "Use a subagent or compacted execution context before (collab run plan)."}` when entering Completion. The same notices are emitted when `speak-lifecycle-live` auto-advances through these transitions. Route docs describe this output; they do not duplicate the decision. See [invariants.md](../../../commands/collab/reference/invariants.md).
 - **Recovery path:** If `commands/collab/engine/registry.py advance <target> next` returns without the expected registry phase or transcript status table change, **ABORT**: treat the missing mirror as a helper defect and do not hand-edit the status table except through a dedicated repair route.
-- **Post-state resume signal:** After `/collab advance` completes, re-establish collab context with `commands/collab/engine/registry.py speak-state --resume <target> <role>` before writing the next contribution.
+- **Post-state resume signal:** After `(collab advance)` completes, re-establish collab context with `commands/collab/engine/registry.py speak-state --resume <target> <role>` before writing the next contribution.
 - **Sync contract compliance:** Step 9's missing-heading repair is a prose-rendered transcript write. `commands/collab/engine/registry.py advance` owns registry phase, turn-order normalization, and status-table rendering. The heading repair is declared under the sync contract in [`platform/standards/route-invariant.md`](../../../platform/standards/route-invariant.md).

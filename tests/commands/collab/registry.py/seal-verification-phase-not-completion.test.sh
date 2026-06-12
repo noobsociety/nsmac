@@ -18,7 +18,7 @@ output="$("$ROOT/commands/collab/engine/registry.py" seal-state "$TARGET" pa 2>&
 status=$?
 set -e
 
-if [[ "$status" -eq 0 || "$output" != *"/collab seal verification is valid only in the Completion phase"* ]]; then
+if [[ "$status" -eq 0 || "$output" != *"(collab seal verification) is valid only in the Completion phase"* ]]; then
   printf 'FAIL: seal-state accepted a non-Completion phase\n%s\n' "$output" >&2
   exit 1
 fi

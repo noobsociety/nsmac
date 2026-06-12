@@ -73,7 +73,7 @@ assert e['verification']['participants']['tw'].get('stage') != 'completed', \
     'scope-aware reset must clear a role whose execution content changed'
 
 # Inactive participant-verify guidance names only published routes and the right
-# actor per sub-state (no /collab restart-verification or repair-execution-provenance).
+# actor per sub-state (no restart-verification or repair-execution-provenance route).
 def msg(substate, enabled=True):
     e = entry()
     if not enabled:
@@ -83,15 +83,15 @@ def msg(substate, enabled=True):
     return R.participant_verification_inactive_message(e)
 
 seal_msg = msg('seal')
-assert '/collab seal verification' in seal_msg and 'restart-verification' not in seal_msg, seal_msg
+assert '(collab seal verification ' in seal_msg and 'restart-verification' not in seal_msg, seal_msg
 
 assess_msg = msg('assessment')
-assert '/collab seal verification' in assess_msg, assess_msg
-assert '/collab reopen <action-plan|handoff>' in assess_msg, assess_msg
+assert '(collab seal verification ' in assess_msg, assess_msg
+assert '(collab reopen <action-plan|handoff>' in assess_msg, assess_msg
 assert 'restart-verification' not in assess_msg and 'repair-execution-provenance' not in assess_msg, assess_msg
 
 disabled_msg = msg('seal', enabled=False)
-assert 'not enabled' in disabled_msg and '/collab seal verification' in disabled_msg, disabled_msg
+assert 'not enabled' in disabled_msg and '(collab seal verification ' in disabled_msg, disabled_msg
 
 print('OK: execution-content change invalidates completed verification (lazy and scope-aware); '
       'inactive guidance uses only published routes')

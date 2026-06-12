@@ -1,12 +1,10 @@
-# /collab show verdict
+# (collab show verdict)
 
 Display the recorded verification verdict metadata for a collaboration record.
 
 ## Trigger
 
-**Slash:** `/collab show verdict`
-**Signature:** `/collab show verdict [<target>]`
-**Prose dispatch:** `(collab show verdict [<target>])` — prose routing hint; not a terminal command.
+**Dispatch:** `(collab show verdict [<target>])` — routing-only command form; not a shell command.
 **Search phrases:** collab verdict, show verification verdict, closed collab verdict metadata
 
 ## Steps

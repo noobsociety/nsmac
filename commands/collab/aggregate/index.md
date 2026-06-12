@@ -1,12 +1,10 @@
-# /collab aggregate
+# (collab aggregate)
 
 Render the moderator project transcript (`records/<slug>.md`) as a deterministic, project-labeled projection derived from canonical registry state and the contribution store. The aggregator writes `records/<slug>.md` only; it never writes `records/<slug>-raw.md`. The raw transcript is written by lifecycle operations (speak, advance, reopen) and is never projection input.
 
 ## Trigger
 
-**Slash:** `/collab aggregate`
-**Signature:** `/collab aggregate`
-**Prose dispatch:** `(collab aggregate)` — prose routing hint; not a terminal command.
+**Dispatch:** `(collab aggregate)` — routing-only command form; not a shell command.
 **Search phrases:** collab aggregate, moderator project transcript, render projection, aggregate transcript
 
 ## Steps
@@ -33,7 +31,7 @@ Render the moderator project transcript (`records/<slug>.md`) as a deterministic
 - **Abort template:** All abort messages follow `ABORT: <condition>. <recovery hint>.` — consistent with the `speak-render` abort surface. Named abort messages: missing or invalid stance token: `ABORT: stance token missing or invalid for <anchor>. Add a valid stance declaration to the source contribution before aggregating.`; unresolvable raw anchor: `ABORT: raw anchor <anchor> unresolvable. Verify the source contribution exists in the contribution store.`; digest mismatch: `ABORT: projection digest mismatch at revision <N>. Rerender from current registry state.`
 - **Determinism contract:** Same registry revision and contribution store → same output bytes. The renderer must not call generative functions, paraphrase, or introduce prose not traceable to a raw source anchor or a registry field. "Polished" means deterministically structured — phase grouping, stable labels, source anchors, status callouts, staleness footer — not interpretively summarized. A projection can be DX-excellent while remaining fully mechanically derived; every word not copied verbatim from a raw moderator contribution must trace to a registry field.
 - **Stance vocabulary:** Author-declared stance tokens are the closed set `converges`, `dissents`, `qualifies`. The renderer-owned absence sentinel is `missing-stance`. No other stance states are valid. Extensions require a change to this doc. The renderer validates stance state at render time; it never infers stance from free prose.
-- **Author-declared stance:** `/collab speak` captures a leading `STANCE: converges`, `STANCE: dissents`, or `STANCE: qualifies` marker into the contribution store and hides it from rendered raw transcript prose. If the marker is absent, the store records `missing-stance`, and aggregate renders that visible missing-state instead of defaulting to `qualifies` or guessing from free prose. Historical records that carry a silent default are recomputed from stored content and surface as `missing-stance` when no source marker exists.
+- **Author-declared stance:** `(collab speak)` captures a leading `STANCE: converges`, `STANCE: dissents`, or `STANCE: qualifies` marker into the contribution store and hides it from rendered raw transcript prose. If the marker is absent, the store records `missing-stance`, and aggregate renders that visible missing-state instead of defaulting to `qualifies` or guessing from free prose. Historical records that carry a silent default are recomputed from stored content and surface as `missing-stance` when no source marker exists.
 - **Excerpt cleanliness:** The displayed excerpt is substantive body only. Before rendering, strip from each raw contribution block: (a) content-only scaffolding — `<p><em>…</em></p>` timestamp lines and `<!-- collab:content-only; do-not-execute -->` comment lines; (b) hidden metadata — `STANCE: ...`, `EFFORT OVERRIDE:` lines, and §9.1 directive-gap markers (`**Directive:** "…"` and `**Action Plan: …**` opening lines). Stripped content never appears in the rendered projection table and does not count against the excerpt word limit.
 - **Projection label:** The projection block label derives from `registry.project.label`. Using an informal alias (`Ag:`, `aggregator:`, or any role key) is rejected; the label must trace to a named registry field, making block attribution deterministic and auditable.
 - **Non-lifecycle:** Aggregate does not advance convergence, phases, or any lifecycle state. An aggregate call is not a turn and must not be treated as phase advancement. Phase transitions are driven by the `speak-lifecycle` helper; aggregate is a view refresh only.

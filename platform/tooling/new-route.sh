@@ -50,34 +50,31 @@ scaffold_route() {
 
   if [[ ! -f "$namespace_dir/index.md" ]]; then
     cat >"$namespace_dir/index.md" <<EOF
-# /$namespace
+# ($namespace)
 
-Namespace router for /$namespace commands.
+Namespace router for $namespace commands.
 
 ## Trigger
 
-**Slash:** \`/$namespace\`
-**Signature:** \`/$namespace <command>\`
-**Prose dispatch:** \`($namespace <command>)\` - prose routing hint; not a terminal command.
+**Dispatch:** \`($namespace <command>)\` - routing-only command form; not a shell command.
+**Search phrases:** $namespace commands
 
 ## Steps
 
-1. Resolve the command token after \`/$namespace\`.
+1. Resolve the command token after \`$namespace\`.
 2. Load the matching route file under \`commands/$namespace/<route>/index.md\`.
 3. Stop after the selected route completes.
 EOF
   fi
 
   cat >"$route_file" <<EOF
-# /$namespace $route
+# ($namespace $route)
 
 $title command route.
 
 ## Trigger
 
-**Slash:** \`/$namespace $route\`
-**Signature:** \`/$namespace $route\`
-**Prose dispatch:** \`($namespace $route)\` - prose routing hint; not a terminal command.
+**Dispatch:** \`($namespace $route)\` - routing-only command form; not a shell command.
 **Search phrases:** $namespace $route
 
 ## Steps
@@ -115,7 +112,7 @@ EOF
       "$TARGET_ROOT/platform/tooling/sync-commands-catalog.sh" >/dev/null
     fi
     if [[ -f "$TARGET_ROOT/platform/tooling/command-reference.py" ]]; then
-      python3 "$TARGET_ROOT/platform/tooling/command-reference.py" >/dev/null 2>&1 || true
+      python3 "$TARGET_ROOT/platform/tooling/command-reference.py" --render >/dev/null 2>&1 || true
     fi
   fi
 

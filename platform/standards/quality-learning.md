@@ -7,8 +7,8 @@ Quality learning governs rubric adaptation for review and assessment routes.
 Apply this policy only when a rubric-based quality or documentation assessment
 route has finished its primary review.
 
-Current rubric routes are `/quality tune`, `/quality assess interface`,
-`/quality assess web`, `/quality assess game`, and `/quality assess operations`.
+Current rubric routes are `(quality tune)`, `(quality assess interface)`,
+`(quality assess web)`, `(quality assess game)`, and `(quality assess operations)`.
 
 ## Behavior
 

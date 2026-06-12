@@ -1,12 +1,10 @@
-# /collab archive
+# (collab archive)
 
 Soft-delete a collab by marking it archived so it is preserved on disk but excluded from active routing.
 
 ## Trigger
 
-**Slash:** `/collab archive`
-**Signature:** `/collab archive [<target>]`
-**Prose dispatch:** `(collab archive ...)` — prose routing hint; not a terminal command.
+**Dispatch:** `(collab archive [<target>])` — routing-only command form; not a shell command.
 **Search phrases:** collab archive, archive collab, soft-delete collab record
 
 ## Steps
@@ -23,9 +21,9 @@ Soft-delete a collab by marking it archived so it is preserved on disk but exclu
 
 - **Parameters:** target collab slug, id, or numeric `#N` as the first token after `archive`; when absent, resolved per **Registry targeting** in **Notes**.
 - **Registry targeting:** Resolve the target collab from the resolved registry, using `commands/collab/engine/registry.py` as the shared helper. When the first token after the route is present, treat it as a collab slug, id, or stable numeric position. Otherwise use `activeCollabId`. If the registry is unreadable or invalid, the token does not match any entry, or `activeCollabId` is empty, **ABORT**: registry target unavailable; name the registry field or token.
-- **Soft delete:** `archive` marks the record inactive without touching the transcript file. The record remains on disk for auditability and recovery. Use `/collab delete` for permanent removal.
+- **Soft delete:** `archive` marks the record inactive without touching the transcript file. The record remains on disk for auditability and recovery. Use `(collab delete)` for permanent removal.
 - **Status encoding:** Status is the authoritative source; do not encode archived state in the filesystem path. The transcript file stays at its original `records/YYYY-MM-DD-<slug>.md` path after archival.
-- **Active cleanup:** Clearing `activeCollabId` means leaving the registry pointer empty. Subsequent routes must refuse target inference until the moderator runs `/collab activate <record>` or names a target explicitly.
+- **Active cleanup:** Clearing `activeCollabId` means leaving the registry pointer empty. Subsequent routes must refuse target inference until the moderator runs `(collab activate) <record>` or names a target explicitly.
 - **Clear notice:** The helper emits `{"message": "Run /clear before starting another collab.", "notice": "clear", "status": "archived"}` after archiving. Display this to the caller. Route docs describe the output; they do not reimplement it. See [invariants.md](../../../commands/collab/reference/invariants.md).
 - **Summary-emission invariant:** A `### Summary —` block is written to `## Completion` at archive; no follow-up step is required.
 

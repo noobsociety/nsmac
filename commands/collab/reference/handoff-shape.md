@@ -1,6 +1,6 @@
 # Structured Handoff deliverable shape
 
-This document specifies the structured Handoff schema for contributions appended by `/collab speak` in the `Handoff` phase. Structured Handoff state is registry-owned; the transcript `## Handoff` section is a helper-rendered mirror.
+This document specifies the structured Handoff schema for contributions appended by `(collab speak)` in the `Handoff` phase. Structured Handoff state is registry-owned; the transcript `## Handoff` section is a helper-rendered mirror.
 
 **Architectural grounding:**
 - **Invariant #2 (registry as source of truth; transcript as human ledger):** Registry is the authoritative source for command state, including Handoff deliverable data. The transcript `## Handoff` section mirrors selected registry fields; it is generated from registry state and must not be hand-edited.
@@ -46,8 +46,8 @@ The transcript `## Handoff` section is generated from registry state. Repeated r
 
 When `execute-spawn` rejects a returned Completion patch or the execution recorder rejects a touched path outside declared `writeScope`, do not widen scope ad hoc. Two recovery paths:
 
-1. **Re-Handoff:** the assigned role issues a revised Handoff via `/collab speak` in a new or restored Handoff phase.
-2. **`/collab rewrite execution`:** when the patch is otherwise valid and scope widening is the only issue, use `/collab rewrite execution` to revise the execution record.
+1. **Re-Handoff:** the assigned role issues a revised Handoff via `(collab speak)` in a new or restored Handoff phase.
+2. **`(collab rewrite execution)`:** when the patch is otherwise valid and scope widening is the only issue, use `(collab rewrite execution)` to revise the execution record.
 
 **Reopen and narrowed scope**
 

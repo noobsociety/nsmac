@@ -46,11 +46,11 @@ run_case() {
     --caller-role pe 2>&1)"
 
   if [[ "$participant_verification" == "true" ]]; then
-    if [[ "$completed_output" != *"NEXT: Run /collab participant verify"* ]]; then
+    if [[ "$completed_output" != *"NEXT: Run (collab participant verify)"* ]]; then
       printf 'FAIL: setup did not reach participant verification for %s\n%s\n' "$slug" "$completed_output" >&2
       exit 1
     fi
-  elif [[ "$completed_output" != *"NEXT: Run /collab seal verification"* ]]; then
+  elif [[ "$completed_output" != *"NEXT: Run (collab seal verification)"* ]]; then
     printf 'FAIL: setup did not reach seal verification for %s\n%s\n' "$slug" "$completed_output" >&2
     exit 1
   fi
@@ -60,15 +60,15 @@ run_case() {
     --assigned-role pe \
     --caller-role tw 2>&1)"
 
-  if [[ "$output" != *"NEXT: Run /collab run plan for role tw."* ]]; then
+  if [[ "$output" != *"NEXT: Run (collab run plan) for role tw."* ]]; then
     printf 'FAIL: execution rewrite NEXT did not restore the re-pending role for %s\n%s\n' "$slug" "$output" >&2
     exit 1
   fi
-  if [[ "$output" == *"NEXT: Run /collab seal verification"* ]]; then
+  if [[ "$output" == *"NEXT: Run (collab seal verification)"* ]]; then
     printf 'FAIL: execution rewrite NEXT kept a stale seal advisory for %s\n%s\n' "$slug" "$output" >&2
     exit 1
   fi
-  if [[ "$output" == *"NEXT: Run /collab participant verify"* ]]; then
+  if [[ "$output" == *"NEXT: Run (collab participant verify)"* ]]; then
     printf 'FAIL: execution rewrite NEXT kept a stale participant verification advisory for %s\n%s\n' "$slug" "$output" >&2
     exit 1
   fi

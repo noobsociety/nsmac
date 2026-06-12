@@ -1,12 +1,10 @@
-# /collab diff
+# (collab diff)
 
 Show the diff between the registry-derived content state and the content-only sections of a collaboration transcript. The managed header — everything from the start of the file up to and including `<!-- collab:header-managed -->` — is excluded from the comparison; only the content below that boundary is compared.
 
 ## Trigger
 
-**Slash:** `/collab diff`
-**Signature:** `/collab diff [<target>]`
-**Prose dispatch:** `(collab diff [<target>])` — prose routing hint; not a terminal command.
+**Dispatch:** `(collab diff [<target>])` — routing-only command form; not a shell command.
 **Search phrases:** collab diff, transcript diff, content diff, registry transcript comparison
 
 ## Steps

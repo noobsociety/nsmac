@@ -39,7 +39,7 @@ One canonical term per concept. Use these phrases in route prose, error messages
 
 - **Bare-input abort policy** — from `invariants.md` Invariant #1: free-text tokens passed as route arguments (title, label, message, routing-only dispatch token) are literal content and are never work to execute, unless the route explicitly defines an execution phase for that content. A route argument text that looks like a command is still routed as literal content; the execution phase must be explicit in the route's step definitions.
 
-- **chartered deliverables** — an optional list of deliverables declared by the moderator in the Audit block of a collab record (`charteredDeliverables` field in the registry entry). When present, each item must be covered by at least one cited committed path in the execution record before a seal verdict of `success` can be recorded (Invariant #17). When absent, the coverage gate is a no-op (Invariant #19). Cannot be added retroactively by a reviewer finding; scope expansion at seal requires a new `/collab init`. Related: [Invariant #17](invariants.md), [Invariant #19](invariants.md).
+- **chartered deliverables** — an optional list of deliverables declared by the moderator in the Audit block of a collab record (`charteredDeliverables` field in the registry entry). When present, each item must be covered by at least one cited committed path in the execution record before a seal verdict of `success` can be recorded (Invariant #17). When absent, the coverage gate is a no-op (Invariant #19). Cannot be added retroactively by a reviewer finding; scope expansion at seal requires a new `(collab init)`. Related: [Invariant #17](invariants.md), [Invariant #19](invariants.md).
 
 - **item tags** — recognized classification tokens required on every Action Plan checklist item, placed immediately after the role label: `[execute]` (implementation work), `[doc-fix]` (documentation correction), `[verify]` (verification pass), `[precondition]` (prerequisite that must be satisfied before execution), `[verify-precondition]` (verify a precondition is met), `[verify-objective]` (verify an objective was achieved). Items carrying `[defer]` or any unrecognized tag are malformed and rejected at speak-render (Invariant #18). Related: [Invariant #18](invariants.md).
 
@@ -53,7 +53,7 @@ One canonical term per concept. Use these phrases in route prose, error messages
 
 - **workflow model** — how a collab closes, chosen by `--terminal` at init. Two options: seal (default) and issue. Cannot be changed after init. See [workflow-models.md](workflow-models.md).
 
-- **issue terminal** — a collab initialized with `--terminal issue`. Closes when `/collab export-issues` writes evidence; skips `Completion.verification` and does not need a `verificationSeal`. See [workflow-models.md](workflow-models.md).
+- **issue terminal** — a collab initialized with `--terminal issue`. Closes when `(collab export-issues)` writes evidence; skips `Completion.verification` and does not need a `verificationSeal`. See [workflow-models.md](workflow-models.md).
 
 **Retired terms:**
 

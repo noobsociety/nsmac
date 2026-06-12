@@ -22,6 +22,12 @@ if ! grep -Fq '<!-- abort: sample-route-scaffold-unimplemented -->' "$route_file
   exit 1
 fi
 
+if ! grep -Fq '**Dispatch:** `(collab sample-route)`' "$route_file"; then
+  printf 'FAIL: scaffolded route missing Dispatch trigger\n' >&2
+  cat "$route_file" >&2
+  exit 1
+fi
+
 if ! grep -Fq 'route-specific behavior is not implemented' "$test_file"; then
   printf 'FAIL: scaffolded coverage fixture does not assert default abort\n' >&2
   cat "$test_file" >&2

@@ -1,12 +1,10 @@
-# /quality assess web
+# (quality assess web)
 
 **WSE** — principal web-software review from the repository tree: structure, boundaries, correctness, safety, maintainability, and tests.
 
 ## Trigger
 
-**Slash:** `/quality assess web`
-**Signature:** `/quality assess web <project>`
-**Prose dispatch:** `(quality assess web <project>)` — prose routing hint; not a terminal command.
+**Dispatch:** `(quality assess web <project>)` — routing-only command form; not a shell command.
 **Search phrases:** web stack review, WSE, principal web engineer
 
 ## Steps
@@ -32,7 +30,7 @@
   - **7 A11y in code** — focus, labels, errors, live regions; loading/empty/error routes; host modals/nav only. Canvas keyboard focus inside the game is IGD scope.
   - **8 Styling/tokens** — centralize tokens; data-viz color separation in app charts.
   - **9 Tests** — match pyramid repo uses; contract/snapshot/drift when aligned.
-  - **Process** — map entrypoints; read root **`OWNERS.md`** if present when boundaries unclear; if `OWNERS.md` is absent and boundaries are unclear, ask `/quality assess operations` to generate it; missing router/CI = note, not automatic failure; **default** one topic per round; **`full`** or user "full pass" → all items with file anchors; prefer incremental fixes. `/quality tune` may aggregate this pass with other principal reviews.
+  - **Process** — map entrypoints; read root **`OWNERS.md`** if present when boundaries unclear; if `OWNERS.md` is absent and boundaries are unclear, ask `(quality assess operations)` to generate it; missing router/CI = note, not automatic failure; **default** one topic per round; **`full`** or user "full pass" → all items with file anchors; prefer incremental fixes. `(quality tune)` may aggregate this pass with other principal reviews.
   - **Feedback** — file + boundary; risk→fix; no roadmap unless in scope.
 
 ```route-arg

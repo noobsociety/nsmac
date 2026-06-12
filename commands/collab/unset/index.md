@@ -1,12 +1,10 @@
-# /collab unset
+# (collab unset reviewer)
 
 Clear scoped collab metadata fields that have explicit empty-state semantics.
 
 ## Trigger
 
-**Slash:** `/collab unset`
-**Signature:** `/collab unset reviewer`
-**Prose dispatch:** `(collab unset ...)` — prose routing hint; not a terminal command.
+**Dispatch:** `(collab unset reviewer)` — routing-only command form; not a shell command.
 **Search phrases:** collab unset, clear collaboration metadata, unset reviewer
 
 ## Steps
@@ -24,5 +22,5 @@ Clear scoped collab metadata fields that have explicit empty-state semantics.
 - **Registry targeting:** Resolve the target collab from the resolved registry, using `commands/collab/engine/registry.py` as the shared helper. When the first token after the route is present, treat it as a collab slug, id, or stable numeric position. Otherwise use `activeCollabId`. If the registry is unreadable or invalid, the token does not match any entry, or `activeCollabId` is empty, **ABORT**: registry target unavailable; name the registry field or token.
 - **Unsettable fields:** `reviewer` -> removes reviewer assignment metadata. Other fields are intentionally out of scope until their empty-state semantics and schema rules are explicitly defined.
 - **Idempotency:** `unset reviewer` succeeds when no reviewer is currently set. It still aborts on unreadable records, schema validation failure, transcript write failure, or closed and archived records.
-- **Ownership boundary:** `/collab unset` is the inverse surface for fields with defined empty states. It is not a generic registry-key deletion command.
-- **Post-state resume signal:** After `/collab unset` completes, re-establish collab context with `commands/collab/engine/registry.py speak-state --resume <target> <role>` before issuing the next collab command.
+- **Ownership boundary:** `(collab unset)` is the inverse surface for fields with defined empty states. It is not a generic registry-key deletion command.
+- **Post-state resume signal:** After `(collab unset)` completes, re-establish collab context with `commands/collab/engine/registry.py speak-state --resume <target> <role>` before issuing the next collab command.

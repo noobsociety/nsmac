@@ -1,12 +1,10 @@
-# /agent install
+# (agent install)
 
 Install the multi-agent scaffold into the current repository from `~/.cursor/platform/templates/`.
 
 ## Trigger
 
-**Slash:** `/agent install`
-**Signature:** `/agent install [--force]`
-**Prose dispatch:** `(agent install [--force])` — prose routing hint; not a terminal command.
+**Dispatch:** `(agent install [--force])` — routing-only command form; not a shell command.
 **Search phrases:** agent install, bootstrap multi-agent setup, install agent scaffold
 
 ## Steps
@@ -38,13 +36,13 @@ Install the multi-agent scaffold into the current repository from `~/.cursor/pla
 
 - **Precondition:** The global command surface (`~/.cursor/`) must be reachable before this route is invoked. In environments without it on the command path, invoke explicitly (e.g., `~/.cursor/...`) on first use. The requirement is reachability; the invocation form depends on the agent surface.
 - **Invocation context:** Run this command from the target git work tree. The current directory may be the target repository root or a nested path inside it; scaffold files are written to the resolved repository root. A checkout developed in place at `~/.cursor` is a valid target repository root, so a target path of `~/.cursor` is permitted.
-- **Placeholder standard:** `AGENTS.md` and `CLAUDE.md` use `<!-- TODO(install): <description> -->` markers resolved during install candidate-patch computation. `REPOSITORY.md` uses `<!-- TODO(patch): <description> -->` markers resolved by `/agent patch`.
+- **Placeholder standard:** `AGENTS.md` and `CLAUDE.md` use `<!-- TODO(install): <description> -->` markers resolved during install candidate-patch computation. `REPOSITORY.md` uses `<!-- TODO(patch): <description> -->` markers resolved by `(agent patch)`.
 - **Parameters:** `--force` — optional pre-positional flag. Default target is the repo root where the command runs.
-- **Examples:** `/agent install`, `/agent install --force`.
+- **Examples:** `(agent install)`, `(agent install --force)`.
 - **Validation:** The install workflow uses scaffold-local checks only: file presence, `CLAUDE.md` → `AGENTS.md` routing, `GEMINI.md` → `AGENTS.md` routing, the `AGENTS.md` reference to `~/.cursor/commands/commands.md`, the `AGENTS.md` prose dispatch sentence, no unresolved `TODO(install)` markers, and unresolved `REPOSITORY.md` `TODO(patch)` placeholders.
 - **Force flag:** `--force` is eligible only for existing scaffold-file conflicts. It does not bypass missing-template, repository-root, validation, or permission failures.
-- **Scaffold marker:** The `<!-- scaffolded-at: ... -->` marker line is present in `~/.cursor/platform/templates/AGENTS.md` and copied verbatim to the installed `AGENTS.md`. This marker is used by `/agent upgrade` to detect when an upgrade is needed.
-- **Next step:** Run `/agent patch` to fill `<!-- TODO(patch): ... -->` placeholders in `REPOSITORY.md` with repo-specific mutation protocol and ownership rules.
+- **Scaffold marker:** The `<!-- scaffolded-at: ... -->` marker line is present in `~/.cursor/platform/templates/AGENTS.md` and copied verbatim to the installed `AGENTS.md`. This marker is used by `(agent upgrade)` to detect when an upgrade is needed.
+- **Next step:** Run `(agent patch)` to fill `<!-- TODO(patch): ... -->` placeholders in `REPOSITORY.md` with repo-specific mutation protocol and ownership rules.
 
 ```route-arg
 dispatch: (agent install [--force])

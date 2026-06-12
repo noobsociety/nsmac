@@ -54,7 +54,7 @@ def parse_route_flags(path: Path) -> list[FlagBlock]:
     if scope is None:
         return []
     lines = path.read_text().splitlines()
-    validate_schema = validate_schema_for_root and any(line.startswith("**Slash:**") for line in lines)
+    validate_schema = validate_schema_for_root and any(line.startswith("**Dispatch:**") for line in lines)
     blocks: list[FlagBlock] = []
     in_block = False
     start_line = 0

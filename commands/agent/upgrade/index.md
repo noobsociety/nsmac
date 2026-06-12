@@ -1,20 +1,18 @@
-# /agent upgrade
+# (agent upgrade)
 
 Apply current scaffold templates to an already-installed multi-agent scaffold in the current repository.
 
 ## Trigger
 
-**Slash:** `/agent upgrade`
-**Signature:** `/agent upgrade [--force]`
-**Prose dispatch:** `(agent upgrade [--force])` — prose routing hint; not a terminal command.
+**Dispatch:** `(agent upgrade [--force])` — routing-only command form; not a shell command.
 **Search phrases:** agent upgrade, upgrade multi-agent scaffold, upgrade scaffold templates
 
 ## Steps
 
 1. Resolve the repo root as the target repository root: the git repository root for the project maintaining scaffold files. This may be the same path as the global runtime root at `~/.cursor`. If not inside a git repository, **ABORT**: must be run from a git repository root.
 2. Parse flags immediately after the route selector and before any positional arguments per [platform/standards/command-argument.md](../../../platform/standards/command-argument.md). `--force` is supported only in that pre-positional slot. Unsupported or misplaced flags **ABORT** before any route mutation.
-3. Verify `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and `REPOSITORY.md` exist in the repo root. If any is missing, **ABORT** naming the missing path — run `/agent install` first.
-4. Read the installed `AGENTS.md` and locate the `<!-- scaffolded-at: <ISO-date> -->` marker line. If absent, **ABORT**: scaffolded-at marker not found in `AGENTS.md`; restore the marker manually or reinstall with `/agent install` in a fresh repo.
+3. Verify `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and `REPOSITORY.md` exist in the repo root. If any is missing, **ABORT** naming the missing path — run `(agent install)` first.
+4. Read the installed `AGENTS.md` and locate the `<!-- scaffolded-at: <ISO-date> -->` marker line. If absent, **ABORT**: scaffolded-at marker not found in `AGENTS.md`; restore the marker manually or reinstall with `(agent install)` in a fresh repo.
 5. Read `~/.cursor/platform/templates/AGENTS.md` and locate its `<!-- scaffolded-at: <ISO-date> -->` marker line.
 6. Compare the two marker strings using lexicographic equality. If equal, compare every installed scaffold file against its corresponding template byte-for-byte. If the markers match and every file is identical to its template, report "scaffold is up to date" and exit.
 7. For `REPOSITORY.md`: compare the installed file against `~/.cursor/platform/templates/REPOSITORY.md`. If the proposed change overlaps any section that has been patched beyond the scaffold-owned header — that is, any content that is not a `<!-- TODO(patch): ... -->` placeholder — and `--force` is absent, record a targeted skip message for `REPOSITORY.md` and exclude it from the confirmation step. Proceed to evaluate the remaining files. When `--force` is supplied, keep `REPOSITORY.md` in the collected overwrite set and defer the decision to the diff and gate.
@@ -39,7 +37,7 @@ Apply current scaffold templates to an already-installed multi-agent scaffold in
 ## Notes
 
 - **Parameters:** `--force` — optional pre-positional flag. Default target is the repo root where the command runs.
-- **Examples:** `/agent upgrade`, `/agent upgrade --force`.
+- **Examples:** `(agent upgrade)`, `(agent upgrade --force)`.
 - **Invocation context:** Run this command from the target repository root. A checkout developed in place at `~/.cursor` is a valid target repository root, so a target path of `~/.cursor` is permitted.
 - **Boundary:** Reads installed scaffold files and `~/.cursor/platform/templates/`; writes only `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and (when overlap-free) `REPOSITORY.md` in the repo root. Leaves template sources, command sources, rule sources, and agent settings JSON unchanged.
 - **Idempotency:** Re-running upgrade on an already-current scaffold reports "scaffold is up to date" and exits without modifying any file.
@@ -50,7 +48,7 @@ Apply current scaffold templates to an already-installed multi-agent scaffold in
 - **Confirm-before-write:** The confirmation step is mandatory and not optional. Gate contract: `platform/standards/command-argument.md`. On refusal or absent confirmation, no file is written and the marker is untouched.
 - **Force flag:** `--force` is eligible only for the route's gated overwrite path. It does not bypass incomplete-scaffold, marker, unreadable-template, all-or-nothing, validation, or permission failures.
 - **All-or-nothing write:** All confirmed files are written as a set. If any single write fails mid-set, the entire set is treated as failed; do not leave a partial upgrade.
-- **Marker-as-comment risk:** The `<!-- scaffolded-at: ... -->` marker is an HTML comment with no structural protection. If `AGENTS.md` is ever edited by a tool that rewrites the file body, the marker could be moved or removed. Today `/agent patch` does not edit `AGENTS.md`, so this is not a current failure mode — but if that changes, the marker becomes load-bearing surface that looks like a comment.
+- **Marker-as-comment risk:** The `<!-- scaffolded-at: ... -->` marker is an HTML comment with no structural protection. If `AGENTS.md` is ever edited by a tool that rewrites the file body, the marker could be moved or removed. Today `(agent patch)` does not edit `AGENTS.md`, so this is not a current failure mode — but if that changes, the marker becomes load-bearing surface that looks like a comment.
 - **Next step after upgrade:** If `REPOSITORY.md` was skipped due to patched-section overlap and a scaffold change to that file is important, apply the change manually.
 - **Upgrade rewrite rule for `commands/commands.md` link:** See step 9. Both conditions must be met for the rewrite to apply; otherwise the step is a no-op.
 

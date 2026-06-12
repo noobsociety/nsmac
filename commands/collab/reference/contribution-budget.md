@@ -26,7 +26,7 @@ The **excerpt** of each contribution is capped at **250 words**.
 
 The cap is a visible-excerpt budget, not a total contribution budget. When useful role-material detail would be removed to stay under the cap, the contribution must keep a standalone excerpt and place the complete detail in the full body. Agents must not summarize away or omit that detail solely to satisfy the excerpt cap.
 
-The cap applies to `/collab speak` excerpts only; `participant-verify-render` audit, remediation, and final-audit turn bodies are unbounded by design.
+The cap applies to `(collab speak)` excerpts only; `participant-verify-render` audit, remediation, and final-audit turn bodies are unbounded by design.
 
 The limit is derived from the `platform/standards/context-management.md` 250-line file discipline — the same human load-window rationale applies to contribution length.
 

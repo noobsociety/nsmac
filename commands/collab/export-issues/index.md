@@ -1,12 +1,10 @@
-# /collab export-issues
+# (collab export-issues)
 
 Record exported issue handoff evidence for an issue-terminal collaboration record.
 
 ## Trigger
 
-**Slash:** `/collab export-issues`
-**Signature:** `/collab export-issues <evidence-file>`
-**Prose dispatch:** `(collab export-issues <evidence-file>)` — prose routing hint; not a terminal command.
+**Dispatch:** `(collab export-issues <evidence-file>)` — routing-only command form; not a shell command.
 **Search phrases:** collab export issues, issue terminal evidence, exported issue handoff
 
 ## Steps
@@ -15,8 +13,8 @@ Record exported issue handoff evidence for an issue-terminal collaboration recor
 2. Read the resolved registry and transcript. If either is unreadable, **ABORT**: record unreadable; name the path.
 3. If the registry status is `closed` or `archived`, **ABORT**: collab is closed or archived; cannot export issues.
 4. Resolve the executing role from the registry participants list. The exporting role must be `pe`; otherwise **ABORT**: issue export must be authored by platform engineer role pe.
-5. If the active phase is not `Completion`, **ABORT**: `/collab export-issues` is valid only in `Completion`.
-6. If the stored `terminal` is not `issue`, **ABORT**: `/collab export-issues` requires terminal issue.
+5. If the active phase is not `Completion`, **ABORT**: `(collab export-issues)` is valid only in `Completion`.
+6. If the stored `terminal` is not `issue`, **ABORT**: `(collab export-issues)` requires terminal issue.
 7. If any non-moderator assigned role lacks a completed execution entry, **ABORT**: issue export blocked: pending execution role(s) remain.
 8. Read `<evidence-file>` as JSON. It must contain an `issues` array with at least one object. Each issue object must contain non-empty `title`; optional `url`, `body`, `owner`, and `delivery` fields must be non-empty strings when present; optional `requires` must be a list of non-empty strings.
 9. Call `commands/collab/engine/registry.py export-issues <target> pe --evidence-file <evidence-file> --caller-role pe`.

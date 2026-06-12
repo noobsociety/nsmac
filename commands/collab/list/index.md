@@ -1,12 +1,10 @@
-# /collab list
+# (collab list)
 
 List the registry-backed collabs so the moderator can inspect status and active selection without navigating the filesystem.
 
 ## Trigger
 
-**Slash:** `/collab list`
-**Signature:** `/collab list [--status <open|closed|archived>]`
-**Prose dispatch:** `(collab list ...)` — prose routing hint; not a terminal command.
+**Dispatch:** `(collab list [--status <open|closed|archived>])` — routing-only command form; not a shell command.
 **Search phrases:** collab list, list collaborations, list collab records
 
 ## Steps
@@ -33,9 +31,9 @@ Project: dotcursor · a13dba4ca8714205b217dca31da96eee
          closed · — · 4 participants · 2025-03-10
 ```
 
-- **Numeric selector stability:** The `#N` position is the collab's 1-based insertion index in the registry `collabs` array and never changes after `archive`, `delete`, or reordering. Pass `#N` or the bare number to any collab management command as a shorthand for the slug (e.g., `/collab activate 3`).
+- **Numeric selector stability:** The `#N` position is the collab's 1-based insertion index in the registry `collabs` array and never changes after `archive`, `delete`, or reordering. Pass `#N` or the bare number to any collab management command as a shorthand for the slug (e.g., `(collab activate 3)`).
 - **Sort order:** Active collab always first. Among the rest: highest `#N` first (newest to oldest), then slug alphabetically as a tiebreaker when `#N` values are equal (not normally possible but stated for completeness).
-- **Registry boundary:** `/collab list` is read-only. It never creates, edits, archives, or selects a collab.
+- **Registry boundary:** `(collab list)` is read-only. It never creates, edits, archives, or selects a collab.
 
 ```route-arg
 dispatch: (collab list [--status <open|closed|archived>])

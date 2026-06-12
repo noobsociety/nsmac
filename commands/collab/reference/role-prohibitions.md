@@ -50,7 +50,7 @@ Reference inventory for role-local advisory prohibitions. This file is prose doc
 
 ## Aggregate renderer (non-role component)
 
-The projection renderer (`/collab aggregate`) is a deterministic, non-role component. It must not:
+The projection renderer (`(collab aggregate)`) is a deterministic, non-role component. It must not:
 
 - Emit prose not traceable to a raw source anchor or a registry field.
 - Call generative functions, paraphrase, or introduce summarized content.

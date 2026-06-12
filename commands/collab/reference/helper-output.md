@@ -56,7 +56,7 @@ These are not part of the post-write advisory sequence. They appear before any w
 
 Successful exit emits in order:
 
-1. `NEXT: Run /collab show policy before first speak.`
+1. `NEXT: Run (collab show policy) before first speak.`
 2. `EFFORT: <phase> · <role> · <level> · <scale phrase>`
 3. `IDENTITY: <agentId>`
 
@@ -66,7 +66,7 @@ Pre-write (before appending):
 
 1. `BOUNDARY: transcript write only; no shell commands or source edits outside the user-scope collab state root`
 2. `SUCCINCTLY: stay within role concerns; do not pad or summarize other roles`
-3. `RETRACT: use /collab retract speak to tombstone the latest active-phase contribution`
+3. `RETRACT: use (collab retract speak) to tombstone the latest active-phase contribution`
 
 Post-write (after successful append):
 
@@ -121,7 +121,7 @@ Exit 0 on valid input. Exit 1 when the collab is closed, the phase is not `Compl
 Writes one atomic three-turn participant-verification sequence. When the last assigned participant completes verification, increments `verification.rounds` by 1. Successful exit emits:
 
 1. `participant verification <completed|failed> for <role>`
-2. `NEXT: Run /collab participant verify for role <role>.` when another participant remains, otherwise `NEXT: Run /collab seal verification for role <reviewer>.`
+2. `NEXT: Run (collab participant verify) for role <role>.` when another participant remains, otherwise `NEXT: Run (collab seal verification) for role <reviewer>.`
 
 Exit 0 on success. Exit 1 when the observed revision is stale, no active participant-verification lock exists for the role, another participant role is next, the attempt cap is reached, or touched paths fall outside the role's declared `writeScope`.
 
@@ -139,7 +139,7 @@ Two modes share the subcommand: bare seal (no verdict flags) and assessment verd
 
 Post-write advisories in order:
 
-1. `NEXT: Run /collab seal verification for role <role> with --outcome <success|incomplete|failed>.`
+1. `NEXT: Run (collab seal verification) for role <role> with --outcome <success|incomplete|failed>.`
 2. `EFFORT: <phase> · <role> · <level> · <scale phrase>`
 3. `EFFICIENCY:` (only when action crosses a lifecycle boundary)
 4. `<status>` — registry status after the write
@@ -151,7 +151,7 @@ When `--cap-exit` is provided, the `NEXT:` line reflects the new state after the
 
 Post-write advisories in order:
 
-1. `NEXT: Moderator should run /collab reopen <phase-token> <target>.` — on `success`, reflects the closed state via `next_line_for_state`; on `incomplete` or `failed`, directs the moderator to run `/collab reopen <phase-token>` where `<phase-token>` is `action-plan` or `handoff` derived from `restoreTarget`.
+1. `NEXT: Moderator should run (collab reopen <phase-token> <target>).` — on `success`, reflects the closed state via `next_line_for_state`; on `incomplete` or `failed`, directs the moderator to run `(collab reopen <phase-token>)` where `<phase-token>` is `action-plan` or `handoff` derived from `restoreTarget`.
 2. `EFFORT: <phase> · <role> · <level> · <scale phrase>`
 3. `EFFICIENCY:` (only when action crosses a lifecycle boundary)
 4. `<status>` — `closed` on `success`; otherwise unchanged
@@ -212,7 +212,7 @@ Exit-1 messages (exact):
 Exit-1 messages (exact):
 
 - `record is closed`
-- `/collab seal verification is valid only in the Completion phase`
+- `(collab seal verification) is valid only in the Completion phase`
 
 ### Module: `seal-render`
 
@@ -240,9 +240,9 @@ RESUME: commands/collab/engine/registry.py seal-state --resume <id> <role>
 Exit-1 messages (exact):
 
 - `record is closed`
-- `/collab seal verification is valid only in the Completion phase`
+- `(collab seal verification) is valid only in the Completion phase`
 - `verification seal requires an active reviewer role`
-- `reviewer role is not a registered participant; run /collab join --role <reviewer> first`
+- `reviewer role is not a registered participant; run (collab join) --role <reviewer> first`
 - `seal must be authored by the reviewer role; current role: <role>; expected: <reviewer>`
 
 **Sub-state guards**
@@ -361,7 +361,7 @@ Exit-1 messages (exact):
 Exit-1 messages (exact):
 
 - `record is closed`
-- `/collab participant verify requires activePhase = Completion`
+- `(collab participant verify) requires activePhase = Completion`
 - `role must already be a participant: <role>`
 
 **Sub-state, assignment, and turn-lock guards**
@@ -415,9 +415,9 @@ Exit-1 message (exact): `reopen phase must be one of: action-plan, handoff`
 Exit-1 messages (exact):
 
 - `record is archived`
-- `/collab reopen is valid only after a non-success Completion verdict`
-- `/collab reopen requires a non-success Completion verdict`
-- `/collab reopen phase mismatch: verdict restoreTarget is <target>; expected <expected_token>`
+- `(collab reopen) is valid only after a non-success Completion verdict`
+- `(collab reopen) requires a non-success Completion verdict`
+- `(collab reopen) phase mismatch: verdict restoreTarget is <target>; expected <expected_token>`
 
 **Transcript availability guard**
 

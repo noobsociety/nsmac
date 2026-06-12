@@ -66,6 +66,11 @@ class AbortClause:
         return f"{self.path}:{self.line_number}|{digest}"
 
     @property
+    def path_fingerprint(self) -> str:
+        digest = hashlib.sha1(self.text.strip().encode("utf-8")).hexdigest()[:12]
+        return f"{self.path}|{digest}"
+
+    @property
     def location(self) -> str:
         return f"{self.path}:{self.line_number}"
 
@@ -85,10 +90,10 @@ def is_public_route_file(path: Path) -> bool:
         text = path.read_text(encoding="utf-8")
     except UnicodeDecodeError:
         return False
-    slash_label = re.search(r"^\*\*Slash:\*\*\s*(.+)$", text, flags=re.MULTILINE)
-    if not slash_label:
+    dispatch_label = re.search(r"^\*\*Dispatch:\*\*\s*(.+)$", text, flags=re.MULTILINE)
+    if not dispatch_label:
         return False
-    return "reference only" not in slash_label.group(1)
+    return "reference only" not in dispatch_label.group(1)
 
 
 def discover_route_files(root: Path) -> list[str]:
@@ -123,6 +128,18 @@ def load_allowlist(path: Path) -> set[str]:
             continue
         entries.add(line)
     return entries
+
+
+def allowlist_path_fingerprints(entries: set[str]) -> set[str]:
+    values: set[str] = set()
+    for entry in entries:
+        if "|" not in entry:
+            continue
+        location, digest = entry.rsplit("|", 1)
+        rel = location.rsplit(":", 1)[0]
+        if rel and digest:
+            values.add(f"{rel}|{digest}")
+    return values
 
 
 def anchor_for_previous_line(lines: list[str], index: int) -> str | None:
@@ -203,6 +220,7 @@ def main() -> int:
         return 1
 
     allowlist = load_allowlist(allowlist_path)
+    allowlist_paths = allowlist_path_fingerprints(allowlist)
     discovered = existing_test_stems(tests_dir)
     required: list[str] = []
     errors: list[str] = []
@@ -215,7 +233,7 @@ def main() -> int:
             if clause.path in DISCOVERY_DEBT_ROUTE_FILES:
                 discovery_debt_unanchored += 1
                 continue
-            if clause.fingerprint in allowlist:
+            if clause.fingerprint in allowlist or clause.path_fingerprint in allowlist_paths:
                 allowlisted_unanchored += 1
                 continue
             errors.append(

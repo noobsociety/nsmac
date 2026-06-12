@@ -22,7 +22,7 @@ Harness files under `~/.cursor/tests/specs/`:
 - `templates.md`
 - `tests.md`
 
-**Note — intentionally internal harness specs:** `generated.md`, `templates.md`, and `tests.md` are not exposed as `/test <target>` routing targets. They are internal harness specifications swept by `./tests/run.sh`'s Markdown harness sweep, not dispatched through the `/test` command.
+**Note — intentionally internal harness specs:** `generated.md`, `templates.md`, and `tests.md` are not exposed as `(test <target>)` routing targets. They are internal harness specifications swept by `./tests/run.sh`'s Markdown harness sweep, not dispatched through the `(test)` command.
 
 ## Principle
 
@@ -30,7 +30,7 @@ Add a test only when a source behavior requires executable proof; prefer shell-l
 
 ## Layer ownership
 
-`tests/*.test.sh` owns shell-executable CI contract validation; `tests/specs/*.md` owns agent-facing policy for the `/test` command surface.
+`tests/*.test.sh` owns shell-executable CI contract validation; `tests/specs/*.md` owns agent-facing policy for the `(test)` command surface.
 
 `platform/tooling/audit.sh` is the shell-layer owning gate for adapter routing, `commands/commands.md` discovery, and runtime ignore rules; no Markdown harness is required for these behaviors.
 

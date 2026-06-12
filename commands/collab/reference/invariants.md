@@ -36,7 +36,7 @@ Maintainer check: `git grep -rnP '(?<![A-Za-z0-9_])(mod|pa|pe|tw)(?![A-Za-z0-9_]
 
 **2. Registry as source of truth; transcript as human ledger**
 
-The resolved registry (`$HOME/.collabs/<projectId>/registry.json` by default, or the explicit `--registry` path) is the authoritative source for command state. The transcript (`records/*.md` inside the resolved state root by default) mirrors selected metadata and captures human-readable context. Registry-only mutations — `/collab set`, `/collab unset`, moderator removal in `speak-lifecycle-live` — must remain reconcilable against transcript-readable state. No registry write may create state that cannot be explained or confirmed from the transcript.
+The resolved registry (`$HOME/.collabs/<projectId>/registry.json` by default, or the explicit `--registry` path) is the authoritative source for command state. The transcript (`records/*.md` inside the resolved state root by default) mirrors selected metadata and captures human-readable context. Registry-only mutations — `(collab set)`, `(collab unset)`, moderator removal in `speak-lifecycle-live` — must remain reconcilable against transcript-readable state. No registry write may create state that cannot be explained or confirmed from the transcript.
 
 **3. Phase-transition notices as structured helper output**
 
@@ -53,11 +53,11 @@ Conversation context is cache; disk state is truth. The resolved registry and tr
 
 **5. Context-changing events**
 
-The following six events are context-changing: `/compact`, `/clear`, agent swap mid-collab, subagent return, phase transition (`advance`/`restore`), and successful concurrent write by another participant. After any of these events, the route helper of record must be re-run before any registry or transcript write — `speak-state` for `/collab speak`, `execute-spawn` for each subagent spawn under `/collab run plan`, and the gate helper named in each route's playbook for other routes. An agent must never trust prior helper output after a context-changing event.
+The following six events are context-changing: `/compact`, `/clear`, agent swap mid-collab, subagent return, phase transition (`advance`/`restore`), and successful concurrent write by another participant. After any of these events, the route helper of record must be re-run before any registry or transcript write — `speak-state` for `(collab speak)`, `execute-spawn` for each subagent spawn under `(collab run plan)`, and the gate helper named in each route's playbook for other routes. An agent must never trust prior helper output after a context-changing event.
 
 **6. Subagent write-scope disjointness**
 
-When a parent agent spawns a subagent for implementation work (e.g., during `/collab run plan`), the parent must declare a disjoint write scope before spawning. The parent rejects any returned patch that touches paths outside the declared scope. A subagent must never become the author of a collab turn, and must not mutate registry or transcript state independently.
+When a parent agent spawns a subagent for implementation work (e.g., during `(collab run plan)`), the parent must declare a disjoint write scope before spawning. The parent rejects any returned patch that touches paths outside the declared scope. A subagent must never become the author of a collab turn, and must not mutate registry or transcript state independently.
 
 **7. Non-goal**
 
@@ -100,7 +100,7 @@ No-assignment-lines: `ABORT: Action Plan body contains no assignment lines after
 Observable-event conditions derived from the 2026-05-18 missed-and-deferred-goals audit. Each line names the observable event that re-opens the item; no behavior change until the event fires.
 
 - **Item 7 (round-counting / budget-exempt assessment path after cap-exit):** if any seal-attempt transcript exceeds 18 turns, or two consecutive participant verifications fail with full-body blocks present, open a follow-up audit of the round-counting and budget-exempt assessment path.
-- **Item 9 (`/collab rewrite-execution` redesign):** if any seal-attempt transcript exceeds 12 turns, open a follow-up DX audit on `rewrite-execution` and turn-budget management across `/compact`.
+- **Item 9 (`(collab rewrite execution)` redesign):** if any seal-attempt transcript exceeds 12 turns, open a follow-up DX audit on `rewrite-execution` and turn-budget management across `/compact`.
 - If any reviewer-backed collab closes via `--cap-exit archive` on a clean first seal (no findings during participant verification), open a verification-cap audit. *(Fired: collab #16, 2026-05-18. Resolved inline: root cause was doc gap on archive semantics + reviewer soliciting verdict from user instead of determining it autonomously. Fixes: `seal-verification.md` and `verification.md` updated to prohibit `--cap-exit archive` on clean verification and to require autonomous verdict determination. Detection remains active.)*
 
 **11. Observation backlog**
@@ -146,7 +146,7 @@ cap-exit follow-up-collab is reserved for newly discovered scope; original-colla
 
 **15. rewrite-speak turn-order enforcement**
 
-/collab rewrite speak rejects when (a) the active phase has a reopen pointer newer than the rewriting role existing block AND (b) the calling role is not the current expectedRole; stale blocks must wait their turn or be retracted via /collab retract speak before rewrite.
+(collab rewrite speak) rejects when (a) the active phase has a reopen pointer newer than the rewriting role existing block AND (b) the calling role is not the current expectedRole; stale blocks must wait their turn or be retracted via (collab retract speak) before rewrite.
 
 **16. Reviewer findings must cite evidence anchors**
 
@@ -156,7 +156,7 @@ Every reviewer finding must cite at least one transcript anchor or committed pat
 
 **17. Success requires coverage of chartered deliverables**
 
-A seal verdict of `success` is rejected unless every item in the collab's `charteredDeliverables` list (declared in the moderator's Audit block) is covered by at least one cited committed path in the execution record. Scope-staging — deferring chartered work to a follow-up collab without explicit moderator re-chartering via a new `/collab init` — is not a valid closure path and is rejected at seal.
+A seal verdict of `success` is rejected unless every item in the collab's `charteredDeliverables` list (declared in the moderator's Audit block) is covered by at least one cited committed path in the execution record. Scope-staging — deferring chartered work to a follow-up collab without explicit moderator re-chartering via a new `(collab init)` — is not a valid closure path and is rejected at seal.
 
 **Maintainer check:** When `charteredDeliverables` is non-empty, `seal-verification.md` must cross-reference each item against `execution.<role>.touchedPaths` before emitting a `success` verdict. A success verdict emitted without this check is a defect.
 
@@ -166,7 +166,7 @@ A seal verdict of `success` is rejected unless every item in the collab's `chart
 
 **18. Item tags required; `[defer]` rejected**
 
-Action Plan items must carry one of the recognized item tags immediately after the role label: `[execute]`, `[doc-fix]`, `[verify]`, `[precondition]`, `[verify-precondition]`, or `[verify-objective]`. Items carrying `[defer]` or no recognized tag are malformed. Deferral belongs in the `restoreReason` field or a follow-up collab opened via `/collab init`, not in the Action Plan checklist.
+Action Plan items must carry one of the recognized item tags immediately after the role label: `[execute]`, `[doc-fix]`, `[verify]`, `[precondition]`, `[verify-precondition]`, or `[verify-objective]`. Items carrying `[defer]` or no recognized tag are malformed. Deferral belongs in the `restoreReason` field or a follow-up collab opened via `(collab init)`, not in the Action Plan checklist.
 
 **Enforcement note:** Tag-level validation is enforced by `validate_action_plan_shape()` (`commands/collab/engine/registry.py:3161`) calling `action_plan_item_tag()` (`commands/collab/engine/registry.py:612`): `speak-render` rejects unrecognized or missing item tags; the Action Plan close path's `validate_action_plan_executable_scope()` (`commands/collab/engine/registry.py:3196`) rejects plans without at least one `[execute]` item.
 
@@ -184,11 +184,11 @@ Seal integrity is enforced by the **scope digest** — the `pathDigests`/`conten
 
 **Reviewer directive:** Never block or condition a seal on commit-hash provenance (e.g. "the cited commit does not contain the file", "the SHA is stale/orphaned"). The only seal-time integrity questions are: (1) is every touched-path's final content committed at `HEAD`, and (2) does the recomputed scope digest equal `verificationSeal.contentDigest`. If both hold, provenance is satisfied regardless of which commit is cited.
 
-**Enforcement note:** Enforced by `invalidate_seal_on_content_drift` and `assert_execution_touched_paths_in_git_state` in `commands/collab/engine/registry.py`; see the [Content-integrity gate](../seal-verification/index.md#content-integrity-gate) note in `/collab seal verification` and `verification.md` §"Seal time". `repair-execution-provenance` repoints commit metadata and recomputes the digest — it does not make the SHA a seal gate.
+**Enforcement note:** Enforced by `invalidate_seal_on_content_drift` and `assert_execution_touched_paths_in_git_state` in `commands/collab/engine/registry.py`; see the [Content-integrity gate](../seal-verification/index.md#content-integrity-gate) note in `(collab seal verification)` and `verification.md` §"Seal time". `repair-execution-provenance` repoints commit metadata and recomputes the digest — it does not make the SHA a seal gate.
 
 **21. Reopen carry-forward coverage is content-validated**
 
-When `/collab reopen` is called, `reopen_collab` saves the current covered paths — active entries plus any surviving carry from prior reopens — into `reopenCoverage` before clearing execution state. At seal time, `valid_carried_execution_entries` re-checks each saved entry against `HEAD`; paths deleted or changed since the save are dropped. Surviving paths are added to `touchedPaths` and the content-digest set (Invariant #20). Without this re-check, a deleted file could still appear covered at Invariant #17; the implementation prevents this.
+When `(collab reopen)` is called, `reopen_collab` saves the current covered paths — active entries plus any surviving carry from prior reopens — into `reopenCoverage` before clearing execution state. At seal time, `valid_carried_execution_entries` re-checks each saved entry against `HEAD`; paths deleted or changed since the save are dropped. Surviving paths are added to `touchedPaths` and the content-digest set (Invariant #20). Without this re-check, a deleted file could still appear covered at Invariant #17; the implementation prevents this.
 
 **`reopenCoverage` lifecycle:** Written when there are entries to save (`{ createdAt: ISO-8601, executionEntries: object[] }`). Each reopen re-saves active entries plus surviving carry from prior rounds, so coverage accumulates across reopens — re-checked against `HEAD` each time. If no entries exist at reopen time, `reopenCoverage` is not written; a stale value may persist but is overwritten on the next reopen that has entries. Not cleared after close. `reopenCoverage` is consulted at every seal by `valid_carried_execution_entries`. A stale snapshot cannot inflate coverage: each carried path must (a) still resolve at `HEAD` with a matching content-digest and (b) not already be an active execution path. A path whose blob is absent or drifted at `HEAD` is dropped — so a stale snapshot can only 'cover' a deliverable that genuinely still exists at `HEAD`.
 

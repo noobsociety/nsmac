@@ -8,6 +8,7 @@ import os
 import subprocess
 from pathlib import Path
 
+from commands.collab.engine.dispatch_forms import collab_dispatch
 from commands.collab.engine.errors import die
 from commands.collab.engine.normalizers import parse_execution_datetime
 from commands.collab.engine.registry_io import current_registry_project_id, root_project_id
@@ -38,7 +39,7 @@ def assert_work_repo_not_framework_for_external_project(repo_root: Path, label: 
             f'root {base} is inside a different git work tree ({enclosing}); '
             "refusing to bind the framework checkout as this collab's work tree. "
             f'Bind the intended tree: pass --work-repo {enclosing} at init, or run '
-            f'/collab set <target> work-repo {enclosing}'
+            f'{collab_dispatch("set", "<target>", "work-repo", enclosing)}'
         )
 
 def resolve_git_work_tree(raw: str, label: str) -> Path:
@@ -81,7 +82,7 @@ def default_init_work_repo_root() -> Path:
     # directory or the test-harness temp dir -- fall back to the framework
     # checkout instead of aborting: git is still enforced later by work_repo_root
     # at execution-commit capture and seal time, so init must not hard-fail on a
-    # not-yet-git directory (doing so makes /collab init unusable outside a repo).
+    # not-yet-git directory.
     base = RESOLVED_WORK_REPO_ROOT if RESOLVED_WORK_REPO_ROOT is not None else ROOT
     enclosing = enclosing_git_tree(Path(base))
     return enclosing if enclosing is not None else ROOT
@@ -105,7 +106,7 @@ def work_repo_root(entry: dict) -> Path:
         if current_project is not None and framework_project is not None and current_project != framework_project:
             die(
                 f'workRepo missing for external project {current_project}; '
-                f'run /collab set {entry.get("id", "<target>")} work-repo <path>'
+                f'run {collab_dispatch("set", entry.get("id", "<target>"), "work-repo", "<path>")}'
             )
         return ROOT
     repo_root = resolve_git_work_tree(raw, 'workRepo')

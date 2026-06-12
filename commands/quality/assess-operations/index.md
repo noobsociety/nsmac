@@ -1,12 +1,10 @@
-# /quality assess operations
+# (quality assess operations)
 
 **OPS** — build and operations review: scripts, tooling contracts, CI/deploy when present, and surfaces other principal roles skip.
 
 ## Trigger
 
-**Slash:** `/quality assess operations`
-**Signature:** `/quality assess operations <project>`
-**Prose dispatch:** `(quality assess operations <project>)` — prose routing hint; not a terminal command.
+**Dispatch:** `(quality assess operations <project>)` — routing-only command form; not a shell command.
 **Search phrases:** build review, CI review, OPS
 
 ## Steps

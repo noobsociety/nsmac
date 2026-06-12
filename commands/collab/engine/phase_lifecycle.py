@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 
+from commands.collab.engine.dispatch_forms import collab_dispatch
 from commands.collab.engine.registry_constants import PHASES
 
 def next_phase_name(phase: str) -> str | None:
@@ -34,7 +35,7 @@ def transition_notice(from_phase: str, to_phase: str) -> dict | None:
         return {
             'notice': 'subagent',
             'transition': transition,
-            'message': 'Use a subagent or compacted execution context before /collab run plan.',
+            'message': f'Use a subagent or compacted execution context before {collab_dispatch("run plan")}.',
         }
     return None
 

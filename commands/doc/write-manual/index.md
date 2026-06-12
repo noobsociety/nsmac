@@ -1,12 +1,10 @@
-# /doc write manual
+# (doc write manual)
 
 Author or update **only** repo-root `MANUAL.md`: numbered human steps that mirror what automation does, so a reader never needs to run those scripts.
 
 ## Trigger
 
-**Slash:** `/doc write manual`
-**Signature:** `/doc write manual`
-**Prose dispatch:** `(doc write manual)` — prose routing hint; not a terminal command.
+**Dispatch:** `(doc write manual)` — routing-only command form; not a shell command.
 **Search phrases:** `update manual`, `create manual`, `manual fallback`, `recovery guide`, `MANUAL.md`
 
 ## Steps
@@ -24,7 +22,7 @@ Author or update **only** repo-root `MANUAL.md`: numbered human steps that mirro
 ## Notes
 
 - **Voice:** Imperative for steps; neutral declarative for short explanations. Shared markdown rules apply; this command owns procedural clarity on **`MANUAL.md`**.
-- **README pairing:** README often carries orientation and short install; **`MANUAL.md`** carries traced fallback steps. Do not invoke **`/doc write readme`** from this command. Link normally when the repo already cross-links.
+- **README pairing:** README often carries orientation and short install; **`MANUAL.md`** carries traced fallback steps. Do not invoke **`(doc write readme)`** from this command. Link normally when the repo already cross-links.
 - **Changelog:** Do not create or edit **`CHANGELOG.md`** unless the user or task explicitly includes it.
 - **Relative paths:** Examples show markdown as it should appear in target **`MANUAL.md`**; links to **`README.md`** are repo-root relative.
 - **Status template (default):**

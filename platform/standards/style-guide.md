@@ -1,6 +1,6 @@
 # Style guide
 
-The style guide applies to all `.md` and `markdown-workflow.md` files across all projects and notes, except where [Personal account exception](#personal-account-exception) or [Changelog entries](#changelog-entries) says otherwise. Per-type templates for common shapes live in [the document standard](document-standard.md); slash playbook details live in [command standard](command-standard.md).
+The style guide applies to all `.md` and `markdown-workflow.md` files across all projects and notes, except where [Personal account exception](#personal-account-exception) or [Changelog entries](#changelog-entries) says otherwise. Per-type templates for common shapes live in [the document standard](document-standard.md); command playbook details live in [command standard](command-standard.md).
 
 Contract: [document-standard.md](document-standard.md), [command-standard.md](command-standard.md), [context-management.md](context-management.md)
 
@@ -26,10 +26,10 @@ Use the following person rules based on document type:
 - Personal accounts (see Personal account exception): person follows [the author voice guide](author-voice.md) — often first person singular (`I`), not neutral documentation
 - Third person for reference docs, role docs, and course notes — the subject is always the thing itself, never a pronoun
 
-Do: `The command playbook states the slash invocation in the Trigger section.`
-Don’t: `This playbook states the slash invocation in the Trigger section.`
+Do: `The command playbook states the dispatch form in the Trigger section.`
+Don’t: `This playbook states the dispatch form in the Trigger section.`
 
-Do: `The maintainer owns the slash command catalog in commands/commands.md.`
+Do: `The maintainer owns the command catalog in commands/commands.md.`
 Don’t: `You own commands/commands.md.` (in a role doc describing the role to others)
 
 Never use `this`, `it`, or `that` as a subject in reference docs, role docs, or course notes. Repeat the noun.
@@ -52,7 +52,7 @@ Never use `this`, `it`, or `that` as a subject in reference docs, role docs, or 
 
 ### Headings
 
-- `H1` — document title only, one per file, noun phrase by default; slash playbooks and harness files follow their own title shape in [command standard](command-standard.md)
+- `H1` — document title only, one per file, noun phrase by default; command playbooks and harness files follow their own title shape in [command standard](command-standard.md)
 - `H2` — major sections
 - `H3` — subsections only when a section needs internal structure
 - No `H4` or deeper — restructure instead
@@ -159,7 +159,7 @@ Examples: `markdown-workflow.md`, `markdown-workflow.md`, `quality-learning.md`
 
 Pattern: `commands/{namespace}/index.md` for public routers and `commands/{namespace}/{route}/index.md` for route playbooks.
 
-The public router name matches the related command family and rule group. Route directory names stay route-shaped so the runtime does not expose them as standalone slashes.
+The public router name matches the related command family and rule group. Route directory names stay route-shaped so the runtime does not expose them as standalone public commands.
 
 Examples: `commands/git/commit/index.md`, `commands/quality/assess-game/index.md`, `commands/doc/write-readme/index.md`
 
@@ -184,7 +184,7 @@ Examples of owned internal JSON: `commands/collab/reference/roles/*.json` (`key`
 ## Related documents
 
 - [Document standard](document-standard.md) — per-type templates for each file shape.
-- [Command standard](command-standard.md) — extended slash playbook rules.
+- [Command standard](command-standard.md) — extended command playbook rules.
 - [Author voice](author-voice.md) — voice, register, and craft principles for personal accounts.
 - [Context engineering](context-management.md) — context engineering principles and context budget guidance for rules and commands.
 

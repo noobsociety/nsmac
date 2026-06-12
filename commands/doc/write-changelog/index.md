@@ -1,12 +1,10 @@
-# /doc write changelog
+# (doc write changelog)
 
 Create or update `CHANGELOG.md`, `NEWS.md`, `HISTORY.md`, `RELEASE_NOTES.md`, and similar changelog files with a curated six-category structure and git-grounded entries.
 
 ## Trigger
 
-**Slash:** `/doc write changelog`
-**Signature:** `/doc write changelog <atomic | squash>`
-**Prose dispatch:** `(doc write changelog <atomic | squash>)` — prose routing hint; not a terminal command.
+**Dispatch:** `(doc write changelog <atomic | squash>)` — routing-only command form; not a shell command.
 **Search phrases:** `changelog atomic`, `update changelog atomic`, `changelog squash`, `update changelog squash`
 
 ## Steps
@@ -23,7 +21,7 @@ Create or update `CHANGELOG.md`, `NEWS.md`, `HISTORY.md`, `RELEASE_NOTES.md`, an
 
 - **Route (atomic vs squash).** `atomic` → one bullet per non-merge commit in the resolved source range, chronological within each `###`. `squash` → one chosen squash commit; one bullet per accepted body line per the **Squash procedure**.
 - **Parameters:** `<atomic | squash>` — git replay mode (required). `atomic`: one bullet per commit in the resolved source range. `squash`: one bullet per accepted body line of a chosen squash commit. For "since last release" or a tag, anchor `git log` from that tag when named.
-- **Dependencies:** [markdown-workflow](../../../platform/standards/markdown-workflow.md), [markdown-workflow](../../../platform/standards/markdown-workflow.md); `/doc write changelog` directives take precedence over those rules on changelog paths. If either is unreadable when needed, **ABORT** per **`context-gate.md`**.
+- **Dependencies:** [markdown-workflow](../../../platform/standards/markdown-workflow.md), [markdown-workflow](../../../platform/standards/markdown-workflow.md); `(doc write changelog)` directives take precedence over those rules on changelog paths. If either is unreadable when needed, **ABORT** per **`context-gate.md`**.
 - **Post-run report:** After each run, emit a structured summary in this exact form — omit the "Squash OID" line for atomic mode: `Updated <path>. Mode: <atomic|squash>. Git range: <YYYY-MM-DD> → <YYYY-MM-DD>. [Squash OID: <sha>.] Ordering: <rule applied, e.g. "chronological within each category" or "body-line order of selected commit">. Sections written: ### <Category> (<N> items)[, …].` No unsolicited coaching unless asked.
 - **Voice:** Shared markdown defaults; changelog entry tense overridden here. **`[Unreleased]`:** imperative or simple present. **Dated / `[YANKED]`:** past tense.
 - **Document skeleton:** H1; short intro explaining the file purpose plus optional SemVer line; `## [Unreleased]`; then dated `##` newest first. **Title by filename:** `CHANGELOG*` → `# Changelog`; `NEWS.md` → `# News`; `HISTORY.md` → `# History`; `CHANGES*` → `# Changes`; `RELEASE_NOTES*` → `# Release notes` or match project. Dates use `YYYY-MM-DD`. Only non-empty `###`. List lines respect ~120 chars when caps exist elsewhere.

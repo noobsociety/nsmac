@@ -48,7 +48,7 @@ This matrix is rendered from `agent-effort.json`. The helper's `EFFORT:` advisor
 | Completion.verification | low | high | high | xhigh *(reviewer seal; mandatory-declaration turn)* |
 | Completion.verification.participant | low | xhigh | xhigh | — |
 
-**`—`** means the role is not on the turn-order roster for that phase by default. Optional admission is available via `reviewerOptionalPhases` in the registry (defaults to `["Discussion"]`; extended via `/collab set reviewer-optional-phases`); when admitted to a non-Discussion phase, the effort level is `xhigh`. Implemented by `reviewer_optional_phases` in `commands/collab/engine/registry.py`.
+**`—`** means the role is not on the turn-order roster for that phase by default. Optional admission is available via `reviewerOptionalPhases` in the registry (defaults to `["Discussion"]`; extended via `(collab set) reviewer-optional-phases`); when admitted to a non-Discussion phase, the effort level is `xhigh`. Implemented by `reviewer_optional_phases` in `commands/collab/engine/registry.py`.
 
 Roles that exist in `commands/collab/reference/roles/` but are absent from this advisory matrix receive the helper's open-roster fallback: `medium`. This keeps join and speak advisories non-blocking for newly added roles while preserving explicit matrix values for the curated roles.
 

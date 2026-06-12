@@ -1,12 +1,10 @@
-# /collab delete
+# (collab delete)
 
 Permanently remove a collab record from the registry and disk. This operation is destructive and requires explicit confirmation.
 
 ## Trigger
 
-**Slash:** `/collab delete`
-**Signature:** `/collab delete [<target>]`
-**Prose dispatch:** `(collab delete ...)` — prose routing hint; not a terminal command.
+**Dispatch:** `(collab delete [<target>])` — routing-only command form; not a shell command.
 **Search phrases:** collab delete, hard delete collab, permanently remove collaboration record
 
 ## Steps
@@ -34,7 +32,7 @@ Permanently remove a collab record from the registry and disk. This operation is
 
 - **Parameters:** target collab slug, id, or numeric `#N` as the first token after `delete`; when absent, resolved per **Registry targeting** in **Notes**.
 - **Registry targeting:** Resolve the target collab from the resolved registry, using `commands/collab/engine/registry.py` as the shared helper. When the first token after the route is present, treat it as a collab slug, id, or stable numeric position. Otherwise use `activeCollabId`. If the registry is unreadable or invalid, the token does not match any entry, or `activeCollabId` is empty, **ABORT**: registry target unavailable; name the registry field or token.
-- **Destructive by default:** `delete` is always a hard delete — it removes both the registry entry and the transcript file. For non-destructive deactivation, use `/collab archive` instead.
+- **Destructive by default:** `delete` is always a hard delete — it removes both the registry entry and the transcript file. For non-destructive deactivation, use `(collab archive)` instead.
 - **Confirmation required:** Always show the target details before presenting the gate. Never skip the gate prompt. Gate contract: `platform/standards/command-argument.md`.
 
 ```route-arg

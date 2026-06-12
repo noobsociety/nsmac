@@ -1,12 +1,10 @@
-# /collab activate
+# (collab activate)
 
 Select the active collab in the registry so subsequent routes do not need an explicit target token.
 
 ## Trigger
 
-**Slash:** `/collab activate`
-**Signature:** `/collab activate <record>`
-**Prose dispatch:** `(collab activate ...)` — prose routing hint; not a terminal command.
+**Dispatch:** `(collab activate <record>)` — routing-only command form; not a shell command.
 **Search phrases:** collab use, select active collab, switch active collaboration
 
 ## Steps
@@ -21,7 +19,7 @@ Select the active collab in the registry so subsequent routes do not need an exp
 ## Notes
 
 - **Parameters:** `<record>` — required collab slug, id, or numeric `#N`.
-- **Active selection model:** the resolved registry stores one top-level `activeCollabId` pointer. `/collab activate` is the only normal route that changes that pointer directly.
+- **Active selection model:** the resolved registry stores one top-level `activeCollabId` pointer. `(collab activate)` is the only normal route that changes that pointer directly.
 
 ```route-arg
 dispatch: (collab activate <record>)

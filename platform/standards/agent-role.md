@@ -54,7 +54,7 @@ Keys are globally reserved as a 1:1 primary key mapping to a specific role. No t
 
 `--role <key>` is the standard flag for any command that accepts a role. The flag is always required when a command uses roles; there is no default role.
 
-**Example:** `/collab join --role tw`
+**Example:** `(collab join --role tw)`
 
 ## Reviewer obligations
 

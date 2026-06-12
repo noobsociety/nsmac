@@ -1,12 +1,10 @@
-# /collab show flags
+# (collab show flags)
 
 Display the generated collab flag inventory from the spec-owned flag taxonomy.
 
 ## Trigger
 
-**Slash:** `/collab show flags`
-**Signature:** `/collab show flags`
-**Prose dispatch:** `(collab show flags)` — prose routing hint; not a terminal command.
+**Dispatch:** `(collab show flags)` — routing-only command form; not a shell command.
 **Search phrases:** collab flags, flag inventory, collab command flags
 
 ## Steps

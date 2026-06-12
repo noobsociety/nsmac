@@ -26,7 +26,7 @@ output="$("$ROOT/commands/collab/engine/registry.py" seal-render "$TARGET" pa \
   --evidence '{"registryRevision":2,"transcriptIds":["action-plan-pe-1"],"committedPaths":["platform/tooling/audit.sh"],"executionEntryIds":["pe-2026-05-15t21-00-00-02-00"]}' \
   --caller-role pa)"
 
-if [[ "$output" != *"NEXT: Moderator should run /collab reopen action-plan $TARGET."* ]]; then
+if [[ "$output" != *"NEXT: Moderator should run (collab reopen action-plan $TARGET)."* ]]; then
   printf 'FAIL: helper NEXT did not emit reopen guidance\n%s\n' "$output" >&2
   exit 1
 fi
@@ -50,11 +50,11 @@ assert '  revision: 2' in block
 assert '  committedPaths: ["platform/tooling/audit.sh"]' in block
 assert '  executionEntryIds: ["pe-2026-05-15t21-00-00-02-00"]' in block
 assert '  transcriptIds: ["action-plan-pe-1"]' in block
-assert f'  NEXT: /collab reopen action-plan {entry["id"]}' in block
+assert f'  NEXT: (collab reopen action-plan {entry["id"]})' in block
 assert '  REASON: Action Plan acceptance criteria were not met.' in block
 assert '  AFFECTED: committedPaths=["platform/tooling/audit.sh"]; executionEntryIds=["pe-2026-05-15t21-00-00-02-00"]; transcriptIds=["action-plan-pe-1"]' in block
 assert '  RETURN: Action Plan' in block
-assert f'helperNext: NEXT: Moderator should run /collab reopen action-plan {entry["id"]}.' in block
+assert f'helperNext: NEXT: Moderator should run (collab reopen action-plan {entry["id"]}).' in block
 assert block.index('  RETURN: Action Plan') < block.index('helperNext:')
 Path('findings-block.txt').write_text(block)
 PY

@@ -52,8 +52,9 @@ assert 'Visible excerpt with the standalone finding.' in text
 PY
 
 "$ROOT/commands/collab/engine/registry.py" transcript-view "$TARGET" Discussion --raw >raw-view.md
+"$ROOT/commands/collab/engine/registry.py" transcript-view "$TARGET" Audit --raw >audit-view.md
+"$ROOT/commands/collab/engine/registry.py" aggregate "$TARGET" >/dev/null
 "$ROOT/commands/collab/engine/registry.py" transcript-view "$TARGET" Discussion >discussion-view.md
-"$ROOT/commands/collab/engine/registry.py" transcript-view "$TARGET" Audit >audit-view.md
 
 grep -Fq 'fullbodyword279' raw-view.md
 if grep -Fq 'Visible excerpt with the standalone finding.' audit-view.md; then

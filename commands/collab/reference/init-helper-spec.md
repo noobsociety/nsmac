@@ -18,7 +18,7 @@ Canonical derivation rules for `commands/collab/engine/registry.py init`. Both t
 
 ### Title normalization
 
-Source: the trimmed `<name>` argument - all tokens after `/collab init` with declared helper flags stripped.
+Source: the trimmed `<name>` argument - all tokens after `(collab init)` with declared helper flags stripped.
 
 Algorithm:
 
@@ -31,7 +31,7 @@ The normalized result is the registry `title`, transcript H1, and description so
 
 ### Slug derivation
 
-Source: the trimmed `<name>` argument - all tokens after `/collab init` with declared helper flags stripped.
+Source: the trimmed `<name>` argument - all tokens after `(collab init)` with declared helper flags stripped.
 
 Algorithm:
 
@@ -67,7 +67,7 @@ When present:
   - `reviewerRole`: the supplied `<role>` value
   - `reviewerMode`: `"last-in-convergent-phases"`
   - `reviewerOptionalPhases`: `["Discussion"]`
-- If the reviewer role is not yet in `participants`, add a transcript **Reviewer** section noting that the role must join via `/collab join --role <role>` before any participant may contribute, and mark it as `(pending)`. Do not abort.
+- If the reviewer role is not yet in `participants`, add a transcript **Reviewer** section noting that the role must join via `(collab join) --role <role>` before any participant may contribute, and mark it as `(pending)`. Do not abort.
 
 When absent: omit `reviewerRole`, `reviewerMode`, and `reviewerOptionalPhases` from the new entry.
 

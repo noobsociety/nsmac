@@ -13,7 +13,7 @@ output="$("$ROOT/commands/collab/engine/registry.py" seal-state missing pa 2>&1)
 status=$?
 set -e
 
-if [[ "$status" -eq 0 || "$output" != *"project marker missing: .collab.json; run /collab init from the project root"* ]]; then
+if [[ "$status" -eq 0 || "$output" != *"project marker missing: .collab.json; run (collab init) from the project root"* ]]; then
   printf 'FAIL: seal-state did not reject an unreadable registry\n%s\n' "$output" >&2
   exit 1
 fi

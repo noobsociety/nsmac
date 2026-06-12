@@ -1,12 +1,10 @@
-# /collab set
+# (collab set)
 
 Update collab metadata fields that do not already belong to a dedicated mutation route.
 
 ## Trigger
 
-**Slash:** `/collab set`
-**Signature:** `/collab set <field> <value>`; or `/collab set reviewer <role>` / `/collab set reviewer --clear` / `/collab set reviewer-optional-phases <phase>...`
-**Prose dispatch:** `(collab set ...)` — prose routing hint; not a terminal command.
+**Dispatch:** `(collab set <field> <value>)` — routing-only command form; not a shell command.
 **Search phrases:** collab set, set collaboration metadata, update collab metadata
 
 ## Steps
@@ -32,16 +30,14 @@ Update collab metadata fields that do not already belong to a dedicated mutation
 - **Parameters:** target collab slug, id, or numeric `#N` as the first token after `set`; when absent, resolved per **Registry targeting** in **Notes**. `<field>` — required metadata field name. `<value>` — required replacement value (omit for `reviewer --clear`). `--force` — optional recovery-only override for fields that are normally owned elsewhere.
 - **Registry targeting:** Resolve the target collab from the resolved registry, using `commands/collab/engine/registry.py` as the shared helper. When the first token after the route is present, treat it as a collab slug, id, or stable numeric position. Otherwise use `activeCollabId`. If the registry is unreadable or invalid, the token does not match any entry, or `activeCollabId` is empty, **ABORT**: registry target unavailable; name the registry field or token.
 - **Field ownership:** `title` -> `set`; `description` -> `set`; `turn-order` -> `set`; `reviewer`, `reviewerOptionalPhases` -> `set`; `work-repo` -> `set`; `status` -> `open` / `close`; `participants` -> `join` / `kick`; `active-phase` -> `next` / `prev` (or `set --force` for recovery only).
-- **Ownership boundary:** Every mutable field has exactly one normal mutation path. `/collab set` must refuse fields owned by another route unless `--force` is used for recovery-only metadata repair.
-- **Post-state resume signal:** After `/collab set` completes, re-establish collab context with `commands/collab/engine/registry.py speak-state --resume <target> <role>` before issuing the next collab command.
+- **Ownership boundary:** Every mutable field has exactly one normal mutation path. `(collab set)` must refuse fields owned by another route unless `--force` is used for recovery-only metadata repair.
+- **Post-state resume signal:** After `(collab set)` completes, re-establish collab context with `commands/collab/engine/registry.py speak-state --resume <target> <role>` before issuing the next collab command.
 - **Sync contract compliance:** `title`, `description`, `turn-order`, and `active-phase` transcript-side updates (H1, opening text, Turn order cell, Active phase cell) are prose-rendered; `commands/collab/engine/registry.py set` writes registry only. This is declared under the sync contract in [`platform/standards/route-invariant.md`](../../../platform/standards/route-invariant.md).
 
 ```route-arg
 dispatch: (collab set <field> <value>)
 param: name=<field>; required=required; placeholder=<field>; class=literal; values=title | description | turn-order | reviewer | reviewer-optional-phases | active-phase | work-repo
 param: name=<value>; required=required; placeholder=<value>; class=type; rule=field-specific replacement value
-param: name=<role>; required=required; placeholder=<role>; class=dynamic; source=commands/collab/engine/registry.py roles
-param: name=--clear; required=optional; placeholder=--clear; class=literal; values=present; default=literal:false
 ```
 
 ```route-flag

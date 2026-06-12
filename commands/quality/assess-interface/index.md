@@ -1,12 +1,10 @@
-# /quality assess interface
+# (quality assess interface)
 
 **UID** — principal user-interface review from a screenshot: hierarchy, clarity, consistency, affordances, and visible accessibility with actionable feedback.
 
 ## Trigger
 
-**Slash:** `/quality assess interface`
-**Signature:** `/quality assess interface <image> <project>`
-**Prose dispatch:** `(quality assess interface <image> <project>)` — prose routing hint; not a terminal command.
+**Dispatch:** `(quality assess interface <image> <project>)` — routing-only command form; not a shell command.
 **Search phrases:** principal UI review, screenshot review, UID
 
 ## Steps

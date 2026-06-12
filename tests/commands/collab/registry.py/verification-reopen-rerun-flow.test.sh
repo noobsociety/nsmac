@@ -52,8 +52,8 @@ output="$("$ROOT/commands/collab/engine/registry.py" seal-render "$TARGET" pa \
   --evidence '{"registryRevision":2,"transcriptIds":["handoff-pe-1"],"committedPaths":["platform/tooling/audit.sh"],"executionEntryIds":["pe-2026-05-17t10-00-00-02-00"]}' \
   --caller-role pa)"
 
-if [[ "$output" != *"NEXT: Moderator should run /collab reopen handoff $TARGET."* ]]; then
-  printf 'FAIL: assessment verdict did not point at /collab reopen handoff\n%s\n' "$output" >&2
+if [[ "$output" != *"NEXT: Moderator should run (collab reopen handoff $TARGET)."* ]]; then
+  printf 'FAIL: assessment verdict did not point at (collab reopen handoff)\n%s\n' "$output" >&2
   exit 1
 fi
 
@@ -69,7 +69,7 @@ start = transcript.index('<a name="reviewer-findings-1"></a>')
 end = transcript.index('</details>', start) + len('</details>')
 block = transcript[start:end]
 assert 'restoreTarget: Handoff' in block
-assert f'  NEXT: /collab reopen handoff {entry["id"]}' in block
+assert f'  NEXT: (collab reopen handoff {entry["id"]})' in block
 assert block.index('  NEXT:') < block.index('helperNext:')
 Path('findings-block.txt').write_text(block)
 PY

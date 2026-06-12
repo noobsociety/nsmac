@@ -59,6 +59,7 @@ ANCHOR_RE = re.compile(r'^<a name="(?P<anchor>[A-Za-z0-9_-]+)"></a>$')
 SEAL_VERDICT_KIND = 'collab.seal-verdict'
 
 from commands.collab.engine import transcript_readers
+from commands.collab.engine.dispatch_forms import collab_dispatch
 from commands.collab.engine.errors import die
 from commands.collab.engine.registry_constants import (
     ACTIVE_PARTICIPANT_VERIFICATION_STAGES,
@@ -387,7 +388,7 @@ def verification_execution_blocker(entry: dict, transcript: str) -> str | None:
             + ', '.join(f'{role}={unchecked[role]}' for role in sorted(unchecked))
         )
     next_role = pending[0] if pending else sorted(unchecked)[0]
-    return '; '.join(details) + f'; run /collab run plan for role {next_role}'
+    return '; '.join(details) + f'; run {collab_dispatch("run plan")} for role {next_role}'
 
 
 def assert_verification_execution_ready(entry: dict, transcript: str, action: str) -> None:
@@ -449,7 +450,7 @@ def sync_participant_verification_review_substate(entry: dict) -> None:
 
 
 def participant_verification_inactive_message(entry: dict) -> str:
-    """Explain why /collab participant verify cannot run and what to do next,
+    """Explain why participant verification cannot run and what to do next,
     instead of surfacing only the raw sub-state. The blocking states are:
     participant verification disabled, the round already complete (sub-state
     'seal'), or a seal recorded and awaiting the reviewer verdict ('assessment').
@@ -460,22 +461,22 @@ def participant_verification_inactive_message(entry: dict) -> str:
     if not participant_verification_enabled(entry):
         return (
             'participant verification is not enabled for this collab; '
-            f'the reviewer ({reviewer}) seals directly via /collab seal verification {target}'
+            f'the reviewer ({reviewer}) seals directly via {collab_dispatch("seal verification", target)}'
         )
     substate = verification_state(entry)['subState']
     if substate == 'seal':
         return (
             'participant verification for this round is already complete; the reviewer '
-            f'({reviewer}) records the seal via /collab seal verification {target}'
+            f'({reviewer}) records the seal via {collab_dispatch("seal verification", target)}'
         )
     if substate == 'assessment':
         return (
             'participant verification cannot run while the cycle is in assessment: a '
             f'verification seal is recorded and awaiting the reviewer ({reviewer}) verdict. '
-            f'Reviewer: record it via /collab seal verification {target} '
+            f'Reviewer: record it via {collab_dispatch("seal verification", target)} '
             '--outcome <success|incomplete|failed>. To redo verification after a correction, '
             'record a non-success outcome; that routes the moderator to '
-            f'/collab reopen <action-plan|handoff> {target} to re-execute and re-verify'
+            f'{collab_dispatch("reopen", "<action-plan|handoff>", target)} to re-execute and re-verify'
         )
     return f'participant verification is not the active sub-state; current sub-state: {substate}'
 
@@ -771,7 +772,7 @@ def completion_summary_bounds(transcript: str) -> tuple[int, int]:
         if SUMMARY_HEADING_RE.match(lines[index].strip())
     ]
     if not heading_indexes:
-        die('nothing yet summarized; run /collab write summary first')
+        die(f'nothing yet summarized; run {collab_dispatch("write summary")} first')
 
     start = heading_indexes[-1]
     end = len(lines)
@@ -1000,9 +1001,9 @@ def seal_state(path: Path, target: str, role: str | None = None, resume: bool = 
         if entry['status'] in {'closed', 'archived'}:
             die('record is closed')
         if entry['activePhase'] != 'Completion':
-            die('/collab seal verification is valid only in the Completion phase')
+            die(f'{collab_dispatch("seal verification")} is valid only in the Completion phase')
         if entry.get('terminal') == 'issue':
-            die('seal verification is not used for issue-terminal collabs; close with /collab export-issues')
+            die(f'seal verification is not used for issue-terminal collabs; close with {collab_dispatch("export-issues")}')
         if reviewer_backed(entry):
             initialize_completion_state(entry, verification_substate(entry))
         if reviewer_backed(entry) and all_execution_completed(entry):
@@ -1105,7 +1106,7 @@ def participant_verify_state(path: Path, target: str, role: str, resume: bool = 
         if entry['status'] in {'closed', 'archived'}:
             die('record is closed')
         if entry['activePhase'] != 'Completion':
-            die('/collab participant verify requires activePhase = Completion')
+            die(f'{collab_dispatch("participant verify")} requires activePhase = Completion')
         if reviewer_backed(entry) and all_execution_completed(entry):
             completion = completion_state(entry)
             if completion['subState'] == 'execution':
@@ -1197,7 +1198,7 @@ def participant_verify_render(
         if entry['status'] in {'closed', 'archived'}:
             die('record is closed')
         if entry['activePhase'] != 'Completion':
-            die('/collab participant verify requires activePhase = Completion')
+            die(f'{collab_dispatch("participant verify")} requires activePhase = Completion')
         live_revision = registry_revision(data)
         if observed_revision != live_revision:
             die(
@@ -1277,9 +1278,9 @@ def participant_verify_render(
     print(f'participant verification {status} for {role}')
     next_role = first_pending_participant_verification_role(entry)
     print(
-        f'NEXT: Run /collab participant verify for role {next_role}.'
+        f'NEXT: Run {collab_dispatch("participant verify")} for role {next_role}.'
         if next_role
-        else f'NEXT: Run /collab seal verification for role {reviewer_role(entry)}.'
+        else f'NEXT: Run {collab_dispatch("seal verification")} for role {reviewer_role(entry)}.'
     )
     return 0
 
@@ -1329,13 +1330,13 @@ def assessment_next_line(entry: dict, verdict: dict) -> str:
         return next_line_for_state(entry)
     target = verdict.get('restoreTarget', 'Action Plan')
     phase_token = 'handoff' if target == 'Handoff' else 'action-plan'
-    return f'NEXT: Moderator should run /collab reopen {phase_token} {entry["id"]}.'
+    return f'NEXT: Moderator should run {collab_dispatch("reopen", phase_token, entry["id"])}.'
 
 
 def verdict_reopen_command(entry: dict, verdict: dict) -> str:
     target = verdict.get('restoreTarget', 'Action Plan')
     phase_token = 'handoff' if target == 'Handoff' else 'action-plan'
-    return f'/collab reopen {phase_token} {entry["id"]}'
+    return collab_dispatch('reopen', phase_token, entry["id"])
 
 
 def evidence_list(evidence: dict, key: str) -> str:
@@ -1519,9 +1520,9 @@ def render_seal(
         if entry['status'] in {'closed', 'archived'}:
             die('record is closed')
         if entry['activePhase'] != 'Completion':
-            die('/collab seal verification is valid only in the Completion phase')
+            die(f'{collab_dispatch("seal verification")} is valid only in the Completion phase')
         if entry.get('terminal') == 'issue':
-            die('seal verification is not used for issue-terminal collabs; close with /collab export-issues')
+            die(f'seal verification is not used for issue-terminal collabs; close with {collab_dispatch("export-issues")}')
         live_revision = registry_revision(data)
         if observed_revision != live_revision:
             die(
@@ -1532,7 +1533,7 @@ def render_seal(
         if reviewer is None:
             die('verification seal requires an active reviewer role')
         if reviewer_state(entry)['state'] != 'active':
-            die(f'reviewer role is not a registered participant; run /collab join --role {reviewer} first')
+            die(f'reviewer role is not a registered participant; run {collab_dispatch("join", "--role", reviewer)} first')
         if role != reviewer:
             die(f'seal must be authored by the reviewer role; current role: {role}; expected: {reviewer}')
         if verification_substate(entry) != 'verification':
@@ -1667,7 +1668,7 @@ def render_seal(
             if advisory:
                 print(advisory)
             next_line = (
-                f'NEXT: Run /collab seal verification for role {role} with --outcome <success|incomplete|failed>.'
+                f'NEXT: Run {collab_dispatch("seal verification")} for role {role} with --outcome <success|incomplete|failed>.'
                 if cap_exit is None
                 else (
                     'NEXT: Open a follow-up collab '
@@ -1692,10 +1693,10 @@ def restart_verification(
     caller_role: str | None = None,
 ) -> int:
     """Reviewer recovery primitive: restart Completion.verification after the
-    execution record was corrected (e.g. via /collab rewrite execution). Resets
+    execution record was corrected (e.g. via rewrite execution). Resets
     rounds to 0, clears participant-verification stages, and returns the cycle to
     the 'participant' sub-state WITHOUT re-recording execution, so the corrected
-    commit reference is preserved. Participants then re-run /collab participant
+    commit reference is preserved. Participants then re-run participant
     verify to record a fresh paired round before the reviewer seals."""
     with registry_lock(path):
         data = load_registry(path)
@@ -1720,9 +1721,9 @@ def restart_verification(
     )
     next_role = first_pending_participant_verification_role(entry)
     if next_role:
-        print(f'NEXT: Run /collab participant verify for role {next_role}.')
+        print(f'NEXT: Run {collab_dispatch("participant verify")} for role {next_role}.')
     else:
-        print(f'NEXT: Run /collab seal verification for role {reviewer_role(entry)}.')
+        print(f'NEXT: Run {collab_dispatch("seal verification")} for role {reviewer_role(entry)}.')
     return 0
 
 

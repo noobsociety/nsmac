@@ -37,7 +37,7 @@ The state root is `$HOME/.collabs/<projectId>/` by default, or the path from the
 
 Fires when `.collab.json` is not found from `cwd` upward (except on `init`).
 
-Exit-1 message (exact): `project marker missing: .collab.json; run /collab init from the project root`
+Exit-1 message (exact): `project marker missing: .collab.json; run (collab init) from the project root`
 
 **Project identity invalid JSON**
 

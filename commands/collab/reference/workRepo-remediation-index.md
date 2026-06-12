@@ -11,7 +11,7 @@ Durable definitions for R1–R7 from collab #50 (`2026-06-02-external-repo-seal-
 
 **R1** — Resolve `workRepo` at init from the `.collab.json` marker directory (the same signal already used for registry resolution), persist the resolved absolute path, so every future helper invocation uses the correct repo without re-resolving from a possibly-drifted cwd.
 
-**R2** — Remove the silent `workRepo→ROOT` fallback for external-project collabs; abort loudly when `workRepo` is unbound: `"work tree not bound; run /collab set <target> work-repo <path>"`.
+**R2** — Remove the silent `workRepo→ROOT` fallback for external-project collabs; abort loudly when `workRepo` is unbound: `"work tree not bound; run (collab set) <target> work-repo <path>"`.
 
 **R3** — Select execution commits by path history (`git log -1 -- <paths>`) rather than bare `HEAD`, so each recorded commit actually contains the declared touched paths.
 

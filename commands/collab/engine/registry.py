@@ -109,11 +109,11 @@ from commands.collab.engine.digests import (
     managed_full_body_blocks,
     participant_execution_signature,
     participant_write_scope_signature,
-    rendered_transcript_without_full_bodies,
     strip_managed_full_body_lines,
     touched_paths_for_execution,
     validation_scopes_for_execution,
 )
+from commands.collab.engine.dispatch_forms import collab_dispatch
 from commands.collab.engine.execution import (
     all_execution_completed,
     assert_disjoint_scopes,
@@ -1380,9 +1380,16 @@ def resume_command_invocation(entry: dict, role: str) -> str:
     return f'commands/collab/engine/registry.py speak-state --resume {entry["id"]} {role}'
 
 
-def transcript_view_command(entry: dict, phase: str | None = None) -> str:
+def transcript_view_command(entry: dict, phase: str | None = None, raw: bool = False) -> str:
     selected_phase = phase or entry['activePhase']
-    return f'commands/collab/engine/registry.py transcript-view {entry["id"]} {shlex.quote(selected_phase)}'
+    command = f'commands/collab/engine/registry.py transcript-view {entry["id"]} {shlex.quote(selected_phase)}'
+    if raw:
+        command += ' --raw'
+    return command
+
+
+def transcript_view_command_for_role(entry: dict, role: str, phase: str | None = None) -> str:
+    return transcript_view_command(entry, phase, raw=role != entry.get('moderatorRole'))
 
 
 def active_phase_anchors(transcript: str, phase: str) -> list[str]:
@@ -1409,10 +1416,10 @@ def current_completion_command(entry: dict) -> str | None:
         ):
             pending_role = first_pending_participant_verification_role(entry)
             if pending_role:
-                return f'/collab participant verify {entry["id"]} {pending_role}'
-            return f'/collab participant verify {entry["id"]}'
-        return f'/collab seal verification {entry["id"]}'
-    return f'/collab run plan {entry["id"]}'
+                return collab_dispatch('participant verify', entry["id"], pending_role)
+            return collab_dispatch('participant verify', entry["id"])
+        return collab_dispatch('seal verification', entry["id"])
+    return collab_dispatch('run plan', entry["id"])
 
 
 def next_command_for_state(entry: dict, transcript: str | None = None) -> str | None:
@@ -1425,7 +1432,7 @@ def next_command_for_state(entry: dict, transcript: str | None = None) -> str | 
         transcript = read_transcript_for_entry(entry)
     state = speak_state_for_entry(entry, transcript)
     if state.get('expectedRole') and state.get('expectedRole') != entry.get('moderatorRole'):
-        return f'/collab speak {entry["id"]}'
+        return collab_dispatch('speak', entry["id"])
     return None
 
 
@@ -1473,7 +1480,7 @@ def add_participation_resume_fields(
     next_command = next_command_for_state(entry, transcript)
     if next_command:
         state['nextCommand'] = next_command
-    state['nextTranscriptCommand'] = transcript_view_command(entry)
+    state['nextTranscriptCommand'] = transcript_view_command_for_role(entry, role)
     state['policyBlockers'] = policy_blockers_for_role(state, role, pending_reviewer)
     state['phaseSummary'] = phase_summary_for_state(entry, state)
     anchors = active_phase_anchors(transcript, entry['activePhase'])
@@ -1525,25 +1532,25 @@ def next_line_for_state(entry: dict, transcript: str | None = None) -> str:
         return 'NEXT: Collab archived; run /clear before starting another collab.'
     phase = entry['activePhase']
     if phase == 'Completion':
-        return f"NEXT: Run /collab run plan for role {effective_turn_order(entry)[0]}."
+        return f"NEXT: Run {collab_dispatch('run plan')} for role {effective_turn_order(entry)[0]}."
     if transcript is None:
         try:
             transcript = read_transcript_for_entry(entry)
         except SystemExit:
             order = effective_turn_order(entry)
             if order:
-                return f'NEXT: Run /collab speak for role {order[0]}.'
+                return f'NEXT: Run {collab_dispatch("speak")} for role {order[0]}.'
             return f'NEXT: Active phase is {phase}.'
     try:
         state = speak_state_for_entry(entry, transcript)
     except SystemExit:
         order = effective_turn_order(entry)
         if order:
-            return f'NEXT: Run /collab speak for role {order[0]}.'
+            return f'NEXT: Run {collab_dispatch("speak")} for role {order[0]}.'
         return f'NEXT: Active phase is {phase}.'
     expected = state.get('expectedRole')
     if expected:
-        return f'NEXT: Run /collab speak for role {expected}.'
+        return f'NEXT: Run {collab_dispatch("speak")} for role {expected}.'
     return f'NEXT: Active phase is {phase}.'
 
 
@@ -1883,7 +1890,7 @@ def next_line_after_execution(entry: dict, assigned_roles: list[str]) -> str:
         if assigned_role == entry['moderatorRole']:
             continue
         if execution.get(assigned_role, {}).get('status') != 'completed':
-            return f'NEXT: Run /collab run plan for role {assigned_role}.'
+            return f'NEXT: Run {collab_dispatch("run plan")} for role {assigned_role}.'
     if issue_terminal(entry):
         if not exported_issue_handoff_present(entry):
             export_role = 'pe' if has_participant(entry, 'pe') else next(
@@ -1893,14 +1900,14 @@ def next_line_after_execution(entry: dict, assigned_roles: list[str]) -> str:
                 ),
                 'pe',
             )
-            return f'NEXT: Run /collab export-issues for role {export_role}.'
+            return f'NEXT: Run {collab_dispatch("export-issues")} for role {export_role}.'
         return next_line_for_state(entry)
     if reviewer_backed(entry):
         if participant_verification_enabled(entry):
             pending_role = first_pending_participant_verification_role(entry)
             if pending_role:
-                return f'NEXT: Run /collab participant verify for role {pending_role}.'
-        return f'NEXT: Run /collab seal verification for role {reviewer_role(entry)}.'
+                return f'NEXT: Run {collab_dispatch("participant verify")} for role {pending_role}.'
+        return f'NEXT: Run {collab_dispatch("seal verification")} for role {reviewer_role(entry)}.'
     return next_line_for_state(entry)
 
 
@@ -2082,6 +2089,21 @@ def path_for_entry_target(registry_path: Path, entry: dict, target_path: str) ->
     if path.is_absolute():
         return path
     return registry_path.parent / path
+
+
+def ensure_init_project_metadata(data: dict, registry_path: Path) -> None:
+    project = data.get('project')
+    if isinstance(project, dict):
+        return
+    metadata = project_metadata_from_identity()
+    if metadata is not None:
+        data['project'] = metadata
+        return
+    project_root = registry_path.parent.resolve()
+    data['project'] = {
+        'projectId': hashlib.sha256(str(project_root).encode()).hexdigest()[:32],
+        'label': project_root.name or 'command-project',
+    }
 
 
 def projection_transcript_path_for_entry(entry: dict) -> str:
@@ -2389,9 +2411,11 @@ def transcript_view(path: Path, target: str, phase: str, raw: bool = False) -> i
         raw_path = path_for_entry_target(path, entry, raw_transcript_path_for_entry(entry))
         transcript = raw_path.read_text() if raw_path.exists() else read_transcript_for_entry(entry)
     else:
-        transcript = read_transcript_for_entry(entry)
-    rendered = transcript if raw or phase == 'Audit' else rendered_transcript_without_full_bodies(transcript)
-    lines = rendered.splitlines()
+        projection_path = path_for_entry_target(path, entry, projection_transcript_path_for_entry(entry))
+        if not projection_path.exists():
+            die(f'transcript missing: {projection_path}')
+        transcript = projection_path.read_text()
+    lines = transcript.splitlines()
     start, end = section_bounds(lines, f'## {phase}')
     sys.stdout.write('\n'.join(lines[start:end]) + '\n')
     return 0
@@ -2895,7 +2919,7 @@ def render_speak(
         notice = add_completion_summary_notice(notice, rendered_text)
         print('BOUNDARY: transcript write only; no shell commands or source edits outside the user-scope collab state root')
         print('SUCCINCTLY: stay within role concerns; do not pad or summarize other roles')
-        print('RETRACT: use /collab retract speak to tombstone the latest active-phase contribution')
+        print(f'RETRACT: use {collab_dispatch("retract speak")} to tombstone the latest active-phase contribution')
         print_header_overwrite(header_changed)
         label_advisory = action_plan_label_advisory(content, phase)
         if label_advisory:
@@ -2952,7 +2976,7 @@ def latest_contribution_anchor(transcript: str, phase: str, role: str) -> str:
     lines = transcript.splitlines()
     bounds = contribution_block_bounds(lines, phase, role)
     if bounds is None:
-        die('no prior contribution to rewrite; use /collab speak to create the first contribution')
+        die(f'no prior contribution to rewrite; use {collab_dispatch("speak")} to create the first contribution')
     start, _end = bounds
     if start > 0:
         match = ANCHOR_RE.match(lines[start - 1].strip())
@@ -2972,7 +2996,7 @@ def replace_latest_contribution(
     lines = transcript.splitlines()
     bounds = contribution_block_bounds(lines, phase, role)
     if bounds is None:
-        die('no prior contribution to rewrite; use /collab speak to create the first contribution')
+        die(f'no prior contribution to rewrite; use {collab_dispatch("speak")} to create the first contribution')
     start, end = bounds
     block = lines[start:end]
 
@@ -3096,7 +3120,7 @@ def render_re_speak(
             rendered_lines = rendered.splitlines()
             bounds = contribution_block_bounds(rendered_lines, phase, role)
             if bounds is None:
-                die('no prior contribution to rewrite; use /collab speak to create the first contribution')
+                die(f'no prior contribution to rewrite; use {collab_dispatch("speak")} to create the first contribution')
             start, end = bounds
             handoff_state['body'] = '\n'.join(contribution_body_lines(rendered_lines[start:end])).rstrip('\n')
             set_handoff_state(entry, role, handoff_state)
@@ -3357,9 +3381,9 @@ def export_issues(
         if entry['status'] in {'closed', 'archived'}:
             die('record is closed')
         if entry['activePhase'] != 'Completion':
-            die('/collab export-issues is valid only in Completion')
+            die(f'{collab_dispatch("export-issues")} is valid only in Completion')
         if not issue_terminal(entry):
-            die('/collab export-issues requires terminal issue')
+            die(f'{collab_dispatch("export-issues")} requires terminal issue')
         if role != 'pe':
             die('issue export must be authored by platform engineer role pe')
         if not has_participant(entry, role):
@@ -3561,14 +3585,14 @@ def reopen_collab(
         if entry['status'] == 'archived':
             die('record is archived')
         if entry['activePhase'] != 'Completion':
-            die('/collab reopen is valid only after a non-success Completion verdict')
+            die(f'{collab_dispatch("reopen")} is valid only after a non-success Completion verdict')
         verdict = entry.get('verdict')
         if not isinstance(verdict, dict) or verdict.get('outcome') not in {'incomplete', 'failed'}:
-            die('/collab reopen requires a non-success Completion verdict')
+            die(f'{collab_dispatch("reopen")} requires a non-success Completion verdict')
         restore_target = verdict.get('restoreTarget')
         if restore_target != phase:
             expected_token = 'handoff' if restore_target == 'Handoff' else 'action-plan'
-            die(f'/collab reopen phase mismatch: verdict restoreTarget is {restore_target}; expected {expected_token}')
+            die(f'{collab_dispatch("reopen")} phase mismatch: verdict restoreTarget is {restore_target}; expected {expected_token}')
         migrate_raw_transcript_for_entry(entry)
         transcript_path = lifecycle_transcript_path_for_entry(entry)
         if not transcript_path.exists():
@@ -3718,11 +3742,13 @@ configure_seal_verification_facade(
 )
 
 
-def commit_new_registry_and_transcript(
+def commit_new_collab_artifacts(
     registry_path: Path,
     data: dict,
-    transcript_path: Path,
-    transcript_text: str,
+    entry: dict,
+    raw_transcript_path: Path,
+    raw_transcript_text: str,
+    contribution_store: dict,
 ) -> None:
     registry_before = registry_path.read_text() if registry_path.exists() else None
     sync_registry_project_metadata(data)
@@ -3733,20 +3759,51 @@ def commit_new_registry_and_transcript(
         bump_registry_event_index(data)
         registry_event = finalize_registry_event(data, registry_event)
     validate_registry(data, registry_path)
-    if transcript_path.exists():
-        die(f'record already exists: {transcript_path}')
 
+    projection_transcript_path = path_for_entry_target(
+        registry_path,
+        entry,
+        projection_transcript_path_for_entry(entry),
+    )
+    contribution_store_path = contribution_store_path_for_entry(registry_path, entry)
+    artifacts = [
+        raw_transcript_path,
+        projection_transcript_path,
+        contribution_store_path,
+    ]
+    for artifact_path in artifacts:
+        if artifact_path.exists():
+            die(f'record already exists: {artifact_path}')
+
+    projection_text = render_moderator_project_transcript(
+        data,
+        entry,
+        contribution_store,
+        registry_revision(data),
+    )
+    store_text = json.dumps(contribution_store, indent=2, ensure_ascii=True) + '\n'
     registry_after = json.dumps(data, indent=2) + '\n'
     registry_tmp = registry_path.with_name(f'{registry_path.name}.tmp')
-    transcript_tmp = transcript_path.with_name(f'{transcript_path.name}.tmp')
+    artifact_payloads = [
+        (raw_transcript_path, raw_transcript_text),
+        (projection_transcript_path, projection_text),
+        (contribution_store_path, store_text),
+    ]
+    artifact_tmps = [
+        (artifact_path.with_name(f'{artifact_path.name}.tmp'), artifact_path)
+        for artifact_path, _text in artifact_payloads
+    ]
 
     registry_path.parent.mkdir(parents=True, exist_ok=True)
-    transcript_path.parent.mkdir(parents=True, exist_ok=True)
+    for artifact_path, _text in artifact_payloads:
+        artifact_path.parent.mkdir(parents=True, exist_ok=True)
     try:
         registry_tmp.write_text(registry_after)
-        transcript_tmp.write_text(transcript_text)
+        for (artifact_path, text), (tmp_path, _target_path) in zip(artifact_payloads, artifact_tmps):
+            tmp_path.write_text(text)
         registry_tmp.replace(registry_path)
-        transcript_tmp.replace(transcript_path)
+        for tmp_path, target_path in artifact_tmps:
+            tmp_path.replace(target_path)
         if registry_event is not None:
             write_revision_event(registry_path, registry_event)
     except OSError as exc:
@@ -3758,12 +3815,14 @@ def commit_new_registry_and_transcript(
                 registry_path.write_text(registry_before)
         except OSError:
             inconsistent.append(str(registry_path))
-        try:
-            transcript_path.unlink(missing_ok=True)
-        except OSError:
-            inconsistent.append(str(transcript_path))
+        for artifact_path, _text in artifact_payloads:
+            try:
+                artifact_path.unlink(missing_ok=True)
+            except OSError:
+                inconsistent.append(str(artifact_path))
         registry_tmp.unlink(missing_ok=True)
-        transcript_tmp.unlink(missing_ok=True)
+        for tmp_path, _target_path in artifact_tmps:
+            tmp_path.unlink(missing_ok=True)
         if inconsistent:
             die(f'collab init failed; inconsistent state may remain: {", ".join(inconsistent)}: {exc}')
         die(f'collab init failed; restored pre-operation state: {exc}')
@@ -3849,6 +3908,7 @@ def init_collab(
     title, agent_id, reviewer, open_requested, participant_verification, terminal, work_repo_raw = parse_init_tokens(tokens)
     with registry_lock(path):
         data = load_registry_or_bootstrap(path)
+        ensure_init_project_metadata(data, path)
         date = dt.date.today().isoformat()
         slug = normalize_slug(title)
         collab_id = f'{date}-{slug}'
@@ -3913,12 +3973,15 @@ def init_collab(
         count_caller_declined_agent_id_write(nextdata, agent_id)
         nextdata['collabs'].append(entry)
         nextdata['activeCollabId'] = collab_id
-        rendered = render_initial_transcript(title, entry, roles_dir, format_banner_timestamp())
-        raw_transcript_path = lifecycle_transcript_path_for_entry(entry)
-        commit_new_registry_and_transcript(path, nextdata, raw_transcript_path, rendered)
-    print(raw_transcript_path)
+        rendered_timestamp = format_banner_timestamp()
+        rendered = render_initial_transcript(title, entry, roles_dir, rendered_timestamp)
+        raw_transcript_path = path_for_entry_target(path, entry, raw_transcript_path_for_entry(entry))
+        projection_transcript_path = projection_transcript_path_for_entry(entry)
+        contribution_store = empty_contribution_store(rendered_timestamp)
+        commit_new_collab_artifacts(path, nextdata, entry, raw_transcript_path, rendered, contribution_store)
+    print(projection_transcript_path)
     if open_requested:
-        file_uri = raw_transcript_path.resolve().as_uri()
+        file_uri = path_for_entry_target(path, entry, projection_transcript_path).resolve().as_uri()
         open_failure = open_browser_uri(file_uri, opener)
         if open_failure is None:
             print(f'OPEN: {file_uri}')
@@ -3973,9 +4036,9 @@ def join_participants(
         role,
         next_entry['activePhase'],
         None,
-        'NEXT: Run /collab show policy before first speak.',
+        f'NEXT: Run {collab_dispatch("show policy")} before first speak.',
     )
-    print(f'TRANSCRIPT: {transcript_view_command(next_entry)}')
+    print(f'TRANSCRIPT: {transcript_view_command_for_role(next_entry, role)}')
     print(f'IDENTITY: {role} {recorded_agent_id}')
     if identity_warning:
         print(identity_warning)
@@ -3985,7 +4048,7 @@ def join_participants(
             'agentId': recorded_agent_id,
             'freshRegistryRead': True,
             'identityWarning': identity_warning,
-            'nextTranscriptCommand': transcript_view_command(next_entry),
+            'nextTranscriptCommand': transcript_view_command_for_role(next_entry, role),
             'participants': participant_roles(next_entry),
             'resumeCommand': resume_command_invocation(next_entry, role),
             'target': next_entry['id'],
@@ -4285,11 +4348,11 @@ def validate_source_contracts() -> None:
 
     seal_verification = DEFAULT_CONFIG_ROOT / 'commands/collab/seal-verification/index.md'
     require_source_text(seal_verification, 'restore-route-recovery', 'restore-route recovery anchor')
-    require_source_text(seal_verification, '/collab show verdict', 'restore-route verdict inspection')
-    require_source_text(seal_verification, '/collab reopen action-plan', 'restore-route action-plan reopen')
-    require_source_text(seal_verification, '/collab reopen handoff', 'restore-route handoff reopen')
-    require_source_text(seal_verification, '/collab run plan', 'restore-route rerun step')
-    require_source_text(seal_verification, '/collab seal verification', 'restore-route reseal step')
+    require_source_text(seal_verification, '(collab show verdict)', 'restore-route verdict inspection')
+    require_source_text(seal_verification, '(collab reopen action-plan)', 'restore-route action-plan reopen')
+    require_source_text(seal_verification, '(collab reopen handoff)', 'restore-route handoff reopen')
+    require_source_text(seal_verification, '(collab run plan)', 'restore-route rerun step')
+    require_source_text(seal_verification, '(collab seal verification)', 'restore-route reseal step')
 
     invariants = DEFAULT_CONFIG_ROOT / 'commands/collab/reference/invariants.md'
     require_source_text(invariants, 'Rollback triggers', 'rollback trigger section')

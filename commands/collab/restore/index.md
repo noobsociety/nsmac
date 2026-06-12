@@ -1,12 +1,10 @@
-# /collab restore
+# (collab restore)
 
 Move the active phase back by one step in a collaboration record when the moderator needs more work in an earlier phase.
 
 ## Trigger
 
-**Slash:** `/collab restore`
-**Signature:** `/collab restore`
-**Prose dispatch:** `(collab restore)` — prose routing hint; not a terminal command.
+**Dispatch:** `(collab restore)` — routing-only command form; not a shell command.
 **Search phrases:** collab prev, previous collaboration phase, rollback collab phase
 
 ## Steps
@@ -27,7 +25,7 @@ Move the active phase back by one step in a collaboration record when the modera
 - **Registry targeting:** Resolve the target collab from the resolved registry, using `commands/collab/engine/registry.py` as the shared helper. When the first token after the route is present, treat it as a collab slug, id, or stable numeric position. Otherwise use `activeCollabId`. If the registry is unreadable or invalid, the token does not match any entry, or `activeCollabId` is empty, **ABORT**: registry target unavailable; name the registry field or token.
 - **Phase sequence:** `Audit` <- `Discussion` <- `Conclusion` <- `Action Plan` <- `Handoff` <- `Completion`.
 - **Multi-phase rollback:** For rollbacks spanning more than one phase, use `(collab set active-phase <phase> --force)` directly rather than chaining sequential calls; this is the canonical batch rollback path.
-- **Append-only rollback:** `/collab restore` moves only the active-phase pointer. It never removes headings, contributions, checklist items, or completion markers.
+- **Append-only rollback:** `(collab restore)` moves only the active-phase pointer. It never removes headings, contributions, checklist items, or completion markers.
 - **Recovery path:** If `commands/collab/engine/registry.py advance <target> prev` returns without the expected registry phase, restored turn order, or transcript status table change, **ABORT**: treat the missing mirror as a helper defect and do not hand-edit the status table except through a dedicated repair route.
-- **Post-state resume signal:** After `/collab restore` completes, re-establish collab context with `commands/collab/engine/registry.py speak-state --resume <target> <role>` before writing the next contribution.
+- **Post-state resume signal:** After `(collab restore)` completes, re-establish collab context with `commands/collab/engine/registry.py speak-state --resume <target> <role>` before writing the next contribution.
 - **Sync contract compliance:** `commands/collab/engine/registry.py advance prev` owns registry phase, turn-order restoration, and status-table rendering. No restore-path prose-rendered write is expected; any missing mirror is a helper defect under the sync contract in [`platform/standards/route-invariant.md`](../../../platform/standards/route-invariant.md).
