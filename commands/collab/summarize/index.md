@@ -24,7 +24,7 @@ Write or refresh the managed per-phase summary inside the canonical collab trans
 - **Parameters:** target collab slug, id, or numeric `#N` as the first token after `summarize`; when absent, resolved per **Registry targeting** in **Notes**.
 <!-- abort: summarize-registry-target-unavailable -->
 - **Registry targeting:** Resolve the target collab from the resolved registry, using `commands/collab/engine/registry.py` as the shared helper. When the first token after the route is present, treat it as a collab slug, id, or stable numeric position. Otherwise use `activeCollabId`. If the registry is unreadable or invalid, the token does not match any entry, or `activeCollabId` is empty, **ABORT**: registry target unavailable; name the registry field or token.
-- **Mutation:** This route mutates the canonical transcript only. It does not write synthesis artifacts, raw transcript siblings, or generated stores.
+- **Mutation:** This route mutates the canonical transcript only; it writes no other files.
 - **Scope:** Summarizes all phases in the record into one managed top-of-file section. For the closing Completion summary, use `(collab write summary)`.
 - **Post-state resume signal:** rerun `commands/collab/engine/registry.py transcript-view <target> <activePhase> --raw` if further transcript inspection is needed.
 

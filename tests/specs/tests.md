@@ -28,6 +28,10 @@ Harness files under `~/.cursor/tests/specs/`:
 
 Add a test only when a source behavior requires executable proof; prefer shell-layer coverage over Markdown-harness duplication. The `agent-honor-system` boundary is a known limit of this criterion, not a defect.
 
+## Suite size
+
+Weekly-review measurement (W24 window `c02ee96..b8dead7`, through 2026-06-14): **101** test scripts (`*.test.sh`) tracked in-window at `b8dead7`, against an advisory budget of **<=80**. The in-window figure is the measurement of record; the HEAD/W25 count (110 at `fcb958a`) is out of this window and must not be substituted here. Carried target: reduce the suite back toward the `<=80` advisory budget; the next reduction is tracked in the W25 weekly review.
+
 ## Layer ownership
 
 `tests/*.test.sh` owns shell-executable CI contract validation; `tests/specs/*.md` owns agent-facing policy for the `(test)` command surface.

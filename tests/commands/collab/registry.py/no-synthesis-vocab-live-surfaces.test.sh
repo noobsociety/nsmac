@@ -6,6 +6,18 @@ cd "$ROOT"
 
 FAIL=0
 
+# Verify retired synthesis/projector negation residue stays trimmed from live route prose
+# (these phrases negated artifacts removed with the synthesis/projection stack; W24 weekly-review TW-4)
+if grep -Fq 'synthesis artifacts' commands/collab/summarize/index.md 2>/dev/null; then
+  printf 'FAIL: synthesis-artifact negation residue found in summarize route prose\n' >&2
+  FAIL=1
+fi
+
+if grep -Fq 'Projector metadata is intentionally absent' commands/collab/show-policy/index.md 2>/dev/null; then
+  printf 'FAIL: projector-metadata negation residue found in show-policy route prose\n' >&2
+  FAIL=1
+fi
+
 # Verify the Deterministic Projector (dp) prohibition section is absent from role-prohibitions.md
 if grep -Fq '## Deterministic Projector (dp)' commands/collab/reference/role-prohibitions.md 2>/dev/null; then
   printf 'FAIL: Deterministic Projector (dp) prohibition section still present in role-prohibitions.md\n' >&2

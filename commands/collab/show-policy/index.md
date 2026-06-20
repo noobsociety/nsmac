@@ -29,7 +29,7 @@ Document the gate policy that decides when a collaboration needs a reviewer judg
 - **Phase presence:** When reviewer is set via `reviewerRole`, the lifecycle enforces: reviewer speaks once, last, in convergent phases (`Audit`, `Conclusion`); reviewer may speak in `Discussion` when the optional-phases list includes it; reviewer stays silent in `Action Plan`, `Handoff`, and `Completion` unless a re-Audit signal fires. In `Completion.verification`, the reviewer issues `(collab seal verification)` to record the seal object; this is the reviewer's terminal obligation for reviewer-backed collabs. Execution (`Completion.execution`) precedes sealing (`Completion.verification`); close is blocked until a current non-stale `verificationSeal` exists.
 - **Verification sub-state semantics:** See [`verification.md`](../../../commands/collab/reference/verification.md) for the full sub-state model, round definition, seal object schema, stale-seal triggers, cap-exit options, and reviewer obligation.
 - **writeScope reopen advisory:** When the reviewer discovers out-of-scope work during `Completion.verification`, the only registered exit is `(collab seal verification --cap-exit reopen-handoff)`. See [`verification.md`](../../../commands/collab/reference/verification.md) for the full advisory and cap-exit option set.
-- **Role catalog:** `commands/collab/engine/registry.py roles` is the authoritative source for available joinable roles. No role key is hard-coded in this policy. Projector metadata is intentionally absent from this catalog.
+- **Role catalog:** `commands/collab/engine/registry.py roles` is the authoritative source for available joinable roles. No role key is hard-coded in this policy.
 
 ## Provenance
 
