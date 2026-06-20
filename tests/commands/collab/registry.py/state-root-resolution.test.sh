@@ -50,12 +50,9 @@ entry = data['collabs'][0]
 assert entry['id'] == target
 assert entry['transcriptPath'] == f'records/{target}.md'
 projection = registry.parent / entry['transcriptPath']
-raw = registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")
 store = registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-contributions.json")
 assert projection.exists()
-assert raw.exists()
 assert store.exists()
-assert projection.read_text() != raw.read_text()
 PY
 
 python3 - <<'PY'

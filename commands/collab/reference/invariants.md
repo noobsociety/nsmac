@@ -32,7 +32,7 @@ Maintainer check: `git grep -rn 'agent-honor-system' commands/collab/` shows eve
 
 For the audit inventory of current agent-honor-system clauses, see [`honor-system-audit.md`](honor-system-audit.md).
 
-Maintainer check: `git grep -rnP '(?<![A-Za-z0-9_])(mod|pa|pe|tw)(?![A-Za-z0-9_])' -- '*.md' '*rule file'` is the broad review sweep for role-key prose drift. Every prose match must either be covered by the documented carve-outs in `platform/tooling/audit-role-prose.sh` or rewritten to function-bound prose. This pattern covers joinable-participant role keys (`commands/collab/reference/roles/`) only; projector-only roles in `commands/collab/reference/projectors/` are excluded. Update the pattern when the joinable-role roster changes.
+Maintainer check: `git grep -rnP '(?<![A-Za-z0-9_])(mod|pa|pe|tw)(?![A-Za-z0-9_])' -- '*.md' '*rule file'` is the broad review sweep for role-key prose drift. Every prose match must either be covered by the documented carve-outs in `platform/tooling/audit-role-prose.sh` or rewritten to function-bound prose. This pattern covers the live role keys swept for prose drift — the human moderator and the joinable participant roles under `commands/collab/reference/roles/`. It does not include the non-joinable deterministic-projector stub also kept under that directory (retained for historical-participant rendering after the synthesis/projection stack was retired). Update the pattern when the role roster changes.
 
 **2. Registry as source of truth; transcript as human ledger**
 

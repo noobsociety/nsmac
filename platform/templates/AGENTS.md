@@ -54,3 +54,4 @@ Halt when the required command or source-of-truth cannot be resolved. Verify com
 
 - Repo contract: [REPOSITORY.md](REPOSITORY.md)
 - Runtime command catalog: `~/.cursor/commands/commands.md`
+- Platform system reference: [`platform/reference.md`](../reference.md)

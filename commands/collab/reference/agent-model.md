@@ -12,7 +12,7 @@
 
 ## Notes
 
-This document defines the join-time model and harness for each collab role, a generated effort projection, and fallback. It supplements [`agent-effort.md`](agent-effort.md) (effort levels) and [`agent-lifecycle.md`](agent-lifecycle.md) (lifecycle command timing). For the role schema and roster, see [`platform/standards/agent-role.md`](../../../platform/standards/agent-role.md); for agentId precedence and capture semantics, see [`join.md`](../join/index.md).
+This document defines the join-time model and harness for each collab role, a generated effort projection, and fallback. It supplements [`agent-effort.md`](agent-effort.md) (effort levels) and [`agent-lifecycle.md`](agent-lifecycle.md) (lifecycle command timing). For the role schema and roster, see [`platform/standards/role-standard.md`](../../../platform/standards/role-standard.md); for agentId precedence and capture semantics, see [`join.md`](../join/index.md).
 
 **Authoritative source:** This file is authoritative for join-time model and harness guidance. `agent-effort.json` is authoritative for effort matrix values; the table below is a generated projection checked by `commands/collab/engine/registry.py audit-effort-matrix`.
 
@@ -60,20 +60,6 @@ At `Completion.verification`, the reviewer operates in two ordered modes:
 2. **assessment** — Evaluates whether discussion goals were met; emits a `verdict: { outcome, restoreTarget?, restoreReason?, evidence?, failureCategory? }`. Opens after a successful seal or when the seal becomes stale or a cap-exit is recorded.
 
 Both modes are part of the reviewer's `Completion.verification` turn (`xhigh`, mandatory-declaration). Assessment is budget-exempt when opened by a cap-exit trigger. The reviewer writes verdict fields only (evaluation); all correction work at the restored phase belongs to participants.
-
-## Non-role components
-
-### Projection renderer
-
-The projection renderer (`(collab aggregate)`) is a deterministic, non-role component operating under `registry.project.label`. It is not assigned a collab role and does not earn convergence turns. It:
-
-- Derives output strictly from registry state and the contribution store.
-- Labels all projection blocks from `registry.project.label` (not from any role key or informal alias).
-- Appends a staleness footer with the registry revision and content digest from which it was rendered.
-
-The projection renderer is subject to the prohibition inventory in [`role-prohibitions.md`](role-prohibitions.md).
-
-**Dual identity.** The Gemini CLI harness (informally `dp`) has two operating modes: (1) **Aggregator mode** — when executing `(collab aggregate)`, it acts as the non-role projection renderer described above; it holds no participant slot and operates under `registry.project.label`. (2) **Collab-participant mode** — the same harness can join any collab under a registered joinable role (see the role roster in `platform/standards/agent-role.md`) via `(collab join) --role <key>`; in that mode it follows the joined role's turn order, effort policy, and reviewer behavior. `dp.json` in `projectors/` governs aggregator mode only; it is not a joinable role key.
 
 ## Caveats
 

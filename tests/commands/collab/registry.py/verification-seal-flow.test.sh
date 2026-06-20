@@ -171,7 +171,7 @@ import sys
 from pathlib import Path
 registry = Path(sys.argv[1])
 entry = json.loads(registry.read_text())['collabs'][0]
-transcript = (registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")).read_text()
+transcript = (registry.parent / Path(entry['transcriptPath'])).read_text()
 assert entry['status'] == 'open'
 assert entry['verificationSeal']['sealedBy'] == 'pa'
 assert entry['verificationSeal']['stale'] is False
@@ -203,7 +203,7 @@ import sys
 from pathlib import Path
 registry = Path(sys.argv[1])
 entry = json.loads(registry.read_text())['collabs'][0]
-transcript = (registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")).read_text()
+transcript = (registry.parent / Path(entry['transcriptPath'])).read_text()
 assert entry['status'] == 'closed'
 assert entry['verdict']['outcome'] == 'success'
 assert '**pa:** assessed' in transcript

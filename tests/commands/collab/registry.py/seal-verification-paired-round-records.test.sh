@@ -80,7 +80,7 @@ entry = next(
     for item in json.loads(registry.read_text())['collabs']
     if item['slug'] == 'seal-verification-paired-round-records'
 )
-transcript = (registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")).read_text()
+transcript = (registry.parent / Path(entry['transcriptPath'])).read_text()
 verification = entry['verification']
 assert verification['rounds'] == 1, verification
 assert verification['pairedExecutionSignature'] == entry['verificationSeal']['executionSignature']

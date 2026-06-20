@@ -9,7 +9,7 @@ This file is the first checked against its own mechanical rubric. If this file f
 Mechanical obligations a checker can verify by inspecting route text. Items are addressed by section heading and item number.
 
 1. **Target resolution.** The route explicitly names how the target resource is resolved before any write, and names the ABORT path when resolution fails.
-2. **Helper-owned writes.** Every Step that mutates state either names the helper subcommand that performs the write or carries a Notes-level exemption citing `platform/standards/route-invariant.md` floor rule 3.
+2. **Helper-owned writes.** Every Step that mutates state either names the helper subcommand that performs the write or carries a Notes-level exemption citing `platform/standards/route-invariants.md` floor rule 3.
 3. **Role and phase preconditions.** The route explicitly states which roles may act and which phases the command admits before any write step.
 4. **Stop conditions.** The route ends with an explicit stop step and names every ABORT condition with a reason before that stop.
 5. **Write scope.** The route declares which files or directories may be written to; writes outside the declared scope are not permitted.

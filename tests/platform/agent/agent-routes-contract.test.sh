@@ -20,7 +20,9 @@ grep -Fq 'GEMINI.md`, and `REPOSITORY.md` exist in the repo root' commands/agent
 grep -Fq 'writes only `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`' commands/agent/upgrade/index.md || fail "upgrade.md boundary omits GEMINI scaffold"
 grep -Fq 'Gemini: `GEMINI.md`' platform/templates/AGENTS.md || fail "AGENTS template lacks Gemini bootstrap chain"
 grep -Fq 'Repository workflow, entry points, and bootstrap chain: [AGENTS.md](AGENTS.md).' platform/templates/GEMINI.md || fail "GEMINI template lacks AGENTS routing pointer"
-grep -Fq 'Role definition pointer: `~/.cursor/commands/collab/reference/projectors/dp.json`.' platform/templates/GEMINI.md || fail "GEMINI template lacks dp projector pointer"
+if grep -Fq 'projectors/dp.json' platform/templates/GEMINI.md; then
+  fail "GEMINI template still references retired dp projector metadata"
+fi
 
 grep -Fq 'a target path of `~/.cursor` is permitted' commands/agent/install/index.md || fail "install.md lacks valid ~/.cursor target policy"
 grep -Fq 'a target path of `~/.cursor` is permitted' commands/agent/upgrade/index.md || fail "upgrade.md lacks valid ~/.cursor target policy"

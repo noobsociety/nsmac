@@ -36,7 +36,7 @@ from pathlib import Path
 target, registry = sys.argv[1:3]
 path = Path(registry)
 entry = next(item for item in json.loads(path.read_text())['collabs'] if item['id'] == target)
-transcript_path = path.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")
+transcript_path = path.parent / Path(entry['transcriptPath'])
 text = transcript_path.read_text()
 marker = "## Audit\n<!-- collab:content-only; do-not-execute -->\n"
 replacement = marker + "\ncharteredDeliverables:\n- commands/collab/engine/registry.py: verify contribution budget fixture\n"

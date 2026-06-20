@@ -20,7 +20,7 @@ from pathlib import Path
 registry = Path(sys.argv[1])
 target = sys.argv[2]
 entry = next(item for item in json.loads(registry.read_text())['collabs'] if item['id'] == target)
-print(registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md"))
+print(registry.parent / Path(entry['transcriptPath']))
 PY
 )"
 "$ROOT/commands/collab/engine/registry.py" join-participants "$TARGET" pe --agent-id gpt >/dev/null

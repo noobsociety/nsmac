@@ -110,7 +110,6 @@ from commands.collab.engine.phase_lifecycle import lifecycle_status_notice, prin
 from commands.collab.engine.registry_io import load_registry, registry_lock, registry_revision, resolve_collab, save_registry
 from commands.collab.engine.transcript_render import (
     print_header_overwrite,
-    raw_transcript_path_for_entry,
     render_managed_header_text,
     rendered_collapsible_block,
 )
@@ -183,14 +182,7 @@ def section_bounds(lines: list[str], heading: str) -> tuple[int, int]:
 
 
 def transcript_path_for_entry(entry: dict) -> Path:
-    raw_path = Path(raw_transcript_path_for_entry(entry))
-    if raw_path.exists():
-        return raw_path
-    projection_path = Path(entry['transcriptPath'])
-    if projection_path.exists():
-        raw_path.parent.mkdir(parents=True, exist_ok=True)
-        raw_path.write_text(projection_path.read_text())
-    return raw_path
+    return Path(entry['transcriptPath'])
 
 
 def read_transcript_for_entry(entry: dict) -> str:
@@ -450,53 +442,39 @@ def sync_participant_verification_review_substate(entry: dict) -> None:
 
 
 def participant_verification_inactive_message(entry: dict) -> str:
-    """Explain why participant verification cannot run and what to do next,
-    instead of surfacing only the raw sub-state. The blocking states are:
-    participant verification disabled, the round already complete (sub-state
-    'seal'), or a seal recorded and awaiting the reviewer verdict ('assessment').
-    The bare 'current value' form gave no exit and was a recurring dead-end when
-    a contributor retried participant verify against a sealed/assessing round."""
+    # Operator guidance for each blocking state lives in
+    # commands/collab/reference/verification.md#operator-guidance-participant-verify-inactive
+    # (anchor resolution gate-enforced by platform/tooling/audit-vocabulary.sh).
     target = entry.get('id', '<target>')
     reviewer = reviewer_role(entry) or '<reviewer>'
+    ref = 'commands/collab/reference/verification.md#operator-guidance-participant-verify-inactive'
     if not participant_verification_enabled(entry):
         return (
-            'participant verification is not enabled for this collab; '
-            f'the reviewer ({reviewer}) seals directly via {collab_dispatch("seal verification", target)}'
+            f'participant verification is not enabled; '
+            f'reviewer ({reviewer}) seals directly via {collab_dispatch("seal verification", target)} '
+            f'— see {ref}'
         )
     substate = verification_state(entry)['subState']
     if substate == 'seal':
         return (
-            'participant verification for this round is already complete; the reviewer '
-            f'({reviewer}) records the seal via {collab_dispatch("seal verification", target)}'
+            f'participant verification already complete for this round; '
+            f'reviewer ({reviewer}) seals via {collab_dispatch("seal verification", target)} '
+            f'— see {ref}'
         )
     if substate == 'assessment':
         return (
-            'participant verification cannot run while the cycle is in assessment: a '
-            f'verification seal is recorded and awaiting the reviewer ({reviewer}) verdict. '
-            f'Reviewer: record it via {collab_dispatch("seal verification", target)} '
-            '--outcome <success|incomplete|failed>. To redo verification after a correction, '
-            'record a non-success outcome; that routes the moderator to '
-            f'{collab_dispatch("reopen", "<action-plan|handoff>", target)} to re-execute and re-verify'
+            f'assessment pending: seal is recorded, awaiting reviewer ({reviewer}) verdict; '
+            f'run {collab_dispatch("seal verification", target)} --outcome <success|incomplete|failed>; '
+            f'for correction use {collab_dispatch("reopen", "<action-plan|handoff>", target)} '
+            f'— see {ref}'
         )
-    return f'participant verification is not the active sub-state; current sub-state: {substate}'
+    return f'participant verification is not the active sub-state; current sub-state: {substate} — see {ref}'
 
 
 def reset_participant_verification_stages(entry: dict, scope_aware: bool = False) -> None:
-    """Clear per-role participant-verification progress so a round reset can
-    restart the cycle. Without this, sync_participant_verification_review_substate
-    sees stale "completed" stages and bounces subState back to "seal", leaving a
-    record that is neither sealable (rounds 0) nor re-verifiable (stages done).
-
-    With scope_aware=True (a reopen that may revise only some roles' scope) a role
-    whose declared write scope is unchanged keeps its completed verification, so
-    only the roles the reviewer actually re-scoped have to re-run -- a reopen no
-    longer forces every participant through a fresh audit round. A verification
-    round is earned only when a participant completes a fresh run (see
-    record_verification_round_for_execution), and rounds=0 + all-stages-completed
-    is intentionally not sealable; so if scope-aware preservation would retain
-    every completed role, no participant would re-run and the round could never be
-    re-earned. Guard that by falling back to a full reset whenever no role would
-    otherwise be cleared, guaranteeing at least one re-run earns the new round."""
+    """Clear per-role participant-verification progress so a round reset can restart.
+    Design rationale and the rounds==0/all-stages-completed invariant:
+    commands/collab/reference/verification.md#participant-verification-stage-reset"""
     if not participant_verification_enabled(entry):
         return
     participants = verification_state(entry).get('participants')

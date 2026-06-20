@@ -32,7 +32,7 @@ COMMAND_SYSTEM_DIR = ROOT / 'platform' / 'tooling'
 if str(COMMAND_SYSTEM_DIR) not in sys.path:
     sys.path.insert(0, str(COMMAND_SYSTEM_DIR))
 
-from roles import load_role, participant_row, roles_command
+from roles import load_role, participant_row, role_catalog
 from commands.collab.engine.errors import die, handoff_abort
 from commands.collab.engine.planned_routes import validate_issue_bridge_block, validate_planned_route_prerequisites
 from commands.collab.engine.registry_constants import (
@@ -244,16 +244,12 @@ from commands.collab.engine.registry_io import (
 )
 from commands.collab.engine.transcript_render import (
     append_phase_block,
-    contribution_store_digest,
-    RAW_PROVENANCE_BANNER,
-    is_projection_hidden_metadata_line,
+    is_hidden_metadata_line,
     insert_toc_entry,
     print_header_overwrite,
-    projection_excerpt_source,
-    projection_source_digest,
-    projection_stance_for_content,
+    excerpt_source,
+    stance_for_content,
     prepend_revision_history,
-    raw_transcript_path_for_entry,
     reject_full_body_details_controls,
     reject_hand_authored_excerpt_details,
     render_contribution_block,
@@ -261,8 +257,6 @@ from commands.collab.engine.transcript_render import (
     render_initial_transcript,
     render_initial_transcript_legacy,
     render_managed_header_text,
-    render_moderator_project_transcript,
-    render_raw_transcript_from_contribution_store,
     rendered_collapsible_block,
     rendered_participants_table,
     rendered_retracted_content_block,
@@ -387,8 +381,9 @@ from commands.collab.engine.seal_verification import (
 #   "Keep splitting the oversized registry core into focused, independently testable
 #    parts. One enormous module is hard to reason about and risky to change; cohesive
 #    units shrink the blast radius of every edit."
-#   Note: #audit-mod-1 in that collab cites /Users/ejelome/Downloads/next-collabs.md
-#   row #4 — a transient local path superseded by this Discussion transcription.
+#   Note: the durable weekly-review row ledger now lives in
+#   platform/data/weekly-review-ledger.md; local Downloads audit files are
+#   transient working context only.
 
 def resolve_config_root() -> Path:
     configured = os.environ.get('COMMAND_CONFIG_ROOT')
@@ -401,7 +396,6 @@ def resolve_config_root() -> Path:
 
 DEFAULT_CONFIG_ROOT = resolve_config_root()
 DEFAULT_ROLES_DIR = DEFAULT_CONFIG_ROOT / 'commands/collab/reference/roles'
-DEFAULT_PROJECTORS_DIR = DEFAULT_CONFIG_ROOT / 'commands/collab/reference/projectors'
 DEFAULT_EFFORT_PATH = DEFAULT_CONFIG_ROOT / 'commands/collab/reference/agent-effort.json'
 DEFAULT_AGENT_MODEL_PATH = DEFAULT_CONFIG_ROOT / 'commands/collab/reference/agent-model.md'
 DEFAULT_BUDGET_PATH = DEFAULT_CONFIG_ROOT / 'commands/collab/reference/contribution-budget.md'
@@ -417,6 +411,8 @@ LEGACY_HEADING_RE = re.compile(r'^###\s+(?P<role>[A-Za-z0-9_-]+)\s+—')
 DETAILS_OPEN_RE = re.compile(r'^<details(?:\s+[^>]*)?>(?:<summary>[^<]*</summary>)?$')
 DETAILS_CLOSE_RE = re.compile(r'^</details>$')
 DETAILS_CONTROL_LINE_RE = re.compile(r'^</?details(?:\s+[^>]*)?\s*>$')
+PHASE_SUMMARY_BEGIN = '<!-- collab:phase-summary-managed -->'
+PHASE_SUMMARY_END = '<!-- collab:phase-summary-end -->'
 ANCHOR_RE = re.compile(r'^<a name="(?P<anchor>[A-Za-z0-9_-]+)"></a>$')
 TIMESTAMP_RE = re.compile(r'^<p><em>(?P<timestamp>.+)</em></p>$')
 ACTION_CHECKLIST_RE = re.compile(
@@ -476,6 +472,10 @@ REVIEWER_DISCIPLINE_GATES = (
     'PRECEDENT CITED',
     'LOOP CHECK',
 )
+
+
+def role_is_joinable(role_data: dict) -> bool:
+    return role_data.get('joinable') is not False
 
 
 def log_command(path: Path, target: str) -> int:
@@ -1036,7 +1036,7 @@ def validate_registry(data: dict, path: Path | None = None) -> None:
         participant_role_keys = [p['role'] for p in participants]
         if len(set(participant_role_keys)) != len(participant_role_keys):
             die(f'{source}: participants must not contain duplicate roles')
-        validate_participant_role_files(participant_role_keys, DEFAULT_ROLES_DIR, source, DEFAULT_PROJECTORS_DIR)
+        validate_participant_role_files(participant_role_keys, DEFAULT_ROLES_DIR, source)
         if moderatorRole not in participant_role_keys:
             die(f'{source}: moderatorRole must be listed in participants')
 
@@ -1503,6 +1503,102 @@ def completion_summary_empty(transcript: str) -> bool:
         if SUMMARY_HEADING_RE.match(line.strip()):
             return False
     return True
+
+
+def phase_summary_bounds(lines: list[str]) -> tuple[int, int] | None:
+    start = None
+    for index, line in enumerate(lines):
+        if line.strip() == PHASE_SUMMARY_BEGIN:
+            start = index
+            break
+    if start is None:
+        return None
+    for index in range(start + 1, len(lines)):
+        if lines[index].strip() == PHASE_SUMMARY_END:
+            return start, index + 1
+    die('phase summary sentinel mismatch')
+
+
+def phase_summary_insert_index(lines: list[str]) -> int:
+    for index, line in enumerate(lines):
+        if line.strip() == HEADER_MANAGED_END:
+            return index + 1
+    if lines and lines[0].startswith('# '):
+        return 1
+    die('transcript title missing')
+
+
+def phase_summary_line(transcript: str, entry: dict, phase: str) -> str:
+    try:
+        roles = contribution_roles(transcript, phase)
+    except SystemExit as exc:
+        if str(exc) == f'transcript phase missing: {phase}':
+            return f'- **{phase}:** missing section'
+        raise
+    if not roles:
+        summary = 'no contributions'
+    else:
+        unique_roles = ', '.join(dict.fromkeys(roles))
+        summary = f'{len(roles)} contribution(s) from {unique_roles}'
+    if phase == 'Completion':
+        completed = [
+            role
+            for role, state in sorted(entry.get('execution', {}).items())
+            if state.get('status') == 'completed'
+        ]
+        if completed:
+            summary = f'{summary}; completed execution for {", ".join(completed)}'
+        if entry.get('status') == 'closed':
+            summary = f'{summary}; closed'
+    return f'- **{phase}:** {summary}'
+
+
+def rendered_phase_summary(transcript: str, entry: dict, date: str) -> list[str]:
+    return [
+        PHASE_SUMMARY_BEGIN,
+        CONTENT_ONLY_GUARD,
+        '',
+        '## Phase Summary',
+        '',
+        f'_Last refreshed: {date}_',
+        '',
+        *[phase_summary_line(transcript, entry, phase) for phase in PHASES],
+        '',
+        PHASE_SUMMARY_END,
+    ]
+
+
+def replace_phase_summary(transcript: str, entry: dict, date: str) -> str:
+    lines = transcript.splitlines()
+    block = rendered_phase_summary(transcript, entry, date)
+    bounds = phase_summary_bounds(lines)
+    if bounds is not None:
+        start, end = bounds
+        replacement = block
+        if end < len(lines) and lines[end].strip():
+            replacement = [*replacement, '']
+        return '\n'.join(lines[:start] + replacement + lines[end:]) + '\n'
+    insert_at = phase_summary_insert_index(lines)
+    replacement = ['', *block, '']
+    return '\n'.join(lines[:insert_at] + replacement + lines[insert_at:]) + '\n'
+
+
+def summarize_collab(path: Path, target: str, date: str | None = None) -> int:
+    with registry_lock(path):
+        data = load_registry(path)
+        entry = resolve_collab(data, target)
+        if entry['status'] == 'archived':
+            die('record is archived')
+        transcript_path = lifecycle_transcript_path_for_entry(entry)
+        if not transcript_path.exists():
+            die(f'transcript missing: {transcript_path}')
+        rendered, header_changed = render_managed_header_text(transcript_path.read_text(), entry, DEFAULT_ROLES_DIR)
+        summary_date = date or dt.date.today().isoformat()
+        rendered = replace_phase_summary(rendered, entry, summary_date)
+        print_header_overwrite(header_changed)
+        commit_registry_and_transcript(path, data, transcript_path, rendered)
+    print(transcript_path)
+    return 0
 
 
 def forced_active_phase_advisory(entry: dict, transcript: str) -> str:
@@ -2000,7 +2096,6 @@ def set_field(
             if not value.strip():
                 die(f'{field} requires a non-empty value')
             entry[field] = value
-        migrate_raw_transcript_for_entry(entry)
         transcript_path = lifecycle_transcript_path_for_entry(entry)
         if transcript_path.exists():
             rendered, header_changed = render_managed_header_text(transcript_path.read_text(), entry, roles_dir)
@@ -2047,7 +2142,6 @@ def unset_field(
         clear_reviewer(next_entry)
         validate_registry(nextdata, path)
 
-        migrate_raw_transcript_for_entry(next_entry)
         transcript_path = lifecycle_transcript_path_for_entry(next_entry)
         if not transcript_path.exists():
             die(f'transcript missing: {transcript_path}')
@@ -2069,7 +2163,6 @@ def speak_lifecycle(path: Path, target: str, contributors: list[str]) -> int:
         for role in contributors:
             if not has_participant(entry, role):
                 die(f'contributor must already be a participant: {role}')
-        migrate_raw_transcript_for_entry(entry)
         transcript_path = lifecycle_transcript_path_for_entry(entry)
         transcript = transcript_path.read_text() if transcript_path.exists() else None
         advanced, notice = apply_speak_lifecycle_with_notice(entry, contributors, transcript)
@@ -2106,96 +2199,31 @@ def ensure_init_project_metadata(data: dict, registry_path: Path) -> None:
     }
 
 
-def projection_transcript_path_for_entry(entry: dict) -> str:
-    aggregate = entry.get('aggregate')
-    if isinstance(aggregate, dict):
-        configured = aggregate.get('moderatorProjectTranscriptPath')
-        if isinstance(configured, str) and configured.strip():
-            return configured.strip()
-    return entry['transcriptPath']
-
-
 def lifecycle_transcript_path_for_entry(entry: dict) -> Path:
-    return Path(raw_transcript_path_for_entry(entry))
-
-
-def legacy_projection_transcript_path_for_entry(entry: dict) -> Path:
-    return Path(projection_transcript_path_for_entry(entry))
-
-
-def migrate_raw_transcript_for_entry(entry: dict) -> bool:
-    raw_path = lifecycle_transcript_path_for_entry(entry)
-    if raw_path.exists():
-        inject_raw_provenance_banner_for_entry(entry)
-        return False
-    projection_path = legacy_projection_transcript_path_for_entry(entry)
-    if not projection_path.exists():
-        return False
-    raw_path.parent.mkdir(parents=True, exist_ok=True)
-    raw_path.write_text(projection_path.read_text())
-    inject_raw_provenance_banner_for_entry(entry)
-    return True
-
-
-def inject_raw_provenance_banner_for_entry(entry: dict) -> bool:
-    raw_path = lifecycle_transcript_path_for_entry(entry)
-    if not raw_path.exists():
-        return False
-    text = raw_path.read_text()
-    if RAW_PROVENANCE_BANNER in text:
-        return False
-    lines = text.splitlines()
-    header_index = next(
-        (index for index, line in enumerate(lines) if line.strip() == HEADER_MANAGED_BEGIN),
-        None,
-    )
-    if header_index is None:
-        return False
-    insert_at = header_index
-    if insert_at > 0 and lines[insert_at - 1].strip() == '':
-        insert_at -= 1
-    lines.insert(insert_at, RAW_PROVENANCE_BANNER)
-    tmp = raw_path.with_suffix('.tmp')
-    tmp.write_text('\n'.join(lines) + '\n')
-    tmp.replace(raw_path)
-    return True
+    return Path(entry['transcriptPath'])
 
 
 def read_transcript_for_entry(entry: dict) -> str:
-    migrate_raw_transcript_for_entry(entry)
-    inject_raw_provenance_banner_for_entry(entry)
     transcript_path = lifecycle_transcript_path_for_entry(entry)
     if not transcript_path.exists():
         die(f'transcript missing: {transcript_path}')
     return transcript_path.read_text()
 
 
-def migrate_raw_transcript(path: Path, target: str | None = None) -> int:
-    with registry_lock(path):
-        data = load_registry(path)
-        entry = resolve_collab(data, target) if target else require_active_collab(data)
-        migrated = migrate_raw_transcript_for_entry(entry)
-        raw_path = lifecycle_transcript_path_for_entry(entry)
-    print(json.dumps({
-        'migrated': migrated,
-        'path': str(raw_path),
-        'target': entry['id'],
-    }, sort_keys=True))
-    return 0
-
-
 def contribution_store_path_for_entry(registry_path: Path, entry: dict) -> Path:
-    aggregate = entry.get('aggregate')
-    if isinstance(aggregate, dict):
-        configured = aggregate.get('contributionStorePath')
-        if isinstance(configured, str) and configured.strip():
-            return path_for_entry_target(registry_path, entry, configured.strip())
-    transcript_path = Path(projection_transcript_path_for_entry(entry))
+    transcript_path = lifecycle_transcript_path_for_entry(entry)
     return path_for_entry_target(
         registry_path,
         entry,
         str(transcript_path.with_name(f'{transcript_path.stem}-contributions.json')),
     )
+
+
+def registry_relative_path(registry_path: Path, target_path: Path) -> str:
+    try:
+        return str(target_path.relative_to(registry_path.parent))
+    except ValueError:
+        return str(target_path)
 
 
 def read_contribution_store_for_entry(registry_path: Path, entry: dict) -> object:
@@ -2239,10 +2267,6 @@ def write_contribution_store_for_entry(registry_path: Path, entry: dict, store: 
     store_path.write_text(json.dumps(store, indent=2, ensure_ascii=True) + '\n')
 
 
-def stance_for_content(content: str) -> str:
-    return projection_stance_for_content(content)
-
-
 def contribution_store_record(
     phase: str,
     role: str,
@@ -2251,7 +2275,7 @@ def contribution_store_record(
     timestamp: str,
     full_body: str | None = None,
 ) -> dict:
-    compact = re.sub(r'\s+', ' ', projection_excerpt_source(content)).strip()
+    compact = re.sub(r'\s+', ' ', excerpt_source(content)).strip()
     record = {
         'phase': phase,
         'role': role,
@@ -2295,85 +2319,23 @@ def replace_latest_contribution_store_record(
     write_contribution_store_for_entry(registry_path, entry, store)
 
 
-def raw_transcript_timestamp_from_store(store: object) -> str:
-    if isinstance(store, dict):
-        metadata = store.get('metadata')
-        if isinstance(metadata, dict):
-            timestamp = metadata.get('rawTranscriptTimestamp')
-            if isinstance(timestamp, str) and timestamp.strip():
-                return timestamp.strip()
-    return format_banner_timestamp()
-
-
-def render_raw_transcript(path: Path, target: str | None = None) -> int:
-    data = load_registry(path)
-    entry = resolve_collab(data, target) if target else require_active_collab(data)
-    store = read_contribution_store_for_entry(path, entry)
-    rendered = render_raw_transcript_from_contribution_store(
-        data,
-        entry,
-        store,
-        DEFAULT_ROLES_DIR,
-        raw_transcript_timestamp_from_store(store),
-    )
-    transcript_path = path_for_entry_target(path, entry, raw_transcript_path_for_entry(entry))
-    transcript_path.parent.mkdir(parents=True, exist_ok=True)
-    transcript_path.write_text(rendered)
-    print(json.dumps({
-        'path': str(transcript_path),
-        'sha256': hashlib.sha256(rendered.encode()).hexdigest(),
-        'target': entry['id'],
-    }, sort_keys=True))
-    return 0
-
-
-def write_text_atomic(path: Path, content: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temp_path = path.with_name(f'.{path.name}.{os.getpid()}.tmp')
-    try:
-        with temp_path.open('w') as handle:
-            handle.write(content)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temp_path, path)
-        try:
-            directory_fd = os.open(path.parent, os.O_RDONLY)
-            try:
-                os.fsync(directory_fd)
-            finally:
-                os.close(directory_fd)
-        except OSError:
-            pass
-    except BaseException:
-        try:
-            temp_path.unlink()
-        except FileNotFoundError:
-            pass
-        raise
-
-
-def aggregate_transcript(path: Path, target: str | None = None, emit_json: bool = False) -> int:
-    data = load_registry(path)
-    entry = resolve_collab(data, target) if target else require_active_collab(data)
-    store = read_contribution_store_for_entry(path, entry)
-    observed_revision = registry_revision(data)
-    rendered = render_moderator_project_transcript(data, entry, store, observed_revision)
-    transcript_path = path_for_entry_target(path, entry, projection_transcript_path_for_entry(entry))
-    write_text_atomic(transcript_path, rendered)
-    result = {
-        'path': str(transcript_path),
-        'registryRevision': observed_revision,
-        'sourceDigest': projection_source_digest(data, entry, store, observed_revision),
-        'contributionStoreDigest': contribution_store_digest(store),
-    }
-    if emit_json:
-        print(json.dumps(result, sort_keys=True))
-    else:
-        print(f'path: {result["path"]}')
-        print(f'registryRevision: {result["registryRevision"]}')
-        print(f'sourceDigest: {result["sourceDigest"]}')
-        print(f'contributionStoreDigest: {result["contributionStoreDigest"]}')
-    return 0
+def mark_contribution_store_record_retracted(
+    registry_path: Path,
+    entry: dict,
+    anchor: str,
+    reason: str,
+    timestamp: str,
+) -> None:
+    store = mutable_contribution_store_for_entry(registry_path, entry)
+    contributions = store.setdefault('contributions', [])
+    for index in range(len(contributions) - 1, -1, -1):
+        existing = contributions[index]
+        if isinstance(existing, dict) and existing.get('anchor') == anchor:
+            existing['retracted'] = True
+            existing['retractionReason'] = reason
+            existing['retractionTimestamp'] = timestamp
+            write_contribution_store_for_entry(registry_path, entry, store)
+            return
 
 
 def speak_state(path: Path, target: str, role: str, resume: bool = False) -> int:
@@ -2458,18 +2420,7 @@ def transcript_view(path: Path, target: str, phase: str, raw: bool = False) -> i
         die(f'phase must be one of: {", ".join(PHASES)}')
     data = load_registry(path)
     entry = resolve_collab(data, target)
-    if raw:
-        raw_path = path_for_entry_target(path, entry, raw_transcript_path_for_entry(entry))
-        if raw_path.exists():
-            inject_raw_provenance_banner_for_entry(entry)
-            transcript = raw_path.read_text()
-        else:
-            transcript = read_transcript_for_entry(entry)
-    else:
-        projection_path = path_for_entry_target(path, entry, projection_transcript_path_for_entry(entry))
-        if not projection_path.exists():
-            die(f'transcript missing: {projection_path}')
-        transcript = projection_path.read_text()
+    transcript = read_transcript_for_entry(entry)
     lines = transcript.splitlines()
     start, end = section_bounds(lines, f'## {phase}')
     sys.stdout.write('\n'.join(lines[start:end]) + '\n')
@@ -2482,7 +2433,6 @@ def speak_lifecycle_live(path: Path, target: str) -> int:
         entry = resolve_collab(data, target)
         if entry['status'] in {'closed', 'archived'}:
             die('record is closed')
-        migrate_raw_transcript_for_entry(entry)
         transcript_path = lifecycle_transcript_path_for_entry(entry)
         if not transcript_path.exists():
             die(f'transcript missing: {transcript_path}')
@@ -2547,7 +2497,7 @@ def budget_countable_lines(content: str, phase: str) -> list[str]:
     lines = strip_managed_full_body_lines(content.splitlines(), 'contribution body')
     for line in lines:
         stripped = line.strip()
-        if is_projection_hidden_metadata_line(stripped):
+        if is_hidden_metadata_line(stripped):
             continue
         if phase == 'Action Plan' and ACTION_PLAN_EXEMPT_RE.match(line):
             continue
@@ -2634,7 +2584,7 @@ def validate_action_plan_shape(content: str, phase: str) -> None:
             if '-->' not in stripped[stripped.find('<!--') + 4:]:
                 in_html_comment = True
             continue
-        if is_projection_hidden_metadata_line(stripped):
+        if is_hidden_metadata_line(stripped):
             continue
         if is_markdown_heading(line):
             continue
@@ -2912,7 +2862,6 @@ def render_speak(
                 f'{resume}'
             )
 
-        migrate_raw_transcript_for_entry(current_entry)
         transcript_path = lifecycle_transcript_path_for_entry(current_entry)
         if not transcript_path.exists():
             die(f'transcript missing: {transcript_path}')
@@ -3137,7 +3086,6 @@ def render_re_speak(
             die('rewrite-speak-render is not permitted in Completion')
         if not has_participant(entry, role):
             die(f'role must already be a participant: {role}')
-        migrate_raw_transcript_for_entry(entry)
         transcript_path = lifecycle_transcript_path_for_entry(entry)
         if not transcript_path.exists():
             die(f'transcript missing: {transcript_path}')
@@ -3211,7 +3159,6 @@ def advance_phase(
             die('record is closed')
         index = PHASES.index(entry['activePhase'])
         from_phase = entry['activePhase']
-        migrate_raw_transcript_for_entry(entry)
         transcript_path = lifecycle_transcript_path_for_entry(entry)
         transcript = transcript_path.read_text() if transcript_path.exists() else None
         if direction == 'next':
@@ -3293,7 +3240,6 @@ def record_execution(
         for assigned_role in assigned_roles:
             if not has_participant(entry, assigned_role):
                 die(f'assigned role must already be a participant: {assigned_role}')
-        migrate_raw_transcript_for_entry(entry)
         transcript = read_transcript_for_entry(entry) if lifecycle_transcript_path_for_entry(entry).exists() else ''
         if status == 'completed' and entry['activePhase'] == 'Completion':
             unchecked_count = unchecked_assigned_item_count(transcript, role)
@@ -3361,7 +3307,6 @@ def record_execution(
 
         notice = lifecycle_status_notice('closed') if closed else None
         next_line = next_line_after_execution(entry, assigned_roles)
-        migrate_raw_transcript_for_entry(entry)
         transcript_path = lifecycle_transcript_path_for_entry(entry)
         if closed and transcript_path.exists():
             rendered, header_changed = render_managed_header_text(transcript, entry, DEFAULT_ROLES_DIR)
@@ -3456,7 +3401,6 @@ def export_issues(
             if data.get('activeCollabId') == entry['id']:
                 data['activeCollabId'] = None
         notice = lifecycle_status_notice('closed') if closed else None
-        migrate_raw_transcript_for_entry(entry)
         transcript_path = lifecycle_transcript_path_for_entry(entry)
         if closed and transcript_path.exists():
             transcript = transcript_path.read_text()
@@ -3612,7 +3556,6 @@ def replace_participants_table_text(transcript: str, entry: dict, roles_dir: Pat
 
 
 def replace_participants_table(transcript_path: Path, entry: dict, roles_dir: Path) -> None:
-    migrate_raw_transcript_for_entry(entry)
     transcript_path = lifecycle_transcript_path_for_entry(entry)
     if not transcript_path.exists():
         die(f'transcript missing: {transcript_path}')
@@ -3648,7 +3591,6 @@ def reopen_collab(
         if restore_target != phase:
             expected_token = 'handoff' if restore_target == 'Handoff' else 'action-plan'
             die(f'{collab_dispatch("reopen")} phase mismatch: verdict restoreTarget is {restore_target}; expected {expected_token}')
-        migrate_raw_transcript_for_entry(entry)
         transcript_path = lifecycle_transcript_path_for_entry(entry)
         if not transcript_path.exists():
             die(f'transcript missing: {transcript_path}')
@@ -3688,7 +3630,6 @@ def render_status(path: Path, target: str) -> int:
     with registry_lock(path):
         data = load_registry(path)
         entry = resolve_collab(data, target)
-        migrate_raw_transcript_for_entry(entry)
         transcript_path = lifecycle_transcript_path_for_entry(entry)
         if not transcript_path.exists():
             die(f'transcript missing: {transcript_path}')
@@ -3707,7 +3648,6 @@ def re_summarize_collab(path: Path, target: str, summary_file: Path, date: str |
         entry = resolve_collab(data, target)
         if entry['status'] == 'archived':
             die('record is archived')
-        migrate_raw_transcript_for_entry(entry)
         transcript_path = lifecycle_transcript_path_for_entry(entry)
         if not transcript_path.exists():
             die(f'transcript missing: {transcript_path}')
@@ -3722,7 +3662,6 @@ def render_participants(path: Path, target: str, roles_dir: Path) -> int:
     with registry_lock(path):
         data = load_registry(path)
         entry = resolve_collab(data, target)
-        migrate_raw_transcript_for_entry(entry)
         transcript_path = lifecycle_transcript_path_for_entry(entry)
         if not transcript_path.exists():
             die(f'transcript missing: {transcript_path}')
@@ -3801,8 +3740,8 @@ def commit_new_collab_artifacts(
     registry_path: Path,
     data: dict,
     entry: dict,
-    raw_transcript_path: Path,
-    raw_transcript_text: str,
+    transcript_path: Path,
+    transcript_text: str,
     contribution_store: dict,
 ) -> None:
     registry_before = registry_path.read_text() if registry_path.exists() else None
@@ -3815,33 +3754,20 @@ def commit_new_collab_artifacts(
         registry_event = finalize_registry_event(data, registry_event)
     validate_registry(data, registry_path)
 
-    projection_transcript_path = path_for_entry_target(
-        registry_path,
-        entry,
-        projection_transcript_path_for_entry(entry),
-    )
     contribution_store_path = contribution_store_path_for_entry(registry_path, entry)
     artifacts = [
-        raw_transcript_path,
-        projection_transcript_path,
+        transcript_path,
         contribution_store_path,
     ]
     for artifact_path in artifacts:
         if artifact_path.exists():
             die(f'record already exists: {artifact_path}')
 
-    projection_text = render_moderator_project_transcript(
-        data,
-        entry,
-        contribution_store,
-        registry_revision(data),
-    )
     store_text = json.dumps(contribution_store, indent=2, ensure_ascii=True) + '\n'
     registry_after = json.dumps(data, indent=2) + '\n'
     registry_tmp = registry_path.with_name(f'{registry_path.name}.tmp')
     artifact_payloads = [
-        (raw_transcript_path, raw_transcript_text),
-        (projection_transcript_path, projection_text),
+        (transcript_path, transcript_text),
         (contribution_store_path, store_text),
     ]
     artifact_tmps = [
@@ -3969,12 +3895,9 @@ def init_collab(
         collab_id = f'{date}-{slug}'
         transcript_rel = f'records/{collab_id}.md'
         transcript_path = Path(transcript_rel)
-        raw_transcript_path = transcript_path.with_name(f'{transcript_path.stem}-raw.md')
 
         if transcript_path.exists():
             die(f'record already exists: {transcript_path}')
-        if raw_transcript_path.exists():
-            die(f'record already exists: {raw_transcript_path}')
         if any(entry['id'] == collab_id for entry in data['collabs']):
             die(f'registry collision: {collab_id}')
         if any(entry['slug'] == slug for entry in data['collabs']):
@@ -4030,13 +3953,12 @@ def init_collab(
         nextdata['activeCollabId'] = collab_id
         rendered_timestamp = format_banner_timestamp()
         rendered = render_initial_transcript(title, entry, roles_dir, rendered_timestamp)
-        raw_transcript_path = path_for_entry_target(path, entry, raw_transcript_path_for_entry(entry))
-        projection_transcript_path = projection_transcript_path_for_entry(entry)
+        transcript_path = path_for_entry_target(path, entry, entry['transcriptPath'])
         contribution_store = empty_contribution_store(rendered_timestamp)
-        commit_new_collab_artifacts(path, nextdata, entry, raw_transcript_path, rendered, contribution_store)
-    print(projection_transcript_path)
+        commit_new_collab_artifacts(path, nextdata, entry, transcript_path, rendered, contribution_store)
+    print(entry['transcriptPath'])
     if open_requested:
-        file_uri = path_for_entry_target(path, entry, projection_transcript_path).resolve().as_uri()
+        file_uri = path_for_entry_target(path, entry, entry['transcriptPath']).resolve().as_uri()
         open_failure = open_browser_uri(file_uri, opener)
         if open_failure is None:
             print(f'OPEN: {file_uri}')
@@ -4054,7 +3976,9 @@ def join_participants(
     emit_json: bool = False,
 ) -> int:
     normalized_agent_id = normalize_join_agent_id(agent_id)
-    load_role(roles_dir, role)
+    role_data = load_role(roles_dir, role)
+    if not role_is_joinable(role_data):
+        die(f'role not joinable: {role}')
     recorded_agent_id = normalized_agent_id
     identity_warning: str | None = None
     with registry_lock(path):
@@ -4077,7 +4001,6 @@ def join_participants(
             count_caller_declined_agent_id_write(nextdata, normalized_agent_id)
         validate_registry(nextdata, path)
 
-        migrate_raw_transcript_for_entry(next_entry)
         transcript_path = lifecycle_transcript_path_for_entry(next_entry)
         if not transcript_path.exists():
             die(f'transcript missing: {transcript_path}')
@@ -4144,7 +4067,6 @@ def archive_collab(
         entry['archived'] = True
         if data.get('activeCollabId') == entry['id']:
             data['activeCollabId'] = None
-        migrate_raw_transcript_for_entry(entry)
         transcript_path = lifecycle_transcript_path_for_entry(entry)
         if transcript_path.exists():
             rendered, header_changed = render_managed_header_text(transcript_path.read_text(), entry, DEFAULT_ROLES_DIR)
@@ -4171,7 +4093,6 @@ def close_collab(
         assert_caller_role(entry, caller_role, 'close')
         if entry['status'] == 'archived':
             die('record is archived')
-        migrate_raw_transcript_for_entry(entry)
         transcript_path = lifecycle_transcript_path_for_entry(entry)
         if not transcript_path.exists():
             die(f'transcript missing: {transcript_path}')
@@ -4221,7 +4142,6 @@ def audit_closed(path: Path) -> int:
     for entry in data['collabs']:
         if entry['status'] != 'closed':
             continue
-        migrate_raw_transcript_for_entry(entry)
         transcript_path = lifecycle_transcript_path_for_entry(entry)
         if not transcript_path.exists():
             die(f'transcript missing: {transcript_path}')
@@ -4245,14 +4165,12 @@ def delete_collab(path: Path, target: str, confirmed: bool, caller_role: str | N
         data = load_registry(path)
         entry = resolve_collab(data, target)
         assert_caller_role(entry, caller_role, 'delete')
-        migrate_raw_transcript_for_entry(entry)
-        raw_transcript_path = lifecycle_transcript_path_for_entry(entry)
-        projection_transcript_path = legacy_projection_transcript_path_for_entry(entry)
+        transcript_path = lifecycle_transcript_path_for_entry(entry)
         contribution_store_path = contribution_store_path_for_entry(path, entry)
         data['collabs'] = [candidate for candidate in data['collabs'] if candidate['id'] != entry['id']]
         if data.get('activeCollabId') == entry['id']:
             data['activeCollabId'] = None
-        for owned_path in (raw_transcript_path, projection_transcript_path, contribution_store_path):
+        for owned_path in (transcript_path, contribution_store_path):
             if owned_path.exists():
                 owned_path.unlink()
         save_registry(path, data)
@@ -4309,7 +4227,6 @@ def retract_latest_contribution(
             die('retract-speak is not permitted after Completion')
         if not has_participant(entry, role):
             die(f'role must already be a participant: {role}')
-        migrate_raw_transcript_for_entry(entry)
         transcript_path = lifecycle_transcript_path_for_entry(entry)
         if not transcript_path.exists():
             die(f'transcript missing: {transcript_path}')
@@ -4319,6 +4236,7 @@ def retract_latest_contribution(
         if bounds is None:
             die(f'no contribution found for {role} in {entry["activePhase"]}')
         start, end = bounds
+        anchor = latest_contribution_anchor(transcript, entry['activePhase'], role)
         block = lines[start:end]
         marker_index: int | None = None
         for index, line in enumerate(block):
@@ -4342,6 +4260,7 @@ def retract_latest_contribution(
         replacement = block[:marker_index + 1] + [''] + tombstone + [''] + [block[-1]]
         rendered = '\n'.join(lines[:start] + replacement + lines[end:]) + '\n'
         commit_registry_and_transcript(path, data, transcript_path, rendered)
+        mark_contribution_store_record_retracted(path, entry, anchor, summary, stamp)
     print(entry['id'])
     print('retracted')
     return 0
@@ -4422,6 +4341,16 @@ def registry_path_command(path: Path) -> int:
 
 def role_row_command(roles_dir: Path, role: str, index: int) -> int:
     print(participant_row(load_role(roles_dir, role), index))
+    return 0
+
+
+def roles_command(roles_dir: Path) -> int:
+    index = 1
+    for data in role_catalog(roles_dir):
+        if not role_is_joinable(data):
+            continue
+        print(participant_row(data, index))
+        index += 1
     return 0
 
 
@@ -4647,15 +4576,9 @@ def build_parser() -> argparse.ArgumentParser:
     transcript_view_parser.add_argument('phase', choices=PHASES)
     transcript_view_parser.add_argument('--raw', action='store_true')
 
-    aggregate_parser = subparsers.add_parser('aggregate')
-    aggregate_parser.add_argument('target', nargs='?')
-    aggregate_parser.add_argument('--json', action='store_true')
-
-    migrate_raw_parser = subparsers.add_parser('migrate-raw-transcript')
-    migrate_raw_parser.add_argument('target', nargs='?')
-
-    render_raw_parser = subparsers.add_parser('render-raw-transcript')
-    render_raw_parser.add_argument('target', nargs='?')
+    summarize_parser = subparsers.add_parser('summarize')
+    summarize_parser.add_argument('target')
+    summarize_parser.add_argument('--date')
 
     participant_verify_state_parser = subparsers.add_parser('participant-verify-state')
     participant_verify_state_parser.add_argument('target')
@@ -4908,12 +4831,8 @@ def main(argv: list[str]) -> int:
         return out_of_scope_patch(path, args.target, args.role, args.path, args.caller_role)
     if args.command == 'transcript-view':
         return transcript_view(path, args.target, args.phase, args.raw)
-    if args.command == 'aggregate':
-        return aggregate_transcript(path, args.target, args.json)
-    if args.command == 'migrate-raw-transcript':
-        return migrate_raw_transcript(path, args.target)
-    if args.command == 'render-raw-transcript':
-        return render_raw_transcript(path, args.target)
+    if args.command == 'summarize':
+        return summarize_collab(path, args.target, args.date)
     if args.command == 'participant-verify-state':
         return participant_verify_state(path, args.target, args.role, args.resume)
     if args.command == 'participant-verify-render':

@@ -25,7 +25,7 @@ target, deliverable, registry = sys.argv[1:4]
 path = Path(registry)
 data = json.loads(path.read_text())
 entry = next(item for item in data['collabs'] if item['id'] == target)
-transcript_path = path.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")
+transcript_path = path.parent / Path(entry['transcriptPath'])
 text = transcript_path.read_text()
 marker = "## Audit\n<!-- collab:content-only; do-not-execute -->\n"
 replacement = marker + f"\ncharteredDeliverables:\n- {deliverable}\n"
@@ -45,7 +45,7 @@ target, block, registry = sys.argv[1:4]
 path = Path(registry)
 data = json.loads(path.read_text())
 entry = next(item for item in data['collabs'] if item['id'] == target)
-transcript_path = path.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")
+transcript_path = path.parent / Path(entry['transcriptPath'])
 text = transcript_path.read_text()
 marker = "## Audit\n<!-- collab:content-only; do-not-execute -->\n"
 replacement = marker + "\n" + block + "\n"

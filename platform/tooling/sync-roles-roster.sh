@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 COMMAND_CONFIG_ROOT="${COMMAND_CONFIG_ROOT:-$ROOT}"
-CONTRACT="${COMMAND_CONFIG_ROOT}/platform/standards/agent-role.md"
+CONTRACT="${COMMAND_CONFIG_ROOT}/platform/standards/role-standard.md"
 BEGIN_MARKER="<!-- BEGIN GENERATED:ROLES_ROSTER -->"
 END_MARKER="<!-- END GENERATED:ROLES_ROSTER -->"
 MODE="write"

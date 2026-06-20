@@ -10,7 +10,7 @@ Deterministic QA for scaffold template sources projected to `~/.cursor/platform/
 4. Validate `CLAUDE.md` is routing-only and points to `AGENTS.md`.
 5. Validate `AGENTS.md` references `~/.cursor/commands/commands.md` and `REPOSITORY.md`.
 6. Validate `AGENTS.md` contains `<!-- TODO(install): ... -->` placeholders for install-time scaffold authoring and `REPOSITORY.md` contains `<!-- TODO(patch): ... -->` placeholders for repo-specific authoring.
-7. Validate `GEMINI.md` is routing-only, points to `AGENTS.md`, and carries the runtime `dp` projector definition pointer.
+7. Validate `GEMINI.md` is routing-only and points to `AGENTS.md`.
 
 ## Required roster
 

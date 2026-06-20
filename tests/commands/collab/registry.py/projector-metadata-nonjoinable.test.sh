@@ -28,6 +28,12 @@ records.mkdir()
     'displayName': 'Moderator',
     'concerns': ['coordination'],
 }) + '\n')
+(roles / 'dp.json').write_text(json.dumps({
+    'key': 'dp',
+    'displayName': 'Deterministic Projector',
+    'concerns': ['historical rendering'],
+    'joinable': False,
+}) + '\n')
 (projectors / 'dp.json').write_text(json.dumps({
     'key': 'dp',
     'displayName': 'Deterministic Projector',
@@ -70,7 +76,7 @@ module.DEFAULT_PROJECTORS_DIR = projectors
 module.validate_registry(registry, registry_path)
 
 roles_output = subprocess.run(
-    [sys.executable, str(root / 'platform/tooling/roles.py'), '--roles-dir', str(roles), 'roles'],
+    [sys.executable, str(root / 'commands/collab/engine/registry.py'), 'roles', '--roles-dir', str(roles)],
     check=True,
     text=True,
     stdout=subprocess.PIPE,
@@ -81,14 +87,14 @@ assert 'Deterministic Projector' not in roles_output, roles_output
 try:
     module.join_participants(registry_path, target, 'dp', 'gemini-cli', roles)
 except SystemExit as exc:
-    assert f'role missing: {roles / "dp.json"}' in str(exc), str(exc)
+    assert 'role not joinable: dp' in str(exc), str(exc)
 else:
     raise AssertionError('projector metadata was accepted as a joinable role')
 
 from commands.collab.engine.transcript_render import rendered_participants_table
 
 rendered = rendered_participants_table(registry['collabs'][0], roles)
-assert '| 2 | dp | Deterministic Projector | gemini-cli | traceability |' in rendered, rendered
+assert '| 2 | dp | Deterministic Projector | gemini-cli | historical rendering |' in rendered, rendered
 PY
 
 printf 'OK: projector metadata remains nonjoinable while historical participants render\n'

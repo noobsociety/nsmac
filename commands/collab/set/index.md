@@ -32,7 +32,7 @@ Update collab metadata fields that do not already belong to a dedicated mutation
 - **Field ownership:** `title` -> `set`; `description` -> `set`; `turn-order` -> `set`; `reviewer`, `reviewerOptionalPhases` -> `set`; `work-repo` -> `set`; `status` -> `open` / `close`; `participants` -> `join` / `kick`; `active-phase` -> `next` / `prev` (or `set --force` for recovery only).
 - **Ownership boundary:** Every mutable field has exactly one normal mutation path. `(collab set)` must refuse fields owned by another route unless `--force` is used for recovery-only metadata repair.
 - **Post-state resume signal:** After `(collab set)` completes, re-establish collab context with `commands/collab/engine/registry.py speak-state --resume <target> <role>` before issuing the next collab command.
-- **Sync contract compliance:** `title`, `description`, `turn-order`, and `active-phase` transcript-side updates (H1, opening text, Turn order cell, Active phase cell) are prose-rendered; `commands/collab/engine/registry.py set` writes registry only. This is declared under the sync contract in [`platform/standards/route-invariant.md`](../../../platform/standards/route-invariant.md).
+- **Sync contract compliance:** `title`, `description`, `turn-order`, and `active-phase` transcript-side updates (H1, opening text, Turn order cell, Active phase cell) are prose-rendered; `commands/collab/engine/registry.py set` writes registry only. This is declared under the sync contract in [`platform/standards/route-invariants.md`](../../../platform/standards/route-invariants.md).
 
 ```route-arg
 dispatch: (collab set <field> <value>)

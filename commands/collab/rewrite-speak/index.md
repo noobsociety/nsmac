@@ -1,5 +1,13 @@
 # (collab rewrite speak)
+ 
+## Turn-gating rule
 
+`(collab rewrite speak)` is contribution-scoped, not turn-scoped. A
+participant that already has a contribution in the active non-Completion
+phase may rewrite that contribution through `rewrite-speak-render` even
+when normal `speak-state` would report another expected role.
+
+Do not use speak-state turn gating to decide whether a rewrite is allowed.
 Rewrite the calling role's last contribution in-place within the active collab phase.
 
 ## Trigger

@@ -1,16 +1,16 @@
-# Collab Phase Commands
+# Collab Phase Admissibility
 
-Quick-reference table: the commands each role invokes in each collaboration phase, in invocation order.
+This table defines which commands are admitted in each phase and which roles may invoke them. Within each admitted cell, commands are listed in invocation order.
 
 ## Trigger
 
 **Slash:** (reference only — not an invocable route)
 **Prose dispatch:** (reference only — not an invocable route)
-**Search phrases:** collab phase commands, phase command reference, what commands per collab phase
+**Search phrases:** collab phase admissibility, phase command admissibility, what commands per collab phase
 
 ## Steps
 
-1. Read this document when orienting to the command sequence for a given phase or role.
+1. Read this document when orienting to command admissibility for a given phase or role.
 2. Do not mutate registry or transcript state from this documentation-only reference.
 3. Consult the source citations table for the authoritative route playbook step behind each cell.
 
@@ -18,7 +18,7 @@ Quick-reference table: the commands each role invokes in each collaboration phas
 
 **Setup (before Audit):** Every role runs `(collab join) --role <role>` on entry, then `(collab show policy)` before the first contribution (`join.md` step 10 — advisory output; `show-policy.md` step 1). The moderator also runs `(collab init) <name>` to create the collab and auto-join as the moderator role (`init.md` step 3).
 
-## Phase commands
+## Phase admissibility
 
 | Phase | mod | tw | pe | pa |
 |---|---|---|---|---|

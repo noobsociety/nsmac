@@ -62,7 +62,7 @@ ineligibility-reason: Bypass would create state that other helpers assume cannot
 | `registry-integrity` | Bypass would create state that other helpers assume cannot exist. | `collab/init` steps 8, 12; shared-state invariants |
 | `lifecycle-gate` | Guard enforces phase or completion state, not an overwritable artifact. | Phase gating contracts |
 | `role-gate` | Guard enforces role membership or reviewer presence. | Role and reviewer contracts |
-| `schema-validation` | Guard enforces structural correctness of role JSON or configuration. | `platform/standards/agent-role.md` schema |
+| `schema-validation` | Guard enforces structural correctness of role JSON or configuration. | `platform/standards/role-standard.md` schema |
 | `unreadable-context` | Guard aborts on unreadable input; there is no artifact to diff. | Route-specific abort steps |
 | `destructive-delete` | Guard covers `delete`, `archive`, `kick`, `purge`, `reset`, `overwrite` verbs. | Command argument destructive verb set |
 
@@ -241,7 +241,7 @@ The following categories must each have at least one test before the first flag-
 | Confirmation token | Command argument exact-token match |
 | Registry-integrity guards | `collab/init` steps 8, 12; shared-state invariant |
 | Lifecycle and role gates | Phase/role gating contracts |
-| Schema and role-JSON validation | Role schema in `platform/standards/agent-role.md` |
+| Schema and role-JSON validation | Role schema in `platform/standards/role-standard.md` |
 | Unreadable context | Route-specific abort on unreadable inputs |
 | Destructive-delete guards | Command argument destructive verb set |
 | Patch-reference uniqueness | Command argument atomicity invariant; grep confirms no two distinct patch identifiers in the same eligible route |

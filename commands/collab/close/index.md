@@ -27,7 +27,7 @@ Mark a collaboration record closed so contribution and phase-advance routes stop
 - **Closed-record behavior:** `(collab speak)` and `(collab advance)` must refuse closed records.
 - **Clear notice:** The helper emits `NEXT: Collab closed; run /clear before starting another collab.` as the first output line and `{"message": "Run /clear before starting another collab.", "notice": "clear", "status": "closed"}` after closing. Display both to the caller. Route docs describe the output; they do not reimplement it. See [invariants.md](../../../commands/collab/reference/invariants.md).
 - **Post-state resume signal:** After `(collab close)` the collab is closed and `activeCollabId` is cleared. Run `/clear` before starting a new collab. No `speak-state --resume` applies — the closed record is no longer active.
-- **Sync contract compliance:** Step 5's narrative refinement call (`(collab rewrite summary)`) is prose-rendered. The structural summary is helper-owned and does not require a sync-contract declaration. This is declared under the sync contract in [`platform/standards/route-invariant.md`](../../../platform/standards/route-invariant.md).
+- **Sync contract compliance:** Step 5's narrative refinement call (`(collab rewrite summary)`) is prose-rendered. The structural summary is helper-owned and does not require a sync-contract declaration. This is declared under the sync contract in [`platform/standards/route-invariants.md`](../../../platform/standards/route-invariants.md).
 
 ```route-arg
 dispatch: (collab close [--no-summary])

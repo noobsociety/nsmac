@@ -69,6 +69,7 @@ is_source_path() {
   case "$1" in
     .gitignore|.collab.json|CLAUDE.md|AGENTS.md|GEMINI.md|README.md|REPOSITORY.md|registry.schema.json) return 0 ;;
     .github/*) return 0 ;;
+    platform/reference.md) return 0 ;;
     platform/standards/*|platform/data/*|platform/tooling/*|generated/*|platform/templates/*|tests/specs/*|commands/*|tests/*) return 0 ;;
     *) return 1 ;;
   esac
@@ -460,6 +461,7 @@ check_generated_freshness
 check_generated_boundary
 check_links
 platform/tooling/audit-reachability.sh || failures=$((failures + 1))
+platform/tooling/audit-vocabulary.sh || failures=$((failures + 1))
 check_route_arg_defaults
 
 if ((failures > 0)); then

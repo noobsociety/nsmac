@@ -118,7 +118,7 @@ from pathlib import Path
 
 registry = Path(sys.argv[1])
 entry = next(item for item in json.loads(registry.read_text())['collabs'] if item['slug'] == 'participant-verify-flow')
-transcript = (registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")).read_text()
+transcript = (registry.parent / Path(entry['transcriptPath'])).read_text()
 state = entry['verification']['participants']['pe']
 assert state['stage'] == 'completed', state
 assert state['attempts'] == 1, state
@@ -156,7 +156,7 @@ from pathlib import Path
 
 registry = Path(sys.argv[1])
 entry = next(item for item in json.loads(registry.read_text())['collabs'] if item['slug'] == 'participant-verify-flow')
-transcript = (registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")).read_text()
+transcript = (registry.parent / Path(entry['transcriptPath'])).read_text()
 assert entry['status'] == 'closed', entry
 assert entry['verdict']['outcome'] == 'success', entry.get('verdict')
 assert transcript.count('### Summary — ') == 1, transcript

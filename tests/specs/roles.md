@@ -6,7 +6,7 @@ Deterministic QA for shared joinable-role JSON sources projected to `~/.cursor/c
 
 1. Load every `*.json` under the tracked source directory `commands/collab/reference/roles/`.
 2. Validate the source roster is exact.
-3. Validate each source file is valid JSON and uses the role schema in `platform/standards/agent-role.md`.
+3. Validate each source file is valid JSON and uses the role schema in `platform/standards/role-standard.md`.
 4. Validate each filename stem equals its `key`.
 5. Validate keys are globally unique.
 6. Validate runtime mode copies `commands/collab/reference/roles/` to `~/.cursor/commands/collab/reference/roles/`.

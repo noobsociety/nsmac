@@ -146,6 +146,26 @@ The seal model governs two distinct time domains:
 
 For remediation guidance when `workRepo` binding or reachability issues surface during execution or seal, see [`workRepo-remediation-index.md`](workRepo-remediation-index.md).
 
+## Operator guidance: participant verify inactive
+
+When `(collab participant verify)` reports that verification cannot run, the active sub-state determines the correct next action. The message is emitted by `participant_verification_inactive_message` in `commands/collab/engine/seal_verification.py`; the branch logic lives there while the operator guidance text lives here, so the guidance prose is authored once rather than duplicated in code. The `platform/tooling/audit-vocabulary.sh` gate enforces that the engine's `verification.md#…` anchor resolves to a real heading, so the runtime pointer cannot silently dangle.
+
+| Condition | Reason | Correct action |
+|-----------|--------|----------------|
+| Participant verification is not enabled for this collab | Verification was not configured at `init` time. | The reviewer (`pa`) seals directly via `(collab seal verification)`. |
+| Sub-state is `seal` | This verification round's participant passes are already complete. | The reviewer seals via `(collab seal verification)`. |
+| Sub-state is `assessment` | A seal is recorded and awaiting the reviewer verdict. | The reviewer records verdict via `(collab seal verification) --outcome <success\|incomplete\|failed>`. To redo verification after a correction, record a non-success outcome; the moderator then runs `(collab reopen <action-plan\|handoff>)` to re-execute and re-verify. |
+
+Any other inactive sub-state is an unexpected state; surface the raw sub-state value and re-run `(collab show policy)` to diagnose.
+
+## Participant verification stage reset
+
+When `(collab reopen)` resets participant verification, `reset_participant_verification_stages` clears per-role stage progress so the round can restart cleanly. Without this clear, `sync_participant_verification_review_substate` would see stale `completed` stages and immediately bounce `subState` back to `seal`, leaving the record neither sealable (rounds 0) nor re-verifiable (stages done).
+
+**Scope-aware partial reset.** With `scope_aware=True` (a reopen that may revise only some roles' scope), a role whose declared write scope and execution signature are unchanged keeps its completed verification. Only the roles the reviewer actually re-scoped must re-run; a reopen no longer forces every participant through a fresh audit round.
+
+**Design invariant — `rounds == 0` / all-stages-completed is intentionally not sealable.** If scope-aware preservation would retain every role's completed stage, no participant would re-run and the round could never be re-earned. The implementation guards against this by falling back to a full reset whenever no role would otherwise be cleared, guaranteeing at least one re-run earns the new round. A `rounds == 0` record with all stages showing `completed` is therefore intentionally not sealable — the guard prevents a no-re-run shortcut from bypassing the round counter.
+
 ## Related routes
 
 - [`participant-verify.md`](../participant-verify/index.md) — invocable route spec for `(collab participant verify)`

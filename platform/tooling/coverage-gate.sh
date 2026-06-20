@@ -40,7 +40,6 @@ COLLAB_COMMAND_ROOT = Path("commands/collab")
 # routes, (2) DISCOVERY_DEBT_ROUTE_FILES grows beyond 10 entries, or (3) a test
 # suite regression surfaces in one of these routes during another collab.
 DISCOVERY_DEBT_ROUTE_FILES = {
-    "commands/collab/aggregate/index.md",
     "commands/collab/diff/index.md",
     "commands/collab/export-issues/index.md",
     "commands/collab/log/index.md",

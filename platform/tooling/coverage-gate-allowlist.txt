@@ -1,10 +1,12 @@
-# Weekly-review reduction target (2026-06-07):
-# Gate-reported live migration debt is 88 allowlisted unanchored ABORT clauses.
-# Reduce live debt to <=66 before the next weekly audit by anchoring and testing
-# at least 22 clauses. Route-family targets: contribution flow
-# (speak/rewrite-speak plus advance/restore) -12 entries; completion flow
-# (run-plan/rewrite-execution) -8 entries; participant/admin flow
-# (join/remove-participant plus set/unset) -6 entries. Keep fingerprints below
+# Weekly-review reduction target (W25, refreshed 2026-06-21):
+# Gate-reported live migration debt is 88 allowlisted unanchored ABORT clauses,
+# unchanged across the W25 window. The prior <=66-by-W25 target was not met;
+# debt held at 88. Next weekly target: reduce live debt to <=76 by anchoring and testing
+# at least 12 clauses. Route-family targets: contribution flow
+# (speak/rewrite-speak plus advance/restore) -6 entries; completion flow
+# (run-plan/rewrite-execution) -4 entries; participant/admin flow
+# (join/remove-participant plus set/unset) -2 entries. Keep <=66 as the next
+# post-next-weekly reduction target after the next weekly cut. Keep fingerprints below
 commands/collab/activate/index.md:12|6de3220d9d35
 commands/collab/activate/index.md:13|8a77055f7223
 commands/collab/activate/index.md:14|b714b022357b

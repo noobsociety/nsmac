@@ -38,7 +38,7 @@ from pathlib import Path
 registry = Path(sys.argv[1])
 target = sys.argv[2]
 entry = next(item for item in json.loads(registry.read_text())['collabs'] if item['id'] == target)
-print(registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md"))
+print(registry.parent / Path(entry['transcriptPath']))
 PY
 )"
 
@@ -53,7 +53,6 @@ PY
 
 "$ROOT/commands/collab/engine/registry.py" transcript-view "$TARGET" Discussion --raw >raw-view.md
 "$ROOT/commands/collab/engine/registry.py" transcript-view "$TARGET" Audit --raw >audit-view.md
-"$ROOT/commands/collab/engine/registry.py" aggregate "$TARGET" >/dev/null
 "$ROOT/commands/collab/engine/registry.py" transcript-view "$TARGET" Discussion >discussion-view.md
 
 grep -Fq 'fullbodyword279' raw-view.md
@@ -62,7 +61,7 @@ if grep -Fq 'Visible excerpt with the standalone finding.' audit-view.md; then
   exit 1
 fi
 if ! grep -Fq 'fullbodyword279' discussion-view.md; then
-  printf 'FAIL: rendered Discussion view omitted full-body content from moderator projection\n' >&2
+  printf 'FAIL: rendered Discussion view omitted full-body content\n' >&2
   exit 1
 fi
 grep -Fq 'Visible excerpt with the standalone finding.' discussion-view.md

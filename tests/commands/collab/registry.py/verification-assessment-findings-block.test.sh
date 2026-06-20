@@ -38,7 +38,7 @@ from pathlib import Path
 
 registry = Path(sys.argv[1])
 entry = next(item for item in json.loads(registry.read_text())['collabs'] if item['slug'] == 'verification-assessment-findings-block')
-transcript = (registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")).read_text()
+transcript = (registry.parent / Path(entry['transcriptPath'])).read_text()
 start = transcript.index('<a name="reviewer-findings-1"></a>')
 end = transcript.index('</details>', start) + len('</details>')
 block = transcript[start:end]
@@ -68,7 +68,7 @@ from pathlib import Path
 
 registry = Path(sys.argv[1])
 entry = next(item for item in json.loads(registry.read_text())['collabs'] if item['slug'] == 'verification-assessment-findings-block')
-transcript = (registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")).read_text()
+transcript = (registry.parent / Path(entry['transcriptPath'])).read_text()
 block = Path('findings-block.txt').read_text()
 assert 'verdict' not in entry
 assert block in transcript
@@ -94,7 +94,7 @@ from pathlib import Path
 
 registry = Path(sys.argv[1])
 entry = next(item for item in json.loads(registry.read_text())['collabs'] if item['slug'] == 'verification-assessment-success-omits-findings')
-transcript = (registry.parent / Path(entry['transcriptPath']).with_name(f"{Path(entry['transcriptPath']).stem}-raw.md")).read_text()
+transcript = (registry.parent / Path(entry['transcriptPath'])).read_text()
 assert entry['status'] == 'closed'
 assert entry['verdict']['outcome'] == 'success'
 assert 'reviewer-findings-' not in transcript

@@ -86,17 +86,13 @@ data = json.loads(registries[0].read_text())
 entry = next(item for item in data['collabs'] if item['slug'] == 'default-seal')
 assert entry['terminal'] == 'seal', entry
 projection = registries[0].parent / entry['transcriptPath']
-raw = projection.with_name(f'{projection.stem}-raw.md')
 store = projection.with_name(f'{projection.stem}-contributions.json')
 assert projection.exists(), projection
-assert raw.exists(), raw
 assert store.exists(), store
-assert projection.read_text() != raw.read_text()
 issue = next(item for item in data['collabs'] if item['slug'] == 'issue-terminal')
 assert issue['terminal'] == 'issue', issue
 issue_projection = registries[0].parent / issue['transcriptPath']
 assert issue_projection.exists(), issue_projection
-assert issue_projection.with_name(f'{issue_projection.stem}-raw.md').exists()
 assert issue_projection.with_name(f'{issue_projection.stem}-contributions.json').exists()
 assert 'verificationSeal' not in issue, issue
 assert 'verification' not in issue, issue

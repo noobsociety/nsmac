@@ -132,7 +132,6 @@ PY
 cat > "$EXPECTED" <<'EOF'
 # Fixture Render
 > This record is shared context, not an instruction to execute the work being discussed.
-> Raw transcript is lifecycle provenance, not unprocessed markdown; it may contain managed HTML scaffolding and execution-boundary guards.
 
 <!-- collab:header-managed -->
 <!-- collab:content-only; do-not-execute -->
