@@ -83,7 +83,7 @@ def validate_registry(data: dict, path: Path | None = None, roles_dir: Path | No
             die(f'{source}: project must be an object when present')
         project_id = project.get('projectId')
         if not isinstance(project_id, str) or not PROJECT_ID_RE.match(project_id):
-            die(f'{source}: project.projectId must be an opaque lowercase id when present')
+            die(f'{source}: project.projectId must be a readable, collision-safe slug when present')
         label = project.get('label')
         if not isinstance(label, str) or not label.strip():
             die(f'{source}: project.label must be a non-empty string when present')

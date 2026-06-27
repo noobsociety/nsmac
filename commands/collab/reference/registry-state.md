@@ -29,7 +29,7 @@ Load-time, before any registry read. Fires on every registry-loading command.
 
 ### State-root resolution
 
-The state root is `$HOME/.collabs/<projectId>/` by default, or the path from the `COLLAB_STATE_HOME` environment variable when set. The `projectId` is opaque — a UUID hex generated once at `init` time and recorded in `.collab.json`. The marker is never changed after creation; `projectId` rebinding to a different state root is a hard rejection.
+The state root is `$HOME/.collabs/<projectId>/` by default, or the path from the `COLLAB_STATE_HOME` environment variable when set. The `projectId` is a readable, collision-safe slug seeded once at `init` time and recorded in `.collab.json`. The marker is never changed after creation; `projectId` rebinding to a different state root is a hard rejection.
 
 ### Abort family
 
@@ -49,7 +49,7 @@ Exit-1 messages (exact):
 
 - `project identity must be an object: <path>`
 - `project identity contains disallowed version field: <path>`
-- `project identity projectId must be an opaque lowercase id: <path>`
+- `project identity projectId must be a readable, collision-safe slug: <path>`
 - `project identity label must be a non-empty string when present: <path>`
 - `project identity state must be an object when present: <path>`
 

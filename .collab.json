@@ -1,8 +1,10 @@
 {
-  "projectId": "a13dba4ca8714205b217dca31da96eee",
+  "projectId": "dotcursor",
   "label": "dotcursor",
   "state": {
     "mode": "shared",
-    "isolation": "opt-in"
+    "isolation": "opt-in",
+    "previousProjectId": "a13dba4ca8714205b217dca31da96eee",
+    "projectIdMigratedAt": "2026-06-27T21:20:01Z"
   }
 }

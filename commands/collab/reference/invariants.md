@@ -36,7 +36,7 @@ Maintainer check: `git grep -rnP '(?<![A-Za-z0-9_])(mod|pa|pe|tw)(?![A-Za-z0-9_]
 
 **2. Registry as source of truth; transcript as human ledger**
 
-The resolved registry (`$HOME/.collabs/<projectId>/registry.json` by default, or the explicit `--registry` path) is the authoritative source for command state. The transcript (`records/*.md` inside the resolved state root by default) mirrors selected metadata and captures human-readable context. Registry-only mutations — `(collab set)`, `(collab unset)`, moderator removal in `speak-lifecycle-live` — must remain reconcilable against transcript-readable state. No registry write may create state that cannot be explained or confirmed from the transcript.
+The resolved registry (`$HOME/.collabs/<projectId>/registry.json`, where `<projectId>` is a readable, collision-safe slug, by default, or the explicit `--registry` path) is the authoritative source for command state. The transcript (`records/*.md` inside the resolved state root by default) mirrors selected metadata and captures human-readable context. Registry-only mutations — `(collab set)`, `(collab unset)`, moderator removal in `speak-lifecycle-live` — must remain reconcilable against transcript-readable state. No registry write may create state that cannot be explained or confirmed from the transcript.
 
 **3. Phase-transition notices as structured helper output**
 

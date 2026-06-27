@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 import re
-import uuid
+import hashlib
 from pathlib import Path
 
 from commands.collab.engine.dispatch_forms import collab_dispatch
@@ -41,7 +41,7 @@ def read_project_identity(path: Path) -> dict:
         die(f'project identity contains disallowed version field: {path}')
     project_id = data.get('projectId')
     if not isinstance(project_id, str) or not PROJECT_ID_RE.match(project_id):
-        die(f'project identity projectId must be an opaque lowercase id: {path}')
+        die(f'project identity projectId must be a readable, collision-safe slug: {path}')
     label = data.get('label')
     if label is not None and (not isinstance(label, str) or not label.strip()):
         die(f'project identity label must be a non-empty string when present: {path}')
@@ -51,15 +51,74 @@ def read_project_identity(path: Path) -> dict:
     return data
 
 
+def sanitize_project_id_seed(value: str | None) -> str:
+    seed = (value or 'command-project').strip().lower()
+    seed = re.sub(r'[^a-z0-9]+', '-', seed)
+    seed = re.sub(r'-+', '-', seed).strip('-')
+    if not seed:
+        seed = 'command-project'
+    if not seed[0].isalnum():
+        seed = f'project-{seed}'
+    while len(seed) < 8:
+        seed = f'{seed}-project'
+    return seed[:128].strip('-') or 'command-project'
+
+
+def project_collision_suffix(project_root: Path) -> str:
+    """Use a short path hash so collision names stay stable without a central allocation ledger."""
+    resolved = str(project_root.expanduser().resolve())
+    return hashlib.sha256(resolved.encode()).hexdigest()[:8]
+
+
+def _fit_project_id(base: str, suffix: str | None = None, ordinal: int | None = None) -> str:
+    parts = [base]
+    if suffix:
+        parts.append(suffix)
+    if ordinal is not None:
+        parts.append(str(ordinal))
+    reserved = sum(len(part) for part in parts[1:]) + len(parts[1:])
+    head = parts[0][: max(1, 128 - reserved)].strip('-') or 'project'
+    candidate = '-'.join([head, *parts[1:]])
+    while len(candidate) < 8:
+        candidate = f'{candidate}-project'
+    return candidate[:128].strip('-')
+
+
+def project_id_for_project(
+    project_root: Path,
+    label: str | None = None,
+    state_home: Path | None = None,
+    current_project_id: str | None = None,
+) -> str:
+    base = sanitize_project_id_seed(label or project_root.name)
+    home = state_home if state_home is not None else collab_state_home()
+    preferred = _fit_project_id(base)
+    if current_project_id == preferred or not (home / preferred).exists():
+        return preferred
+
+    suffix = project_collision_suffix(project_root)
+    candidate = _fit_project_id(base, suffix)
+    if current_project_id == candidate or not (home / candidate).exists():
+        return candidate
+
+    ordinal = 2
+    while True:
+        candidate = _fit_project_id(base, suffix, ordinal)
+        if current_project_id == candidate or not (home / candidate).exists():
+            return candidate
+        ordinal += 1
+
+
 def write_project_identity(project_root: Path, label: str | None = None) -> dict:
     project_root.mkdir(parents=True, exist_ok=True)
     identity_path = project_root / PROJECT_ID_FILENAME
     if identity_path.exists():
         return read_project_identity(identity_path)
-    project_id = uuid.uuid4().hex
+    project_label = label or project_root.name or 'command-project'
+    project_id = project_id_for_project(project_root, project_label)
     data = {
         'projectId': project_id,
-        'label': label or project_root.name or 'command-project',
+        'label': project_label,
         'state': {
             'mode': 'shared',
             'isolation': 'opt-in',
