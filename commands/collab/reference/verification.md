@@ -1,4 +1,4 @@
-# Completion.verification — Verification semantics reference
+# Completion.verification — verification semantics reference
 
 Standalone reference for `Completion.verification` sub-state semantics. Loaded by `show-policy.md`, `seal-verification.md`, and any contributor needing a non-route description of the reviewer verification loop.
 
@@ -67,7 +67,7 @@ Assessment must emit even when no actionable cause is identifiable: `nullResult:
 
 > **Drift (collab #8):** Authorship-bias disclosure (§4.7, verificationSeal.observedRevision 251, verdict revision 253) — see the commit introducing this note.
 
-> **Drift (collab #10):** `assessment_next_line` (was at `registry.py:4097–4101`) previously emitted `NEXT: Moderator should run (collab set active-phase {target} --force).` for non-success verdicts — the wrong primitive. This document reflects the corrected target behavior (`(collab reopen <restoreTarget>)`); the implementation fix landed in collab #10's platform-engineer scope.
+> **Drift (collab #10):** `assessment_next_line` (was at `registry.py:4097–4101`) previously emitted `NEXT: Moderator should run (collab set active-phase {target} --force).` for non-success verdicts — the wrong primitive. The document reflects the corrected target behavior (`(collab reopen <restoreTarget>)`); the implementation fix landed in collab #10's platform-engineer scope.
 
 ## Round definition
 

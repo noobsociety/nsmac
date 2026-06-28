@@ -12,14 +12,13 @@ import subprocess
 from pathlib import Path
 
 from commands.collab.engine.errors import die
+from commands.collab.engine.transcript_readers import DETAILS_CLOSE_RE, DETAILS_OPEN_RE
 from commands.collab.engine.registry_constants import (
     DELETED_PATH_BLOB,
     DELETED_PATH_MODE,
     FULL_BODY_SUMMARY_LINE,
 )
 
-DETAILS_OPEN_RE = re.compile(r'^<details(?:\s+[^>]*)?>(?:<summary>[^<]*</summary>)?$')
-DETAILS_CLOSE_RE = re.compile(r'^</details>$')
 
 def details_block_end(lines: list[str], start: int, context: str) -> int:
     depth = 1

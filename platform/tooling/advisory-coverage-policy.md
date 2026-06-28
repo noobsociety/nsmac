@@ -1,7 +1,6 @@
-# Advisory Coverage Policy
+# Advisory coverage policy
 
-Documents the hybrid namespace advisory coverage decision and denylist
-extension paths. Policy lists live in
+The hybrid namespace advisory coverage decision and denylist extension paths are documented here. Policy lists live in
 `platform/data/command-advisory-policy.json` and are read by
 `platform/tooling/command-advisories.py` at validation time.
 

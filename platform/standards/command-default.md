@@ -1,4 +1,4 @@
-# Command Default
+# Command default
 
 Surface-wide bare-input policy for command routes. Routes that declare `default=none` on a `required=optional` parameter row cite this file as the governing contract.
 
@@ -26,7 +26,7 @@ Surface-wide bare-input policy for command routes. Routes that declare `default=
   | Required command choice missing | Allowed value set for the missing command |
   | Required flag missing or `default=none` optional omitted | Flag signature and description |
 
-- **Bare-namespace dispatch policy:** A bare namespace dispatch (e.g., `(collab)` with no further tokens) must never silently dispatch to any route, mutating or otherwise. It aborts and emits the command roster for that namespace. This prevents exploratory input from triggering work the caller did not request.
+- **Bare-namespace dispatch policy:** A bare namespace dispatch (e.g., `(collab)` with no further tokens) must never silently dispatch to any route, mutating or otherwise. The dispatch aborts and emits the command roster for that namespace. The policy prevents exploratory input from triggering work the caller did not request.
 
 - **Consistency requirement:** All three input shapes follow the same rule. There are no per-route exceptions to abort-on-empty; only the content of the contextual help differs by input shape.
 

@@ -8,7 +8,6 @@ python3 - "$@" <<'PY'
 from __future__ import annotations
 
 import argparse
-import hashlib
 import re
 import sys
 from dataclasses import dataclass
@@ -16,39 +15,7 @@ from pathlib import Path
 
 COLLAB_COMMAND_ROOT = Path("commands/collab")
 
-# Accepted-debt decision — 2026-06-08 (tooling-contracts collab, tw)
-#
-# The 8 routes below have anchored ABORT clauses (structural P9 requirement met) but
-# no corresponding test files. The gate warns instead of enforcing for these routes.
-#
-# Why deferred: each route requires non-trivial registry-state fixtures to exercise its
-# failure modes meaningfully. Writing those fixtures is a focused test-authoring task
-# that exceeds the scope of the tooling-contracts collab, which targeted the paved-path
-# and contract-surface gaps.
-#
-#   diff             — display-only; ABORT paths need registry state stubs
-#   export-issues    — issue-terminal export; needs populated registry + transcript fixtures
-#   log              — audit log display; needs multi-entry registry state
-#   participant-verify — 3-turn lifecycle; significant registry orchestration required
-#   reopen           — lifecycle restore; needs seal + verdict state preconditions
-#   seal-verification — reviewer seal; needs full participant-verification preconditions
-#   show-verdict     — display-only; needs verdict + seal state
-#   status           — display-only; needs varied phase/status state
-#
-# Burn-down trigger: open a dedicated coverage-test-authoring collab when any of the
-# following fires — (1) a new collab explicitly scopes P9 test authoring for these
-# routes, (2) DISCOVERY_DEBT_ROUTE_FILES grows beyond 10 entries, or (3) a test
-# suite regression surfaces in one of these routes during another collab.
-DISCOVERY_DEBT_ROUTE_FILES = {
-    "commands/collab/diff/index.md",
-    "commands/collab/export-issues/index.md",
-    "commands/collab/log/index.md",
-    "commands/collab/participant-verify/index.md",
-    "commands/collab/reopen/index.md",
-    "commands/collab/seal-verification/index.md",
-    "commands/collab/show-verdict/index.md",
-    "commands/collab/status/index.md",
-}
+# Migration provenance: see platform/tooling/coverage-gate-migration.md.
 
 
 @dataclass(frozen=True)
@@ -60,27 +27,15 @@ class AbortClause:
     honor_system: bool
 
     @property
-    def fingerprint(self) -> str:
-        digest = hashlib.sha1(self.text.strip().encode("utf-8")).hexdigest()[:12]
-        return f"{self.path}:{self.line_number}|{digest}"
-
-    @property
-    def path_fingerprint(self) -> str:
-        digest = hashlib.sha1(self.text.strip().encode("utf-8")).hexdigest()[:12]
-        return f"{self.path}|{digest}"
-
-    @property
     def location(self) -> str:
         return f"{self.path}:{self.line_number}"
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Check P9-required collab abort coverage.")
+    parser = argparse.ArgumentParser(description="Check public collab ABORT coverage.")
     parser.add_argument("--routes-dir", default=".", help="Root directory containing route files.")
     parser.add_argument("--tests-dir", default="tests/commands/collab/registry.py", help="Directory containing P9 abort tests.")
-    parser.add_argument("--allowlist", default="platform/tooling/coverage-gate-allowlist.txt", help="Current migration allowlist.")
     parser.add_argument("--route-file", action="append", default=[], help="Route file to scan, relative to routes-dir. Repeatable.")
-    parser.add_argument("--print-unanchored-allowlist", action="store_true", help="Print allowlist entries for current unanchored ABORT clauses.")
     return parser.parse_args()
 
 
@@ -115,30 +70,6 @@ def route_subcommand(path: str) -> str:
     if path.endswith("/index.md"):
         return Path(path).parent.name
     return Path(path).stem
-
-
-def load_allowlist(path: Path) -> set[str]:
-    if not path.exists():
-        return set()
-    entries: set[str] = set()
-    for raw in path.read_text().splitlines():
-        line = raw.strip()
-        if not line or line.startswith("#"):
-            continue
-        entries.add(line)
-    return entries
-
-
-def allowlist_path_fingerprints(entries: set[str]) -> set[str]:
-    values: set[str] = set()
-    for entry in entries:
-        if "|" not in entry:
-            continue
-        location, digest = entry.rsplit("|", 1)
-        rel = location.rsplit(":", 1)[0]
-        if rel and digest:
-            values.add(f"{rel}|{digest}")
-    return values
 
 
 def anchor_for_previous_line(lines: list[str], index: int) -> str | None:
@@ -194,22 +125,33 @@ def existing_test_stems(path: Path) -> set[str]:
     return {item.name.removesuffix(".test.sh") for item in path.glob("*.test.sh")}
 
 
+def central_checker_test_stems(root: Path, inventory_path: Path) -> set[str]:
+    if not inventory_path.exists():
+        return set()
+    stems: set[str] = set()
+    row_re = re.compile(
+        r"^\| `registry\.py/(?P<stem>[^`]+)\.test\.sh` \(removed; consolidated\) "
+        r"\| [^|]+ \| central-checker: `(?P<checker>[^`]+)` \|"
+    )
+    for raw in inventory_path.read_text().splitlines():
+        match = row_re.match(raw)
+        if not match:
+            continue
+        checker = root / match.group("checker")
+        if checker.exists():
+            stems.add(match.group("stem"))
+    return stems
+
+
 def main() -> int:
     args = parse_args()
     root = Path(args.routes_dir)
-    allowlist_path = Path(args.allowlist)
     tests_dir = Path(args.tests_dir)
     files = route_files(args, root)
     if not files:
         print("coverage-gate: no public collab route files discovered", file=sys.stderr)
         return 1
     clauses = scan_abort_clauses(root, files)
-
-    if args.print_unanchored_allowlist:
-        for clause in clauses:
-            if clause.anchor is None:
-                print(clause.fingerprint)
-        return 0
 
     if not clauses:
         print(
@@ -218,25 +160,14 @@ def main() -> int:
         )
         return 1
 
-    allowlist = load_allowlist(allowlist_path)
-    allowlist_paths = allowlist_path_fingerprints(allowlist)
-    discovered = existing_test_stems(tests_dir)
+    discovered = existing_test_stems(tests_dir) | central_checker_test_stems(root, root / "tests/specs/tests.md")
     required: list[str] = []
     errors: list[str] = []
-    allowlisted_unanchored = 0
-    discovery_debt_unanchored = 0
-    discovery_debt_required: set[str] = set()
 
     for clause in clauses:
         if clause.anchor is None:
-            if clause.path in DISCOVERY_DEBT_ROUTE_FILES:
-                discovery_debt_unanchored += 1
-                continue
-            if clause.fingerprint in allowlist or clause.path_fingerprint in allowlist_paths:
-                allowlisted_unanchored += 1
-                continue
             errors.append(
-                f"unanchored ABORT outside allowlist: {clause.location}; "
+                f"unanchored ABORT: {clause.location}; "
                 f"add `<!-- abort: <stable-id> -->` immediately above it"
             )
             continue
@@ -249,18 +180,16 @@ def main() -> int:
             continue
         if clause.honor_system:
             continue
-        if clause.path in DISCOVERY_DEBT_ROUTE_FILES:
-            discovery_debt_required.add(clause.anchor)
         required.append(clause.anchor)
 
-    missing = sorted((set(required) - discovered) - discovery_debt_required)
+    missing = sorted(set(required) - discovered)
     if missing:
         errors.append("missing P9-required tests:")
         for stem in missing:
             errors.append(f"  expected {tests_dir}/{stem}.test.sh")
 
     if errors:
-        print("coverage-gate: P9-required-only check failed", file=sys.stderr)
+        print("coverage-gate: abort coverage check failed", file=sys.stderr)
         print("required pairs:", file=sys.stderr)
         for stem in sorted(set(required)):
             print(f"  {stem}", file=sys.stderr)
@@ -272,21 +201,9 @@ def main() -> int:
         return 1
 
     print(
-        "coverage-gate: P9-required-only check passed; "
+        "coverage-gate: abort coverage check passed; "
         f"{len(set(required))} required pair(s), {len(discovered)} discovered test(s)."
     )
-    if allowlisted_unanchored:
-        print(
-            "coverage-gate: migration debt remains; "
-            f"{allowlisted_unanchored} allowlisted unanchored ABORT clause(s) "
-            "are not counted as required pairs yet."
-        )
-    if discovery_debt_unanchored or discovery_debt_required:
-        print(
-            "coverage-gate: discovery migration debt remains; "
-            f"{discovery_debt_unanchored} unanchored ABORT clause(s) and "
-            f"{len(discovery_debt_required)} anchored required pair(s) are discovered but deferred."
-        )
     print("coverage-gate: extra tests beyond the required set are ignored.")
     return 0
 

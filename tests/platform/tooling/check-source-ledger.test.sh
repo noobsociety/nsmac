@@ -93,4 +93,28 @@ if ! grep -Fq "retired substrate trace: _mdc/auto/untracked.mdc" "$TMPDIR/undecl
   exit 1
 fi
 
+empty="$TMPDIR/empty"
+mkdir -p "$empty/platform/data" "$empty/commands/demo/use"
+cat >"$empty/platform/data/source-ledger.md" <<'MD'
+# Source Ledger
+
+| Source path | Normative essence | Destination owner | Load contract | Validation check | Delete condition |
+|---|---|---|---|---|---|
+MD
+printf 'legacy alwaysApply trace\n' >"$empty/commands/demo/use/index.md"
+set +e
+"$ROOT/platform/tooling/check-source-ledger.py" --check --root "$empty" >"$TMPDIR/empty.out" 2>&1
+status=$?
+set -e
+
+if [[ "$status" -eq 0 ]]; then
+  printf 'FAIL: expected empty-ledger retired trace fixture to fail\n' >&2
+  exit 1
+fi
+if ! grep -Fq "retired substrate trace: alwaysApply" "$TMPDIR/empty.out"; then
+  printf 'FAIL: empty-ledger retired trace output mismatch\n' >&2
+  cat "$TMPDIR/empty.out" >&2
+  exit 1
+fi
+
 printf 'OK: source ledger audit detects dependency drift\n'

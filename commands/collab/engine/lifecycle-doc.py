@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from commands.collab.engine.registry import (  # noqa: E402
+from commands.collab.engine.registry_constants import (  # noqa: E402
     ALLOWED_COMPLETION_SUBSTATES,
     AUTO_ADVANCE_EXEMPT_PHASES,
     CONVERGENT_REVIEWER_PHASES,

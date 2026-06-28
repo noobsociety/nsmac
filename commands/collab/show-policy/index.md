@@ -14,12 +14,12 @@ Document the gate policy that decides when a collaboration needs a reviewer judg
 3. Resolve the reviewer from registry `reviewerRole` when set; otherwise apply the **Reviewer fallback** in **Notes**.
 4. If a trigger fires and no safe assignee exists, pause the collab as gate-blocked instead of advancing.
 5. Do not mutate registry state from this documentation-only route.
-6. To list available joinable roles, call `commands/collab/engine/registry.py roles` from the repository root. This reads every file under `commands/collab/reference/roles/` and outputs one participant-row per role.
+6. To list available joinable roles, call `commands/collab/engine/registry.py roles` from the repository root. `registry.py roles` reads every file under `commands/collab/reference/roles/` and outputs one participant-row per role.
 
 ## Notes
 
 - **Parameters:** no arguments are accepted.
-- **Documentation-only status:** This route documents policy and lists roles. It does not mutate registry state. No machine-readable registry field exists for gate assignment in this version. The future field name is `reviewer`.
+- **Documentation-only status:** The route documents policy and lists roles. The route does not mutate registry state. No machine-readable registry field exists for gate assignment in this version. The future field name is `reviewer`.
 - **Gate policy:** A gate policy separates durable trigger conditions from the role assigned to close the gate.
 - **Gate triggers:** Any one condition fires the gate: all non-reviewer, non-moderator participants complete one full exchange without convergence; those participants converge but change Audit framing; the direction creates notable cost, migration, or maintenance risk not present in Audit; the moderator explicitly requests a judgment pass.
 - **Reviewer:** Set the reviewer at collab initialization or roster setup using `(collab set reviewer <role>)`. Do not reassign mid-collab.
@@ -61,9 +61,9 @@ These items were previously deferred here and later implemented or superseded. T
 
 | Item | Resolution provenance |
 |---|---|
-| Join/speak registry + transcript transaction | Resolved by `commands/collab/engine/registry.py` `commit_registry_and_transcript`, which writes registry and transcript together with rollback on known write failures; covered by `tests/commands/collab/registry.py/registry.py__validates_registry_flows.test.sh` for `speak-render` and `join-participants` persistence. |
-| Participant-table render helper | Resolved by `commands/collab/engine/registry.py render-participants` and `join-participants`; covered by `tests/commands/collab/registry.py/registry.py__validates_registry_flows.test.sh` assertions that stale participant rows are replaced from registry state. |
-| Tombstone-style contribution retract | Resolved by `commands/collab/engine/registry.py retract-speak`; covered by `tests/commands/collab/registry.py/registry.py__enforces_speak_contracts.test.sh` assertions that the tombstone is written, original content is retained, and retract is rejected after Completion. |
+| Join/speak registry + transcript transaction | Resolved by `commands/collab/engine/registry.py` `commit_registry_and_transcript`, which writes registry and transcript together with rollback on known write failures. Provenance only — the helper resolution is the record; no executable test asserts the rollback path. |
+| Participant-table render helper | Resolved by `commands/collab/engine/registry.py render-participants` and `join-participants`, which rebuild participant rows from registry state. Provenance only — no executable test asserts the render-participants stale-row replacement in isolation. |
+| Tombstone-style contribution retract | Resolved by `commands/collab/engine/registry.py retract-speak`; exercised by `tests/commands/collab/registry.py/full-body-block-flow.test.sh`, which asserts the tombstone is written and the original content is retained. |
 
 **Deferred structural items (trigger-based backlog):**
 

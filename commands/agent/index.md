@@ -1,6 +1,6 @@
 # (agent)
 
-Route multi-agent scaffold workflows through one public command router.
+Route multi-agent scaffold workflows through one namespace.
 
 ## Trigger
 

@@ -1,6 +1,6 @@
-# Collab Phase Admissibility
+# Collab phase admissibility
 
-This table defines which commands are admitted in each phase and which roles may invoke them. Within each admitted cell, commands are listed in invocation order.
+The table defines which commands are admitted in each phase and which roles may invoke them. Within each admitted cell, commands are listed in invocation order.
 
 ## Trigger
 

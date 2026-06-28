@@ -13,7 +13,7 @@
 
 ## Notes
 
-Defines the required output lines per collab helper command, advisory line ordering, and exit-code semantics. Authoritative for platform-engineer role audits under item #5.
+The document defines the required output lines per collab helper command, advisory line ordering, and exit-code semantics. The definitions are authoritative for platform-engineer role audits under item #5.
 
 ## Exit codes
 
@@ -518,7 +518,7 @@ Maps each documented `## Abort families` module family to its implementing subco
 | `init` | `init` | `init_collab()`, `parse_init_tokens()` |
 | `contribution-budget` | `speak-render`, `rewrite-speak-render` | `enforce_contribution_budget()`, `read_budget_spec()` |
 | `command-default` | all commands | `load_registry()`, `resolve_config_root()` |
-| `participant-role-files` | all registry-loading commands | `validate_registry()`, `validate_participant_role_files()` |
+| `participant-role-files` | all registry-loading commands | `registry_validation.validate_registry()`, `validate_participant_role_files()` |
 | `planned-route-gates` | `validate` | `validate_planned_route_prerequisites()` in `commands/collab/engine/planned_routes.py` |
 
 **How to diff:** For each module row, open the named key function(s) in `registry.py` or the named helper module and compare its `die()` / `sys.exit(1)` call strings against the exit-1 messages listed in the corresponding `## Abort families` module section above. Any string present in one but absent in the other is a spec-drift candidate.

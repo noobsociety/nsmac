@@ -10,7 +10,6 @@ from pathlib import Path
 
 DEFAULT_CONFIG_ROOT = Path(os.environ.get('COMMAND_CONFIG_ROOT', '.')).expanduser()
 DEFAULT_ROLES_DIR = DEFAULT_CONFIG_ROOT / 'commands/collab/reference/roles'
-DEFAULT_PROJECTORS_DIR = DEFAULT_CONFIG_ROOT / 'commands/collab/reference/projectors'
 
 
 def die(message: str) -> None:
@@ -47,22 +46,6 @@ def load_role(roles_dir: Path, role: str) -> dict:
     except json.JSONDecodeError as exc:
         die(f'role invalid JSON: {path}: {exc}')
     validate_role_data(data, role, str(path))
-    return data
-
-
-def projectors_dir_for_roles(roles_dir: Path) -> Path:
-    return roles_dir.parent / 'projectors'
-
-
-def load_projector(projectors_dir: Path, projector: str) -> dict:
-    path = projectors_dir / f'{projector}.json'
-    if not path.exists():
-        die(f'projector missing: {path}')
-    try:
-        data = json.loads(path.read_text())
-    except json.JSONDecodeError as exc:
-        die(f'projector invalid JSON: {path}: {exc}')
-    validate_role_data(data, projector, str(path))
     return data
 
 

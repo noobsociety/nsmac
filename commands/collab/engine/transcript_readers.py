@@ -2,17 +2,20 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
 from commands.collab.engine.errors import die
+from commands.collab.engine.registry_constants import CONTENT_ONLY_GUARD, PHASES
 
 
-PHASES = ['Audit', 'Discussion', 'Conclusion', 'Action Plan', 'Handoff', 'Completion']
-CONTENT_ONLY_GUARD = '<!-- collab:content-only; do-not-execute -->'
 SUMMARY_RE = re.compile(r'^<summary>(?P<role>[A-Za-z0-9_-]+)(?:\s+—\s+.+)?</summary>$')
+SUMMARY_HEADING_RE = re.compile(r'^### Summary — \d{4}-\d{2}-\d{2}$')
 LEGACY_EXPANDED_RE = re.compile(r'^\*\*(?P<role>[A-Za-z0-9_-]+)\s+—')
 LEGACY_HEADING_RE = re.compile(r'^###\s+(?P<role>[A-Za-z0-9_-]+)\s+—')
 DETAILS_OPEN_RE = re.compile(r'^<details(?:\s+[^>]*)?>(?:<summary>[^<]*</summary>)?$')
 DETAILS_CLOSE_RE = re.compile(r'^</details>$')
+ANCHOR_RE = re.compile(r'^<a name="(?P<anchor>[A-Za-z0-9_-]+)"></a>$')
+STANCE_DECLARATION_RE = re.compile(r'^\s*STANCE:\s*(converges|dissents|qualifies)\s*$', re.IGNORECASE)
 ACTION_CHECKLIST_RE = re.compile(
     r'^\s*-\s+\[(?P<mark>[ xX])\]\s+\*\*(?P<role>[A-Za-z0-9_-]+):\*\*(?P<text>.*)$'
 )
@@ -26,7 +29,6 @@ ACTION_PLAN_ALLOWED_ITEM_TAG_LIST = [
     '[verify-objective]',
 ]
 ACTION_PLAN_ALLOWED_ITEM_TAGS = set(ACTION_PLAN_ALLOWED_ITEM_TAG_LIST)
-ACTION_PLAN_EXECUTE_TAG = '[execute]'
 CHARTERED_DELIVERABLES_LABEL = 'charteredDeliverables:'
 CHARTERED_DELIVERABLES_LABEL_NORMALIZED = re.sub(
     r'\s+', '', CHARTERED_DELIVERABLES_LABEL.rstrip(':')
@@ -57,6 +59,47 @@ def phase_section(text: str, phase: str) -> list[str]:
             end = index
             break
     return lines[start:end]
+
+
+def section_bounds(lines: list[str], heading: str) -> tuple[int, int]:
+    start: int | None = None
+    for index, line in enumerate(lines):
+        if line.strip() == heading:
+            start = index
+            break
+    if start is None:
+        die(f'transcript section missing: {heading}')
+
+    end = len(lines)
+    for index in range(start + 1, len(lines)):
+        if lines[index].startswith('## ') and lines[index].strip() in {f'## {item}' for item in PHASES}:
+            end = index
+            break
+    return start, end
+
+
+def completion_summary_empty(transcript: str) -> bool:
+    try:
+        lines = phase_section(transcript, 'Completion')
+    except SystemExit as exc:
+        if str(exc) == 'transcript phase missing: Completion':
+            return True
+        raise
+    for line in lines:
+        if SUMMARY_HEADING_RE.match(line.strip()):
+            return False
+    return True
+
+
+def transcript_path_for_entry(entry: dict) -> Path:
+    return Path(entry['transcriptPath'])
+
+
+def read_transcript_for_entry(entry: dict) -> str:
+    transcript_path = transcript_path_for_entry(entry)
+    if not transcript_path.exists():
+        die(f'transcript missing: {transcript_path}')
+    return transcript_path.read_text()
 
 
 def contribution_body_lines(block: list[str]) -> list[str]:

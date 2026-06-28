@@ -7,15 +7,12 @@ trap 'rm -rf "$TMPDIR"' EXIT
 
 routes="$TMPDIR/routes"
 tests_dir="$TMPDIR/tests/commands/collab/registry.py"
-allowlist="$TMPDIR/coverage-gate-allowlist.txt"
 mkdir -p "$routes/commands/collab/sample" "$tests_dir"
-touch "$allowlist"
 
 run_gate() {
   "$ROOT/platform/tooling/coverage-gate.sh" \
     --routes-dir "$routes" \
     --tests-dir "$tests_dir" \
-    --allowlist "$allowlist" \
     --route-file commands/collab/sample/index.md "$@"
 }
 
@@ -28,7 +25,7 @@ MD
 touch "$tests_dir/sample-missing-input.test.sh"
 run_gate >"$TMPDIR/pass.out"
 
-if ! grep -Fq "P9-required-only check passed" "$TMPDIR/pass.out"; then
+if ! grep -Fq "abort coverage check passed" "$TMPDIR/pass.out"; then
   printf 'FAIL: expected passing fixture output\n' >&2
   cat "$TMPDIR/pass.out" >&2
   exit 1
@@ -96,22 +93,53 @@ status=$?
 set -e
 
 if [[ "$status" -eq 0 ]]; then
-  printf 'FAIL: unanchored ABORT passed without allowlist\n' >&2
+  printf 'FAIL: unanchored ABORT passed without anchor\n' >&2
   exit 1
 fi
 
-if ! grep -Fq "unanchored ABORT outside allowlist" "$TMPDIR/unanchored.out"; then
+if ! grep -Fq "unanchored ABORT" "$TMPDIR/unanchored.out"; then
   printf 'FAIL: unanchored output did not name failure\n' >&2
   cat "$TMPDIR/unanchored.out" >&2
   exit 1
 fi
 
-run_gate --print-unanchored-allowlist >"$allowlist"
-run_gate >"$TMPDIR/allowlisted.out"
+cat >"$routes/commands/collab/sample/index.md" <<'MD'
+# sample route
 
-if ! grep -Fq "migration debt remains; 1 allowlisted unanchored ABORT clause(s)" "$TMPDIR/allowlisted.out"; then
-  printf 'FAIL: allowlisted pass output did not report migration debt\n' >&2
-  cat "$TMPDIR/allowlisted.out" >&2
+<!-- abort: sample-restored -->
+1. If input is missing, **ABORT**: input required.
+MD
+touch "$tests_dir/sample-restored.test.sh"
+
+set +e
+run_gate --allowlist "$TMPDIR/retired-allowlist.txt" >"$TMPDIR/allowlist-arg.out" 2>&1
+status=$?
+set -e
+
+if [[ "$status" -eq 0 ]]; then
+  printf 'FAIL: retired --allowlist argument passed\n' >&2
+  exit 1
+fi
+
+if ! grep -Fq "unrecognized arguments: --allowlist" "$TMPDIR/allowlist-arg.out"; then
+  printf 'FAIL: retired --allowlist argument was not rejected by argparse\n' >&2
+  cat "$TMPDIR/allowlist-arg.out" >&2
+  exit 1
+fi
+
+set +e
+run_gate --print-unanchored-allowlist >"$TMPDIR/print-allowlist.out" 2>&1
+status=$?
+set -e
+
+if [[ "$status" -eq 0 ]]; then
+  printf 'FAIL: retired --print-unanchored-allowlist argument passed\n' >&2
+  exit 1
+fi
+
+if ! grep -Fq "unrecognized arguments: --print-unanchored-allowlist" "$TMPDIR/print-allowlist.out"; then
+  printf 'FAIL: retired --print-unanchored-allowlist argument was not rejected\n' >&2
+  cat "$TMPDIR/print-allowlist.out" >&2
   exit 1
 fi
 

@@ -7,6 +7,7 @@
   "namespaceCoverageExemptions": {
     "doc": "Documentation rewrite routes are artifact-specific and intentionally exempt from caller recommendations.",
     "git": "Git workflow routes depend on repository and issue state, so caller recommendations remain policy-exempt.",
+    "help": "Route lookup renders existing playbooks as a thin pass-through; no capability or effort tier applies.",
     "test": "Test harness dispatch is a maintainer QA surface and remains policy-exempt from caller recommendations."
   },
   "modelOrHarnessLeakageTerms": [

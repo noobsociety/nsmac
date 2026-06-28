@@ -117,6 +117,12 @@
       "rationale": "Permanently removes the collab record and registry entry."
     },
     {
+      "route": "diff",
+      "capabilityTier": "transformation",
+      "effortTier": "medium",
+      "rationale": "Read-only drift comparison across registry header metadata, transcript contribution content, and sealed path digests."
+    },
+    {
       "route": "write summary",
       "capabilityTier": "composition",
       "effortTier": "high",
@@ -187,12 +193,6 @@
       "capabilityTier": "transformation",
       "effortTier": "low",
       "rationale": "Reads registry state and displays the current workflow state of the resolved collab."
-    },
-    {
-      "route": "diff",
-      "capabilityTier": "transformation",
-      "effortTier": "low",
-      "rationale": "Compares registry-derived content state against the content-only transcript sections."
     }
   ]
 }

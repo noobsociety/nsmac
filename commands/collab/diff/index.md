@@ -1,26 +1,70 @@
 # (collab diff)
 
-Show the diff between the registry-derived content state and the content-only sections of a collaboration transcript. The managed header — everything from the start of the file up to and including `<!-- collab:header-managed -->` — is excluded from the comparison; only the content below that boundary is compared.
+Compare the current state of a collaboration record against its last recorded registry snapshot — scaffold-stripped — and surface drift across three axes: registry/transcript metadata, scaffold-stripped transcript content, and `verificationSeal.pathDigests` versus current `HEAD`. The output is advisory; it does not modify registry state or transcript content.
 
 ## Trigger
 
 **Dispatch:** `(collab diff [<target>])` — routing-only command form; not a shell command.
-**Search phrases:** collab diff, transcript diff, content diff, registry transcript comparison
+**Search phrases:** collab diff, content drift, registry transcript diff, stale seal, seal drift, transcript content mismatch
 
 ## Steps
 
 1. Read [invariants.md](../../../commands/collab/reference/invariants.md) before executing; call the relevant helper fresh and do not trust prior reads from conversation context (Invariant #4). Resolve the target collab with **Registry targeting** in **Notes**.
-2. Call `commands/collab/engine/registry.py diff <target>`.
+2. Call `commands/collab/engine/registry.py diff [<target>]`.
 3. Display the helper output exactly. Stop.
 
 ## Notes
 
 - **Parameters:** target collab slug, id, or numeric `#N` as the first token after `diff`; when absent, resolved per **Registry targeting** in **Notes**.
+<!-- abort: diff-registry-target -->
 - **Registry targeting:** Resolve the target collab from the resolved registry, using `commands/collab/engine/registry.py` as the shared helper. When the first token after the route is present, treat it as a collab slug, id, or stable numeric position. Otherwise use `activeCollabId`. If the registry is unreadable or invalid, the token does not match any entry, or `activeCollabId` is empty, **ABORT**: registry target unavailable; name the registry field or token.
-- **Content boundary:** The `<!-- collab:header-managed -->` comment marks the boundary between the managed header and the content-only body. Everything from the start of the transcript file through `<!-- collab:header-managed -->` is managed by the helper (`render_managed_header_text`) and is excluded from the diff. The comparison starts at the first line after `<!-- collab:header-managed -->`. Do not include the managed header, TOC, generated participant tables, or lifecycle projection fields in the diff output.
-- **Comparison model:** The diff compares a normalized projection of registry-derived content (what the registry says the transcript should contain) against the actual content-only sections of the transcript file on disk. The projection function extracts content sections without rebuilding managed fields from scratch; this avoids over-reporting header churn as a diff.
-- **No-diff output:** When the registry-derived content and the on-disk content-only sections match, the helper reports `no diff` and exits cleanly.
-- **Read-only:** This route does not mutate registry state or transcript text.
+- **What diff ignores (scaffold and ledger categories):** The helper strips or normalizes the following before comparing transcript content. This enumeration must exactly match `diff.ignored_scaffold_category_names()`; `test_diff_scaffold_categories` extracts these bullet titles and asserts doc<->helper set equality. Each predicate the helper composes must map to at least one named category, so a new stripped line-type cannot stay unnamed. The guard catches "a category with no predicate" and "a predicate row with no category"; a new strip step added inside `scaffold_stripped_text` that bypasses the category map would not be detected — fully closing that gap requires behavioral corpus enumeration of what the predicate chain actually drops.
+  - **Contribution timestamp wrappers** — `<p><em>…</em></p>` lines rendered per contribution block.
+  - **Content-only guards** — `<!-- collab:content-only; do-not-execute -->` lines.
+  - **Effort-override banners** — `<!-- collab:effort-override b64:…​ -->` base64 comment lines.
+  - **Full-contribution collapsible blocks** — `<details>` blocks whose first inner line is `<summary>Full contribution</summary>`; stripped by `strip_managed_full_body_lines` in `digests.py`.
+  - **Managed header block** — the `<!-- collab:header-managed -->` through `<!-- collab:header-end -->` section (status table, participants table, prohibitions, reviewer note, table of contents, separator).
+  - **Revision-history collapsible blocks** — managed `<details><summary>Revision history</summary>` blocks added by contribution rewrites.
+  - **Action Plan checkbox state** — `[ ]` versus `[x]` checklist state changes; item text remains content.
+- **False authority:** diff output is advisory; registry state remains authoritative.
+- **Advisory-output contract:** `(collab diff)` reads and compares; it emits display output only. No registry write, no transcript mutation, no phase change. Running it during any phase or sub-state is safe.
+- **Three output axes:** The helper distinguishes:
+  1. **Seal drift** — `verificationSeal.pathDigests` recorded blob/mode versus current `HEAD` for each touched path; path-level rows with recorded blob, current blob, mode, and missing/deleted status (F3).
+  2. **Content mismatch** — scaffold-stripped transcript contribution text differs from the per-contribution baseline recorded in `<transcript-stem>-contributions.json` (written by the speak path). When no store exists yet, every current contribution surfaces as "added" (F1).
+  3. **Metadata mismatch** — registry field values differ from what the transcript header mirrors (F2).
+- **Read-only:** The route does not mutate registry state or transcript text.
+
+## Examples
+
+### F3 scenario — stale seal after a post-seal commit
+
+A `verificationSeal` was recorded at revision 18 for `collab-render-seal-facade-boundary`. A subsequent commit updated a touched path. The seal was silently invalidated; without `(collab diff)`, the reviewer's only recovery was raw git plumbing (`git cat-file`, `rev-parse`) against the registry's recorded `pathDigests`. `(collab diff)` closes this gap.
+
+Running `(collab diff collab-render-seal-facade-boundary)` after the post-seal commit:
+
+```
+seal drift (1 path):
+  commands/collab/engine/transcript_render.py
+    recorded blob: a3f8c1d…  mode: 100644
+    current  blob: 7b2e09f…  mode: 100644
+
+content mismatch (0 contributions):
+  (none)
+
+metadata mismatch (0 fields):
+  (none)
+```
+
+The recorded blob matches the digest in `verificationSeal.pathDigests`; the current blob reflects the post-seal commit. The reviewer sees exactly what drifted before re-running the seal, instead of reconstructing it from raw git plumbing.
+
+**Deleted-path variant:** If a touched path is deleted after the seal:
+
+```
+seal drift (1 path):
+  commands/collab/engine/transcript_render.py
+    recorded blob: a3f8c1d…  mode: 100644
+    current  blob: (deleted)  mode: 000000
+```
 
 ```route-arg
 dispatch: (collab diff [<target>])

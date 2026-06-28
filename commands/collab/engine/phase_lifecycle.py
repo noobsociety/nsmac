@@ -4,9 +4,34 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
+from dataclasses import dataclass
+from pathlib import Path
 
 from commands.collab.engine.dispatch_forms import collab_dispatch
-from commands.collab.engine.registry_constants import PHASES
+from commands.collab.engine.errors import die
+from commands.collab.engine.contribution_validation import validate_action_plan_executable_scope
+from commands.collab.engine.participants import (
+    assert_caller_role,
+    normalize_turn_order_for_phase,
+    remove_moderator_from_turn_order,
+)
+from commands.collab.engine.registry_constants import MOD_EXCLUDED_PHASES, PHASES
+from commands.collab.engine.registry_io import load_registry, registry_lock, resolve_collab
+from commands.collab.engine.transcript_readers import transcript_path_for_entry
+
+
+@dataclass(frozen=True)
+class PhaseLifecycleCallbacks:
+    seal_terminal: Callable[[dict], bool]
+    initialize_completion_state: Callable[..., None]
+    invalidate_verification_seal: Callable[[dict, str], None]
+    render_managed_header_text: Callable[[str, dict, Path], tuple[str, bool]]
+    add_completion_summary_notice: Callable[[dict | None, str], dict | None]
+    print_header_overwrite: Callable[[bool], None]
+    commit_registry_and_transcript: Callable[[Path, dict, Path, str], None]
+    print_post_action_advisories: Callable[[dict, str | None, str | None, dict | None, str], None]
+    next_line_for_state: Callable[[dict], str]
 
 def next_phase_name(phase: str) -> str | None:
     index = PHASES.index(phase)
@@ -89,3 +114,61 @@ def print_lifecycle_diagnostic(lifecycle: dict, emit_json: bool) -> None:
 def print_phase_result(phase: str, notice: dict | None = None, emit_json: bool = True) -> None:
     print(phase)
     print_notice_diagnostic(notice, emit_json)
+
+
+def advance_phase_state(
+    path: Path,
+    target: str,
+    direction: str,
+    callbacks: PhaseLifecycleCallbacks,
+    roles_dir: Path,
+    emit_json: bool = False,
+    caller_role: str | None = None,
+) -> int:
+    with registry_lock(path):
+        data = load_registry(path)
+        entry = resolve_collab(data, target)
+        assert_caller_role(entry, caller_role, 'advance' if direction == 'next' else 'restore')
+        if entry['status'] in {'closed', 'archived'}:
+            die('record is closed')
+        active_phase = entry.get('activePhase')
+        if active_phase not in PHASES:
+            die('active phase missing in metadata')
+        index = PHASES.index(active_phase)
+        from_phase = active_phase
+        transcript_path = transcript_path_for_entry(entry)
+        if not transcript_path.exists():
+            die(f'transcript missing: {transcript_path}')
+        transcript = transcript_path.read_text()
+        if direction == 'next':
+            if index == len(PHASES) - 1:
+                die('no next phase')
+            if from_phase == 'Action Plan':
+                validate_action_plan_executable_scope(transcript)
+            entry['activePhase'] = PHASES[index + 1]
+            if entry['activePhase'] in MOD_EXCLUDED_PHASES:
+                remove_moderator_from_turn_order(entry)
+            if entry['activePhase'] == 'Completion' and callbacks.seal_terminal(entry):
+                callbacks.initialize_completion_state(entry, 'execution', reset_rounds=True, scope_aware=True)
+        else:
+            if index == 0:
+                die('no previous phase')
+            entry['activePhase'] = PHASES[index - 1]
+            normalize_turn_order_for_phase(entry, entry['activePhase'])
+            if entry['activePhase'] != 'Completion':
+                callbacks.invalidate_verification_seal(entry, f'restored to {entry["activePhase"]}')
+
+        notice = transition_notice(from_phase, entry['activePhase'])
+        rendered, header_changed = callbacks.render_managed_header_text(transcript, entry, roles_dir)
+        notice = callbacks.add_completion_summary_notice(notice, rendered)
+        callbacks.print_header_overwrite(header_changed)
+        callbacks.commit_registry_and_transcript(path, data, transcript_path, rendered)
+    callbacks.print_post_action_advisories(
+        entry,
+        None,
+        None,
+        notice,
+        callbacks.next_line_for_state(entry),
+    )
+    print_phase_result(entry['activePhase'], notice, emit_json)
+    return 0

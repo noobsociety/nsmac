@@ -10,8 +10,11 @@ Clear scoped collab metadata fields that have explicit empty-state semantics.
 ## Steps
 
 1. Read [invariants.md](../../../commands/collab/reference/invariants.md) before executing; call the relevant helper fresh and do not trust prior reads from conversation context (Invariant #4). Resolve the target collab with **Registry targeting** in **Notes**.
+<!-- abort: unset-field-required -->
 2. Resolve `<field>` from the next positional token after `unset`. If missing, **ABORT**: `<field>` is required.
+<!-- abort: unset-record-unreadable -->
 3. Read the resolved registry and the resolved transcript path. If either is unreadable, **ABORT**: record unreadable; name the path.
+<!-- abort: unset-field-not-unsettable -->
 4. Validate field ownership against **Unsettable fields** in **Notes**. If `<field>` is not unsettable, **ABORT**: field not unsettable; name the field.
 5. For `reviewer`, call `commands/collab/engine/registry.py unset <target> reviewer`. The helper removes `reviewerRole`, `reviewerMode`, and `reviewerOptionalPhases`, treats an already-absent reviewer as a no-op, and renders the transcript status and Reviewer sections from registry state.
 6. Stop after updating registry and transcript metadata. Do not append a contribution.
@@ -19,8 +22,10 @@ Clear scoped collab metadata fields that have explicit empty-state semantics.
 ## Notes
 
 - **Parameters:** target collab slug, id, or numeric `#N` as the first token after `unset`; when absent, resolved per **Registry targeting** in **Notes**. `<field>` — required field name. The only supported field in this pass is `reviewer`.
+<!-- abort: unset-registry-target-unavailable -->
 - **Registry targeting:** Resolve the target collab from the resolved registry, using `commands/collab/engine/registry.py` as the shared helper. When the first token after the route is present, treat it as a collab slug, id, or stable numeric position. Otherwise use `activeCollabId`. If the registry is unreadable or invalid, the token does not match any entry, or `activeCollabId` is empty, **ABORT**: registry target unavailable; name the registry field or token.
-- **Unsettable fields:** `reviewer` -> removes reviewer assignment metadata. Other fields are intentionally out of scope until their empty-state semantics and schema rules are explicitly defined.
-- **Idempotency:** `unset reviewer` succeeds when no reviewer is currently set. It still aborts on unreadable records, schema validation failure, transcript write failure, or closed and archived records.
-- **Ownership boundary:** `(collab unset)` is the inverse surface for fields with defined empty states. It is not a generic registry-key deletion command.
+- **Unsettable fields:** `reviewer` -> removes reviewer assignment metadata. It clears `reviewerRole`, `reviewerMode`, and `reviewerOptionalPhases`; already-absent reviewer metadata is a no-op.
+- **Deferred field coverage (dated scope note, 2026-06-24):** every other collab metadata field remains intentionally deferred, not accidentally omitted. `title`, `description`, `status`, `activePhase`, `moderatorRole`, `transcriptPath`, `id`, `slug`, and `terminal` are required lifecycle or identity fields under the live validator. `turn-order` is deferred because clearing it would reactivate participant-list fallback semantics and can change reviewer exclusion behavior; use `(collab set turn-order ...)` instead. `reviewer-optional-phases` is deferred because its empty state depends on an active `reviewerRole`; clearing all reviewer metadata is already covered by `unset reviewer`. `work-repo` is deferred because execution and seal checks require a concrete repository binding or the documented fallback semantics. Lifecycle evidence fields such as `verification`, `execution`, `verificationSeal`, `verdict`, `exportedIssues`, and `reopenCoverage` are cleared only by their owning lifecycle helpers, not by generic unset.
+- **Idempotency:** `unset reviewer` succeeds when no reviewer is currently set. The command still aborts on unreadable records, schema validation failure, transcript write failure, or closed and archived records.
+- **Ownership boundary:** `(collab unset)` is the inverse surface for fields with defined empty states. `(collab unset)` is not a generic registry-key deletion command.
 - **Post-state resume signal:** After `(collab unset)` completes, re-establish collab context with `commands/collab/engine/registry.py speak-state --resume <target> <role>` before issuing the next collab command.

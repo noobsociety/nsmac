@@ -1,4 +1,4 @@
-# Contribution Full Body
+# Contribution full body
 
 Reference contract for storing an uncapped contribution body beside a capped human excerpt in a collab transcript.
 
@@ -15,9 +15,9 @@ Reference contract for storing an uncapped contribution body beside a capped hum
 
 ## Notes
 
-This file is the tracked source record for the proposal formerly reviewed as "Contribution Annex for Uncapped Audit Bodies". The accepted design does not store prose in `registry.json` and does not create sibling annex files. It keeps both contribution surfaces in the transcript:
+The document is the tracked source record for the proposal formerly reviewed as "Contribution Annex for Uncapped Audit Bodies". The accepted design does not store prose in `registry.json` and does not create sibling annex files. The design keeps both contribution surfaces in the transcript:
 
-- **Excerpt**: the visible contribution body. It is authored by the contributor and remains subject to the configured word limit.
+- **Excerpt**: the visible contribution body. The excerpt is authored by the contributor and remains subject to the configured word limit.
 - **Full body**: an optional uncapped body rendered by the helper as managed transcript structure immediately after the excerpt.
 
 The helper-owned full-body block has exactly this envelope:
@@ -33,7 +33,7 @@ The helper-owned full-body block has exactly this envelope:
 
 Agents must not hand-author `<details>` blocks inside the excerpt surface. A contribution that needs uncapped body text passes it through the helper's full-body input, so the helper owns the envelope and can parse it deterministically.
 
-## Parser Contract
+## Parser contract
 
 The canonical full-body block is recognized only when a `<details>` line is immediately followed by `<summary>Full contribution</summary>`. Any other `<details>` block in submitted excerpt text is rejected before mutation. The full-body content is byte-fenced; any `<details>` open or close tag inside the supplied full body is rejected before mutation.
 
@@ -41,10 +41,10 @@ Budgeting applies to the excerpt only. The canonical full-body block is excluded
 
 Rewrite replaces the active excerpt and active full body together. The prior active region, including any managed full body, is moved into revision history. Retract tombstones the active contribution and preserves the prior active region, including any managed full body, under retracted content.
 
-## Read Policy
+## Read policy
 
 Audit reads raw transcript content by default so the full body is available to the next contributor when the evidence load matters most. Later phases read rendered contribution content by default, which hides managed full-body blocks unless a route explicitly requests raw transcript content.
 
-## Seal Binding
+## Seal binding
 
 Verification seals bind the exact managed full-body blocks in the transcript through a full-body signature. If those bytes change after sealing while the excerpt is unchanged, the existing seal becomes stale and must be reissued before a success verdict can close the record.

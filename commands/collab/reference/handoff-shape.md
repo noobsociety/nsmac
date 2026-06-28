@@ -1,6 +1,6 @@
-# Structured Handoff deliverable shape
+# Structured handoff deliverable shape
 
-This document specifies the structured Handoff schema for contributions appended by `(collab speak)` in the `Handoff` phase. Structured Handoff state is registry-owned; the transcript `## Handoff` section is a helper-rendered mirror.
+The document specifies the structured Handoff schema for contributions appended by `(collab speak)` in the `Handoff` phase. Structured Handoff state is registry-owned; the transcript `## Handoff` section is a helper-rendered mirror.
 
 **Architectural grounding:**
 - **Invariant #2 (registry as source of truth; transcript as human ledger):** Registry is the authoritative source for command state, including Handoff deliverable data. The transcript `## Handoff` section mirrors selected registry fields; it is generated from registry state and must not be hand-edited.
@@ -51,7 +51,7 @@ When `execute-spawn` rejects a returned Completion patch or the execution record
 
 **Reopen and narrowed scope**
 
-Reopen saves current coverage before clearing execution state. If your scope narrows on a reopen, you don't need to re-add prior paths to `writeScope`; the saved snapshot already covers them. `writeScope` is about write permissions, not what counts as covered at seal — seal coverage comes from the snapshot. On registries that predate this feature, re-declare all paths or the seal will fail with CHARTERED-DELIVERABLE-MISSING.
+Reopen saves current coverage before clearing execution state. If scope narrows on a reopen, prior paths need not be re-added to `writeScope`; the saved snapshot already covers them. `writeScope` declares write permissions, not seal coverage — seal coverage comes from the snapshot. On registries that predate this feature, re-declare all paths or the seal will fail with CHARTERED-DELIVERABLE-MISSING.
 
 **Grandfather policy**
 

@@ -35,13 +35,13 @@ Include `## Trigger`, `## Steps`, then `## Notes`, in that order, each exactly o
 
 The `## Trigger` block declares two labeled sections in this order: **Dispatch**, then **Search phrases**. Each section carries distinct routing semantics; omitting a section or placing them out of order is a structural conformance failure.
 
-**Dispatch** — the routing-only `(<namespace> <route> <arg>...)` notation for routed agents. The line is the public invocation contract and must match the route's machine-readable `route-arg dispatch:` line exactly when a route declares arguments. It is not terminal-executable; copying it into a shell starts subshell syntax in bash and zsh. Dispatch entries must be unique across routes and must not appear under Search phrases. Public command docs, route H1 titles, generated advisory text, and engine runtime output must not present slash-prefixed command examples or trigger prose. The `(test)` router and `commands/test/index.md` may mirror the same routed form because they describe one command surface and one implementation playbook, not two independently exposed routes.
+**Dispatch** — the routing-only `(<namespace> <route> <arg>...)` notation for routed agents. The line is the public invocation contract and must match the route's machine-readable `route-arg dispatch:` line exactly when a route declares arguments. The dispatch form is not terminal-executable; copying it into a shell starts subshell syntax in bash and zsh. Dispatch entries must be unique across routes and must not appear under Search phrases. Public command docs, route H1 titles, generated advisory text, and engine runtime output must not present slash-prefixed command examples or trigger prose. The `(test)` router and `commands/test/index.md` may mirror the same routed form because they describe one command surface and one implementation playbook, not two independently exposed routes.
 
 **Search phrases** — discovery aids only; explicitly non-invocable; agents must not dispatch on a phrase match alone. For multi-mode functions, use a labeled group per mode: `**Search phrases (mode):**`.
 
 **Argument quoting:** Multi-word free-text arguments are valid only when double-quoted. Single-quoted wrappers are rejected with the named abort: `invalid quote: single quotes are not a valid wrapper; use double quotes`.
 
-**Dequoted-value contract:** Routes receive the dequoted string, not the raw quoted token. This is stated once here; function files must not restate it.
+**Dequoted-value contract:** Routes receive the dequoted string, not the raw quoted token. The contract is stated once here; function files must not restate it.
 
 **Trust-model scope:** Dispatch enforces structural conformance of spec files — presence and order of the two sections, quote shape on declared invocation forms. Correctness of invocation intent is honor-system, comparable to `agentId` in `join.md`: the validator names what it checks; it does not claim to verify intent.
 
@@ -176,3 +176,4 @@ One sentence — purpose of the route and when to use it.
 - [Document standard](document-standard.md) — minimal command template and other shapes.
 - [Context engineering](context-management.md) — phases, precision, context budget.
 - [Author voice](author-voice.md) — register for personal-account exceptions.
+- [Command grammar](command-grammar.md) — spaced public verbs vs. hyphenated filesystem names.

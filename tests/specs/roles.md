@@ -5,20 +5,28 @@ Deterministic QA for shared joinable-role JSON sources projected to `~/.cursor/c
 ## Procedure
 
 1. Load every `*.json` under the tracked source directory `commands/collab/reference/roles/`.
-2. Validate the source roster is exact.
+2. Validate the source roster is exact, including retained non-joinable stubs.
 3. Validate each source file is valid JSON and uses the role schema in `platform/standards/role-standard.md`.
 4. Validate each filename stem equals its `key`.
 5. Validate keys are globally unique.
 6. Validate runtime mode copies `commands/collab/reference/roles/` to `~/.cursor/commands/collab/reference/roles/`.
-7. Validate projector metadata under `commands/collab/reference/projectors/` is excluded from the joinable-role roster.
+7. Validate the non-joinable projector stub (`dp.json`, `"joinable": false`) retained under `commands/collab/reference/roles/` is excluded from the joinable-role roster (covered by `projector-metadata-nonjoinable.test.sh`).
 
 ## Required roster
 
-<!-- BEGIN GENERATED:REQUIRED_ROSTER -->
-<!-- shared-cmd-values exemption: registry-state mirror; role-key enumeration is generated output, not prose authorship. -->
-_Generated from `commands/collab/reference/roles/*.json`; do not edit this block by hand._
-
 Tracked role source files under `commands/collab/reference/roles/`:
+
+- `dp.json`
+- `mod.json`
+- `pa.json`
+- `pe.json`
+- `tw.json`
+
+Joinable role source files under `commands/collab/reference/roles/`:
+
+<!-- BEGIN GENERATED:REQUIRED_ROSTER -->
+<!-- shared-cmd-values exemption: registry-state mirror; joinable role-key enumeration is generated output, not prose authorship. -->
+_Generated from joinable role files under `commands/collab/reference/roles/`; do not edit this block by hand._
 
 - `mod.json`
 - `pa.json`

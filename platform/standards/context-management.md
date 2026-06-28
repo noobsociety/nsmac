@@ -100,7 +100,7 @@ Rules, commands, and skills consume tokens whenever they are in play. Token cost
 
 ### File size discipline
 
-The **250-line** strict budget applies **only** to prose under the **config root** (`COMMAND_CONFIG_ROOT`; in this repository, the **repository root**). Count every `*.md` and `markdown-workflow.md` under that root — including **`commands/`**, **`platform/standards/`**, and root-level markdown such as **`README.md`** or audit notes. It does **not** apply to application or library source outside that tree. Host load behavior can change between releases, so re-verify limits when upgrading.
+The **250-line** strict budget applies **only** to prose under the **config root** (`COMMAND_CONFIG_ROOT`; in this repository, the **repository root**). Count every `*.md` and `markdown-workflow.md` under that root — including **`commands/`**, **`platform/standards/`**, and root-level markdown such as **`README.md`** or audit notes. The budget does **not** apply to application or library source outside that tree. Host load behavior can change between releases, so re-verify limits when upgrading.
 
 - Keep every always-loaded instruction Markdown file at or under 250 lines so essential instructions stay within typical load windows
 - Keep every command playbook (`*.md` in `commands/`) at or under 250 lines for the same default. Command playbooks invoked from the palette may load in full while always-on rules may not — confirm for your host version

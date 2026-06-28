@@ -19,6 +19,8 @@ Owns: seal state reads (seal_state, seal_snapshot, verification_state,
 Does not own: registry persistence, phase lifecycle sequencing, participant
               roster management, non-seal transcript rendering, or CLI dispatch.
               This module is imported by commands.collab.engine.registry only.
+              registry.py owns the permanent CLI facade for render_seal and
+              participant_verify_render; implementation lives in seal_verification.py.
 
 Naming convention
   *_state(entry, ...)   -- pure registry-entry accessor; no I/O or side effects.
@@ -54,11 +56,18 @@ def resolve_config_root() -> Path:
 
 DEFAULT_CONFIG_ROOT = resolve_config_root()
 DEFAULT_ROLES_DIR = DEFAULT_CONFIG_ROOT / 'commands/collab/reference/roles'
-SUMMARY_HEADING_RE = re.compile(r'^### Summary \u2014 \d{4}-\d{2}-\d{2}$')
-ANCHOR_RE = re.compile(r'^<a name="(?P<anchor>[A-Za-z0-9_-]+)"></a>$')
 SEAL_VERDICT_KIND = 'collab.seal-verdict'
 
 from commands.collab.engine import transcript_readers
+from commands.collab.engine.transcript_readers import (
+    completion_summary_empty,
+    phase_section,
+    read_transcript_for_entry,
+    section_bounds,
+    transcript_path_for_entry,
+)
+from commands.collab.engine.transcript_readers import SUMMARY_HEADING_RE
+from commands.collab.engine.transcript_readers import ANCHOR_RE
 from commands.collab.engine.dispatch_forms import collab_dispatch
 from commands.collab.engine.errors import die
 from commands.collab.engine.registry_constants import (
@@ -85,11 +94,12 @@ from commands.collab.engine.digests import (
 )
 from commands.collab.engine.execution import (
     all_execution_completed,
+    assert_execution_touched_paths_in_git_state,
     assert_no_execution_agent_conflation,
     assert_touched_paths_inside_handoff,
     execution_scope_advisory,
 )
-from commands.collab.engine.git_repo import assert_execution_touched_paths_in_git_state, work_repo_root
+from commands.collab.engine.git_repo import work_repo_root
 from commands.collab.engine.normalizers import (
     assert_one_line_nonempty,
     format_timestamp,
@@ -158,51 +168,6 @@ def print_post_action_advisories(
     if _print_post_action_advisories is None:
         die('seal verification engine is not configured: advisory callback missing')
     _print_post_action_advisories(entry, role, phase, notice, next_line)
-
-
-def phase_section(text: str, phase: str) -> list[str]:
-    return transcript_readers.phase_section(text, phase)
-
-
-def section_bounds(lines: list[str], heading: str) -> tuple[int, int]:
-    start: int | None = None
-    for index, line in enumerate(lines):
-        if line.strip() == heading:
-            start = index
-            break
-    if start is None:
-        die(f'transcript section missing: {heading}')
-
-    end = len(lines)
-    for index in range(start + 1, len(lines)):
-        if lines[index].startswith('## ') and lines[index].strip() in {f'## {item}' for item in PHASES}:
-            end = index
-            break
-    return start, end
-
-
-def transcript_path_for_entry(entry: dict) -> Path:
-    return Path(entry['transcriptPath'])
-
-
-def read_transcript_for_entry(entry: dict) -> str:
-    transcript_path = transcript_path_for_entry(entry)
-    if not transcript_path.exists():
-        die(f'transcript missing: {transcript_path}')
-    return transcript_path.read_text()
-
-
-def completion_summary_empty(transcript: str) -> bool:
-    try:
-        lines = phase_section(transcript, 'Completion')
-    except SystemExit as exc:
-        if str(exc) == 'transcript phase missing: Completion':
-            return True
-        raise
-    for line in lines:
-        if SUMMARY_HEADING_RE.match(line.strip()):
-            return False
-    return True
 
 
 def chartered_deliverables(transcript: str) -> list[str]:

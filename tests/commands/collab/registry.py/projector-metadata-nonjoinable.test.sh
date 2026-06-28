@@ -17,10 +17,8 @@ from pathlib import Path
 root = Path(sys.argv[1])
 tmp = Path(sys.argv[2])
 roles = tmp / 'roles'
-projectors = tmp / 'projectors'
 records = tmp / 'records'
 roles.mkdir()
-projectors.mkdir()
 records.mkdir()
 
 (roles / 'mod.json').write_text(json.dumps({
@@ -34,12 +32,6 @@ records.mkdir()
     'concerns': ['historical rendering'],
     'joinable': False,
 }) + '\n')
-(projectors / 'dp.json').write_text(json.dumps({
-    'key': 'dp',
-    'displayName': 'Deterministic Projector',
-    'concerns': ['traceability'],
-}) + '\n')
-
 registry_path = tmp / 'registry.json'
 target = '2026-06-11-projector-boundary'
 registry = {
@@ -71,7 +63,6 @@ module = importlib.util.module_from_spec(spec)
 assert spec.loader is not None
 spec.loader.exec_module(module)
 module.DEFAULT_ROLES_DIR = roles
-module.DEFAULT_PROJECTORS_DIR = projectors
 
 module.validate_registry(registry, registry_path)
 

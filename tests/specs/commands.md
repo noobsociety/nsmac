@@ -15,21 +15,69 @@ Deterministic QA for command routers and route playbooks in `~/.cursor/commands/
 9. Validate catalog integrity: `commands.md` links every public command file.
 10. Validate catalog integrity: the generated roster block in `commands.md` matches filesystem state (`platform/tooling/sync-commands-catalog.sh --check`).
 11. Validate command advisory coverage and rendering: v0 advisory namespaces have exactly one effective default or explicit not-applicable marker per invocable route, role overrides are non-orphan and differentiated, aliases resolve through `platform/data/capability-aliases.json` and `platform/data/effort-tiers.json`, and caller-facing generated output does not leak runtime policy fields or concrete model identities.
-12. Validate command links stay inside `commands/`, core policy, core policy, and `tests/specs/`.
-13. Validate dependencies align with rule routers (core policy, core policy).
+12. Validate command links stay inside `commands/`, platform standards, and `tests/specs/`.
+13. Validate dependencies align with platform standards.
 
 ## Required roster
 
-Public command files under `~/.cursor/commands/`:
+Public command routers under `~/.cursor/commands/`:
 
 - `agent/index.md`
 - `commands.md`
 - `collab/index.md`
-- `collab/speak/index.md`
 - `doc/index.md`
-- `quality/index.md`
 - `git/index.md`
+- `help/index.md`
+- `quality/index.md`
 - `test/index.md`
+
+Route playbooks under `~/.cursor/commands/`:
+
+- `agent/install/index.md`
+- `agent/patch/index.md`
+- `agent/upgrade/index.md`
+- `collab/activate/index.md`
+- `collab/advance/index.md`
+- `collab/archive/index.md`
+- `collab/close/index.md`
+- `collab/delete/index.md`
+- `collab/diff/index.md`
+- `collab/export-issues/index.md`
+- `collab/init/index.md`
+- `collab/join/index.md`
+- `collab/list/index.md`
+- `collab/log/index.md`
+- `collab/open/index.md`
+- `collab/participant-verify/index.md`
+- `collab/remove-participant/index.md`
+- `collab/reopen/index.md`
+- `collab/restore/index.md`
+- `collab/retract-speak/index.md`
+- `collab/rewrite-execution/index.md`
+- `collab/rewrite-speak/index.md`
+- `collab/rewrite-summary/index.md`
+- `collab/run-plan/index.md`
+- `collab/seal-verification/index.md`
+- `collab/set/index.md`
+- `collab/show-flags/index.md`
+- `collab/show-policy/index.md`
+- `collab/show-verdict/index.md`
+- `collab/speak/index.md`
+- `collab/status/index.md`
+- `collab/summarize/index.md`
+- `collab/unset/index.md`
+- `collab/write-summary/index.md`
+- `doc/write-changelog/index.md`
+- `doc/write-manual/index.md`
+- `doc/write-readme/index.md`
+- `git/commit/index.md`
+- `git/issue/index.md`
+- `quality/assess-game/index.md`
+- `quality/assess-interface/index.md`
+- `quality/assess-operations/index.md`
+- `quality/assess-web/index.md`
+- `quality/show-notes/index.md`
+- `quality/tune/index.md`
 
 ## Output
 

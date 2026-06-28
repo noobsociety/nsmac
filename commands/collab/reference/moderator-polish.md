@@ -13,7 +13,7 @@
 
 ## Notes
 
-Defines the allowed transformations the helper may apply to moderator-role contribution text and the bounded typo dictionary. Authoritative for helper implementation under items #13 and #14.
+The allowed transformations the helper may apply to moderator-role contribution text, and the bounded typo dictionary, are defined here. The rules are authoritative for helper implementation under items #13 and #14.
 
 ## Opt-out
 

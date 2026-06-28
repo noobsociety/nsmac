@@ -1,8 +1,8 @@
-# Repository Contract
+# Repository contract
 
 Contract between this repository (source plane) and the global agent runtime at `~/.cursor/*`.
 
-## 1) System Model
+## 1) System model
 
 The contract has three planes:
 
@@ -12,7 +12,7 @@ The contract has three planes:
 
 Only the source plane is authoritative. Runtime planes are derived execution contexts.
 
-## 2) Authority Chain
+## 2) Authority chain
 
 Authority is strict and ordered:
 
@@ -23,29 +23,29 @@ Authority is strict and ordered:
 3. Derived runtime or generated outputs:
    <!-- TODO(patch): describe runtime mirrors, generated files, or overlays -->
 
-## 3) Output Chain Contract
+## 3) Output chain contract
 
 <!-- TODO(patch): describe the root outputs this repo projects or generates, their deepest dependency chains, and how each output is validated -->
 
-## 4) Mutation Protocol and Ownership
+## 4) Mutation protocol and ownership
 
 - Must edit tracked source only.
 <!-- TODO(patch): define repo-specific ownership boundaries, generated outputs, and files that must not be edited directly -->
 
-## 5) Validation Modes
+## 5) Validation modes
 
-### Source Mode (required)
+### Source mode (required)
 
 <!-- TODO(patch): list required source-mode validation commands -->
 
-### Runtime Mode (required if the repo projects runtime state)
+### Runtime mode (required if the repo projects runtime state)
 
 <!-- TODO(patch): list runtime or projection validation commands, or state explicitly that none exist -->
 
-### Overlay Mode (optional)
+### Overlay mode (optional)
 
 <!-- TODO(patch): describe any project-local or environment-specific validation gates -->
 
-## 6) Reporting Contract
+## 6) Reporting contract
 
 <!-- TODO(patch): define the validation results and residual risks that must be reported when work completes -->

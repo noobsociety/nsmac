@@ -12,7 +12,7 @@ COMMAND_SYSTEM_DIR = ROOT / 'platform' / 'tooling'
 if str(COMMAND_SYSTEM_DIR) not in sys.path:
     sys.path.insert(0, str(COMMAND_SYSTEM_DIR))
 
-from roles import load_projector, load_role, projectors_dir_for_roles
+from roles import load_role
 from commands.collab.engine.errors import die
 from commands.collab.engine.registry_constants import (
     CALLER_DECLINED_AGENT_ID,
@@ -28,17 +28,12 @@ def validate_participant_role_files(
     role_keys: list[str],
     roles_dir: Path,
     source: str,
-    projectors_dir: Path | None = None,
 ) -> None:
-    projector_source = projectors_dir or projectors_dir_for_roles(roles_dir)
     for role in role_keys:
         try:
             load_role(roles_dir, role)
         except SystemExit as exc:
-            try:
-                load_projector(projector_source, role)
-            except SystemExit:
-                die(f'{source}: participants role file unreadable for {role}: {roles_dir / f"{role}.json"}: {exc}')
+            die(f'{source}: participants role file unreadable for {role}: {roles_dir / f"{role}.json"}: {exc}')
 
 def reviewer_role(entry: dict) -> str | None:
     value = entry.get('reviewerRole')

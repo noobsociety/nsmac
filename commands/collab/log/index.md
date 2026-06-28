@@ -1,6 +1,6 @@
 # (collab log)
 
-Display the registry changelog for a collaboration record — a sequenced list of explicit registry events sourced from the append-only revision store. This is not the transcript revision history: transcript contribution rewrites (`(collab rewrite speak)`, implemented via `prepend_revision_history` in `registry.py`) record per-contribution edit history inside each transcript block and are a distinct surface.
+Display the registry changelog for a collaboration record — a sequenced list of explicit registry events sourced from the append-only revision store. The changelog is not the transcript revision history: transcript contribution rewrites (`(collab rewrite speak)`, implemented via `prepend_revision_history` in `registry.py`) record per-contribution edit history inside each transcript block and are a distinct surface.
 
 ## Trigger
 
@@ -16,6 +16,7 @@ Display the registry changelog for a collaboration record — a sequenced list o
 ## Notes
 
 - **Parameters:** target collab slug, id, or numeric `#N` as the first token after `log`; when absent, resolved per **Registry targeting** in **Notes**.
+<!-- abort: log-registry-target -->
 - **Registry targeting:** Resolve the target collab from the resolved registry, using `commands/collab/engine/registry.py` as the shared helper. When the first token after the route is present, treat it as a collab slug, id, or stable numeric position. Otherwise use `activeCollabId`. If the registry is unreadable or invalid, the token does not match any entry, or `activeCollabId` is empty, **ABORT**: registry target unavailable; name the registry field or token.
 - **Data source:** Reads from `<state-root>/revisions/<collabId>/` — the append-only revision store introduced by collab #52 (`collab-state-observability`). The store must exist; if the `revisions/` directory is absent or the collab has no entries, the helper reports `no log entries` and exits cleanly. Retroactive behavior for pre-existing collabs (those initialized before the revision store existed) is documented in the revision writer spec.
 - **Event sequence:** Each log entry carries an `eventIndex` value — a counter that increments only on explicit log events. Header rewrites, transcript rendering, and state repair do not increment `eventIndex` unless they deliberately emit a registry event. The `eventIndex` is distinct from the write-guard `revision` counter; see [schema-evolution.md](../../../commands/collab/reference/schema-evolution.md) for the counter lifecycle.
@@ -28,7 +29,7 @@ Display the registry changelog for a collaboration record — a sequenced list o
   ```
 
 - **Naming disambiguation:** "Registry changelog" is the correct framing for this command's output. Do not conflate it with the `<details><summary>Revision history</summary>` blocks in transcript contributions, which record per-contribution rewrites and are written by `prepend_revision_history` (`registry.py:4179`). These are two distinct history surfaces: one for registry state events, one for transcript content edits.
-- **Read-only:** This route does not mutate registry state or transcript text.
+- **Read-only:** The route does not mutate registry state or transcript text.
 - **Precondition:** `(collab log)` requires the append-only revision writer to be present. If the writer is absent, log output is empty for all collabs regardless of activity. The writer is a hard precondition for this route's usefulness; its implementation and `eventIndex` counter are a single deliverable.
 
 ```route-arg

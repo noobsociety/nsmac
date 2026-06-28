@@ -10,6 +10,7 @@ make_fixture() {
   mkdir -p "$dir/commands/collab/speak" "$dir/commands/collab/engine"
   cp "$ROOT/commands/collab/speak/index.md" "$dir/commands/collab/speak/index.md"
   cp "$ROOT/commands/collab/engine/registry.py" "$dir/commands/collab/engine/registry.py"
+  cp "$ROOT/commands/collab/engine/contribution_validation.py" "$dir/commands/collab/engine/contribution_validation.py"
 }
 
 clean="$TMPDIR/clean"

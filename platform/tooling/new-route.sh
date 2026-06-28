@@ -120,12 +120,9 @@ EOF
 }
 
 run_collab_coverage_gate() {
-  local allowlist="$TARGET_ROOT/platform/tooling/coverage-gate-allowlist.txt"
-  [[ -f "$allowlist" ]] || allowlist="/dev/null"
   "$ROOT/platform/tooling/coverage-gate.sh" \
     --routes-dir "$TARGET_ROOT" \
-    --tests-dir "$TARGET_ROOT/tests/commands/collab/registry.py" \
-    --allowlist "$allowlist" >/dev/null
+    --tests-dir "$TARGET_ROOT/tests/commands/collab/registry.py" >/dev/null
 }
 
 self_test() {
@@ -145,8 +142,7 @@ EOF
 
   if "$ROOT/platform/tooling/coverage-gate.sh" \
     --routes-dir "$tmp" \
-    --tests-dir "$tmp/tests/commands/collab/registry.py" \
-    --allowlist "$tmp/allowlist.txt" >/tmp/new-route-coverage.out 2>&1; then
+    --tests-dir "$tmp/tests/commands/collab/registry.py" >/tmp/new-route-coverage.out 2>&1; then
     cat /tmp/new-route-coverage.out >&2
     die "self-test expected coverage-gate to fail for discovered missing coverage"
   fi

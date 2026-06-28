@@ -281,6 +281,22 @@ def registry_lock(path: Path):
         finally:
             fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
 
+@contextmanager
+def registry_lock_nonblocking(path: Path):
+    """Acquire a registry lock without waiting; used by migration preflight."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lock_path = path.with_name(f'{path.name}.lock')
+    with lock_path.open('a+') as lock_file:
+        try:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            die(f'registry lock held: {lock_path}')
+        os.utime(lock_path, None)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+
 def load_registry_or_bootstrap(path: Path) -> dict:
     if not path.exists():
         data = {'activeCollabId': None, 'collabs': []}

@@ -13,7 +13,7 @@
 
 ## Notes
 
-Defines the word-count limit for collab speak contributions and the named exemptions that are excluded from that count. Authoritative for `speak-render` enforcement under items #4 and #9.
+The word-count limit for collab speak contributions and the named exemptions excluded from that count are defined here. The rules are authoritative for `speak-render` enforcement under items #4 and #9.
 
 ## Term definitions
 

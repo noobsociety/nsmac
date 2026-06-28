@@ -1,6 +1,6 @@
-# `workRepo` Remediation Index
+# `workRepo` remediation index
 
-Durable definitions for R1–R7 from collab #50 (`2026-06-02-external-repo-seal-failure-workrepo-default-trap`). Transcribed to satisfy the reviewer's Conclusion provenance precondition in that collab record. Do not mutate this file without reopening the source collab or opening a follow-up.
+Durable definitions for R1–R7 from collab #50 (`2026-06-02-external-repo-seal-failure-workrepo-default-trap`). These definitions were transcribed to satisfy the reviewer's Conclusion provenance precondition in that collab record. Do not mutate this file without reopening the source collab or opening a follow-up.
 
 ## Trigger
 

@@ -2,7 +2,7 @@
 
 **Layer:** `commands/collab/reference/` — plumbing (non-dispatchable reference; not a catalog route).
 
-Cross-route rules that apply to every route under `commands/collab` and the `commands/collab/engine/registry.py` helper. Any future route or helper change must stay consistent with all clauses below.
+Cross-route rules that apply to every route under `commands/collab` and to `commands/collab/engine/registry.py`. Any future route or helper change must stay consistent with all clauses below.
 
 ## Trigger
 
@@ -20,11 +20,11 @@ Cross-route rules that apply to every route under `commands/collab` and the `com
 
 **1. Route prose as contract; helper as enforcement (`agent-honor-system` clause)**
 
-Route prose declares the contract. The helper enforces it. Every documented ABORT in a route file maps 1:1 to a helper subcommand check, or is explicitly marked `agent-honor-system` in the route notes to signal it relies on agent judgment rather than runtime enforcement.
+Route prose declares the contract. The helper enforces the contract. Every documented ABORT in a route file maps 1:1 to a helper subcommand check, or is explicitly marked `agent-honor-system` in the route notes to signal it relies on agent judgment rather than runtime enforcement.
 
 Free-text tokens are literal content. A route argument such as a title, label, message, or routing-only dispatch token is never work to execute unless the route explicitly defines an execution phase for that content.
 
-Inline marker form: `**ABORT** (agent-honor-system): ...` placed on the same line as the ABORT clause it exempts. The marker exempts only the ABORT clause on the line it appears in — it does not exempt subsequent or sibling clauses. This file is the single source of truth for this grammar; the detector enforces line-level binding.
+Inline marker form: `**ABORT** (agent-honor-system): ...` placed on the same line as the ABORT clause it exempts. The marker exempts only the ABORT clause on the line it appears in — it does not exempt subsequent or sibling clauses. The file is the single source of truth for this grammar; the detector enforces line-level binding.
 
 Anchor convention: each ABORT in `<route>.md` must carry a stable id anchor `<!-- abort: <id> -->` on the line immediately above it. The anchor id must start with the route stem followed by a hyphen (e.g., `speak-` in `speak.md`); the detector enforces this prefix and rejects anchors that omit it.
 
@@ -32,11 +32,11 @@ Maintainer check: `git grep -rn 'agent-honor-system' commands/collab/` shows eve
 
 For the audit inventory of current agent-honor-system clauses, see [`honor-system-audit.md`](honor-system-audit.md).
 
-Maintainer check: `git grep -rnP '(?<![A-Za-z0-9_])(mod|pa|pe|tw)(?![A-Za-z0-9_])' -- '*.md' '*rule file'` is the broad review sweep for role-key prose drift. Every prose match must either be covered by the documented carve-outs in `platform/tooling/audit-role-prose.sh` or rewritten to function-bound prose. This pattern covers the live role keys swept for prose drift — the human moderator and the joinable participant roles under `commands/collab/reference/roles/`. It does not include the non-joinable deterministic-projector stub also kept under that directory (retained for historical-participant rendering after the synthesis/projection stack was retired). Update the pattern when the role roster changes.
+Maintainer check: `git grep -rnP '(?<![A-Za-z0-9_])(mod|pa|pe|tw)(?![A-Za-z0-9_])' -- '*.md' '*rule file'` is the broad review sweep for role-key prose drift. Every prose match must either be covered by the documented carve-outs in `platform/tooling/audit-role-prose.sh` or rewritten to function-bound prose. The pattern covers the live role keys swept for prose drift — the human moderator and the joinable participant roles under `commands/collab/reference/roles/`. The pattern does not include the non-joinable deterministic-projector stub also kept under that directory (retained, after the synthesis/projection stack was retired, as a backed tombstone for historical-participant rendering of closed collab a13dba4c, whose participant roster references `dp`). Update the pattern when the role roster changes.
 
 **2. Registry as source of truth; transcript as human ledger**
 
-The resolved registry (`$HOME/.collabs/<projectId>/registry.json` by default, or the explicit `--registry` path) is the authoritative source for command state. The transcript (`records/*.md` inside the resolved state root by default) mirrors selected metadata and captures human-readable context. Registry-only mutations — `(collab set)`, `(collab unset)`, moderator removal in `speak-lifecycle-live` — must remain reconcilable against transcript-readable state. No registry write may create state that cannot be explained or confirmed from the transcript.
+The resolved registry (`$HOME/.collabs/<projectId>/registry.json`, where `<projectId>` is a readable, collision-safe slug, by default, or the explicit `--registry` path) is the authoritative source for command state. The transcript (`records/*.md` inside the resolved state root by default) mirrors selected metadata and captures human-readable context. Registry-only mutations — `(collab set)`, `(collab unset)`, moderator removal in `speak-lifecycle-live` — must remain reconcilable against transcript-readable state. No registry write may create state that cannot be explained or confirmed from the transcript.
 
 **3. Phase-transition notices as structured helper output**
 
@@ -49,7 +49,7 @@ Structured notice shapes:
 
 **4. Disk-state authority**
 
-Conversation context is cache; disk state is truth. The resolved registry and transcript files are the authoritative sources. Helpers recompute state from files, not from agent memory. This is the durability invariant that makes collabs survive `/compact`, `/clear`, agent swaps, and harness restarts equally.
+Conversation context is cache; disk state is truth. The resolved registry and transcript files are the authoritative sources. Helpers recompute state from files, not from agent memory. Disk-state authority is the durability invariant that makes collabs survive `/compact`, `/clear`, agent swaps, and harness restarts equally.
 
 **5. Context-changing events**
 
@@ -71,7 +71,7 @@ The collab system records the role under which an agent joins (`participants[].a
 
 **9. Action Plan checklist shape**
 
-Every Action Plan contribution must consist entirely of flat checklist assignment lines after exempt content is removed. This invariant clause is the canonical source for shape enforcement; `speak.md` step 10 and the `Action Plan checklist shape` note, `contribution-budget.md` `action-plan-checklist` row, and `rewrite-speak.md` all cite this invariant and do not paraphrase it.
+Every Action Plan contribution must consist entirely of flat checklist assignment lines after exempt content is removed. The invariant clause is the canonical source for shape enforcement; `speak.md` step 10 and the `Action Plan checklist shape` note, `contribution-budget.md` `action-plan-checklist` row, and `rewrite-speak.md` all cite this invariant and do not paraphrase it.
 
 **Canonical regex:** `^- \[[ x]\] \*\*[a-z]+:\*\*` (case-sensitive; `[a-z]+` matches the role key)
 
@@ -97,11 +97,12 @@ No-assignment-lines: `ABORT: Action Plan body contains no assignment lines after
 
 **10. Rollback triggers**
 
-Observable-event conditions derived from the 2026-05-18 missed-and-deferred-goals audit. Each line names the observable event that re-opens the item; no behavior change until the event fires.
+These conditions are derived from the 2026-05-18 missed-and-deferred-goals audit. Each line names the observable event that re-opens the item; no behavior change until the event fires.
 
 - **Item 7 (round-counting / budget-exempt assessment path after cap-exit):** if any seal-attempt transcript exceeds 18 turns, or two consecutive participant verifications fail with full-body blocks present, open a follow-up audit of the round-counting and budget-exempt assessment path.
 - **Item 9 (`(collab rewrite execution)` redesign):** if any seal-attempt transcript exceeds 12 turns, open a follow-up DX audit on `rewrite-execution` and turn-budget management across `/compact`.
-- If any reviewer-backed collab closes via `--cap-exit archive` on a clean first seal (no findings during participant verification), open a verification-cap audit. *(Fired: collab #16, 2026-05-18. Resolved inline: root cause was doc gap on archive semantics + reviewer soliciting verdict from user instead of determining it autonomously. Fixes: `seal-verification.md` and `verification.md` updated to prohibit `--cap-exit archive` on clean verification and to require autonomous verdict determination. Detection remains active.)*
+- If any reviewer-backed collab closes via `--cap-exit archive` on a clean first seal (no findings during participant verification), open a verification-cap audit.
+  - _Present state: `--cap-exit archive` on a clean seal is a protocol violation (`verification.md` §"Cap and cap-exit options"; `seal-verification/index.md` §"Cap exits"). This trigger fires only if that prohibition is relaxed._
 
 **11. Observation backlog**
 
@@ -142,11 +143,11 @@ Codified from the reviewer's path-(a) decision in collab #36 (`2c14a36`). Does n
 
 **14. cap-exit follow-up-collab scope**
 
-cap-exit follow-up-collab is reserved for newly discovered scope; original-collab incomplete/failed verdicts MUST use restoreTarget action-plan or handoff.
+cap-exit follow-up-collab is reserved for newly discovered scope; original-collab incomplete/failed verdicts must use `restoreTarget` `action-plan` or `handoff`.
 
 **15. rewrite-speak turn-order enforcement**
 
-(collab rewrite speak) rejects when (a) the active phase has a reopen pointer newer than the rewriting role existing block AND (b) the calling role is not the current expectedRole; stale blocks must wait their turn or be retracted via (collab retract speak) before rewrite.
+`(collab rewrite speak)` rejects when (a) the active phase has a reopen pointer newer than the rewriting role's existing block AND (b) the calling role is not the current expectedRole; stale blocks must wait their turn or be retracted via `(collab retract speak)` before the rewrite.
 
 **16. Reviewer findings must cite evidence anchors**
 
@@ -162,6 +163,8 @@ A seal verdict of `success` is rejected unless every item in the collab's `chart
 
 **Path-not-content caveat:** This gate checks path coverage — that at least one committed path is cited for each chartered item — not content sufficiency. Whether the committed content actually fulfills the chartered item is a reviewer judgment, not a gate outcome. A passing coverage check is a necessary prerequisite for `success`; it does not guarantee correctness.
 
+For source-decomposition work, a chartered path alone is not a completion proof. The Action Plan must pair the path with a measurable content assertion — for example a symbol-placement audit, local-definition ceiling, byte-identical render gate, or dispatch-only check — so the seal can verify that the extraction changed the intended ownership boundary rather than only touching the named file.
+
 **Reopen carry-forward caveat:** Reopen carry-forward coverage is content-validated against `HEAD`; a carried chartered path that is removed or whose content has drifted is dropped from the coverage aggregate, so a name-only carry cannot mask a reverted deliverable. See Invariant #21 for the full carry-forward rule and `reopenCoverage` lifecycle.
 
 **18. Item tags required; `[defer]` rejected**
@@ -174,13 +177,13 @@ Action Plan items must carry one of the recognized item tags immediately after t
 
 `charteredDeliverables` is an optional moderator declaration. When present in the Audit block, the seal-time coverage gate (Invariant #17) verifies that every chartered item is covered by a cited committed path. When absent — as is correct for discovery and audit collabs where scope is determined by the process, not before it — Invariant #17 is a no-op.
 
-The purpose of `charteredDeliverables` is to prevent reviewer-driven scope expansion at seal: a reviewer finding cannot charter new work. It was never intended to require moderators to enumerate file paths before the audit has run.
+The purpose of `charteredDeliverables` is to prevent reviewer-driven scope expansion at seal: a reviewer finding cannot charter new work. `charteredDeliverables` was never intended to require moderators to enumerate file paths before the audit has run.
 
 **Enforcement note:** Seal-time coverage is enforced by `assert_chartered_deliverables_covered(entry, transcript)` in `commands/collab/engine/registry.py`. No advance-time gate exists; the Conclusion → Action Plan transition is not blocked by the presence or absence of `charteredDeliverables`.
 
 **20. Seal verification is content-addressed, not commit-reachable**
 
-Seal integrity is enforced by the **scope digest** — the `pathDigests`/`contentDigest` recomputed from the *content* of each execution `touchedPath` at `HEAD` — together with the requirement that every touched path is committed at `HEAD` (`SEAL-GIT-STATE` / `SEAL-CONTENT-INCOMPLETE`). The commit SHA recorded in `execution.<role>.commits` is provenance **metadata only**: it is never checked for reachability or membership. A "wrong", orphaned, amended, rebased, or squashed commit does **not** fail the seal, as long as the touched-path content is committed at `HEAD` and matches the sealed digest. This replaces the retired commit-reachability check (`SEAL-PROVENANCE`); content identity is invariant under history rewrites that preserve the tree.
+Seal integrity is enforced by the **scope digest** — the `pathDigests`/`contentDigest` recomputed from the *content* of each execution `touchedPath` at `HEAD` — together with the requirement that every touched path is committed at `HEAD` (`SEAL-GIT-STATE` / `SEAL-CONTENT-INCOMPLETE`). The commit SHA recorded in `execution.<role>.commits` is provenance **metadata only**: it is never checked for reachability or membership. A "wrong", orphaned, amended, rebased, or squashed commit does **not** fail the seal, as long as the touched-path content is committed at `HEAD` and matches the sealed digest. The approach replaces the retired commit-reachability check (`SEAL-PROVENANCE`); content identity is invariant under history rewrites that preserve the tree.
 
 **Reviewer directive:** Never block or condition a seal on commit-hash provenance (e.g. "the cited commit does not contain the file", "the SHA is stale/orphaned"). The only seal-time integrity questions are: (1) is every touched-path's final content committed at `HEAD`, and (2) does the recomputed scope digest equal `verificationSeal.contentDigest`. If both hold, provenance is satisfied regardless of which commit is cited.
 

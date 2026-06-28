@@ -39,6 +39,7 @@ ALLOWLISTED_TRACE_PATHS = {
     "platform/tooling/check-source-ledger.py",
     "platform/tooling/sync-context-gate.sh",
     "platform/data/source-ledger.md",
+    "tests/platform/tooling/audit-reachability.test.sh",
     "tests/platform/tooling/check-source-ledger.test.sh",
     "tests/platform/tooling/sync-context-gate.test.sh",
 }
@@ -164,17 +165,6 @@ def check_inventory(root: Path, rows: list[LedgerRow]) -> list[Failure]:
     return failures
 
 
-def normalize_reference(raw: str) -> str:
-    value = raw.strip("`'\"([]),.;:]}")
-    value = value.removeprefix("~/.cursor/")
-    while value.startswith(("../", "./", "/")):
-        if value.startswith("/"):
-            value = value[1:]
-            continue
-        value = value[3:]
-    return value
-
-
 def iter_scan_files(root: Path) -> list[Path]:
     tracked = run_git_ls_files(root)
     files: list[Path] = []
@@ -219,7 +209,7 @@ def check(root: Path, ledger: Path) -> int:
     rows, failures = parse_ledger(root, ledger)
     if rows:
         failures.extend(check_inventory(root, rows))
-        failures.extend(check_dependency_scan(root))
+    failures.extend(check_dependency_scan(root))
 
     if failures:
         for failure in failures:

@@ -6,5 +6,5 @@
     "moderator projection"
   ],
   "joinable": false,
-  "prohibitions": ["Role retired. Preserved in roles/ for closed-collab participant ledger integrity only. Do not join new collabs with this role."]
+  "prohibitions": ["Role retired and non-joinable. Retained as a backed tombstone: closed collab a13dba4c references dp in its participant roster, so the stub is required for that record's participant-ledger integrity. Delete only when no registry record references dp. Do not join new collabs with this role."]
 }

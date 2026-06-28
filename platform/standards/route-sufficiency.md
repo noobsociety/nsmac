@@ -2,7 +2,7 @@
 
 A route is sufficient when an agent that has read the route file, its explicit forward references, and the resume signal can execute it correctly without inference.
 
-This file is the first checked against its own mechanical rubric. If this file fails a mechanical check, the rubric item is defective and must be corrected before any route migration relies on it.
+The file is the first checked against its own mechanical rubric. If the file fails a mechanical check, the rubric item is defective and must be corrected before any route migration relies on it.
 
 ## Mechanical sufficiency
 
@@ -18,7 +18,7 @@ Mechanical obligations a checker can verify by inspecting route text. Items are 
 
 ## Execution sufficiency
 
-Fixture obligations that require a constrained-bootstrap execution run to verify. This section is not lintable.
+Fixture obligations that require a constrained-bootstrap execution run to verify. The section is not lintable.
 
 A route satisfies execution sufficiency when a fresh agent — with no prior conversation context, no memory beyond the bootstrap chain, and no registry or transcript edits not sanctioned by the route — can follow the route from the bootstrap entry point plus its explicit forward references and reach the expected helper and transcript state.
 

@@ -10,9 +10,13 @@ Open the next moderator-selected phase in a collaboration record and update the 
 ## Steps
 
 1. Read [invariants.md](../../../commands/collab/reference/invariants.md) before executing; call the relevant helper fresh and do not trust prior reads from conversation context (Invariant #4). Resolve the target collab with **Registry targeting** in **Notes**.
+<!-- abort: advance-record-unreadable -->
 2. Read the resolved registry and the resolved transcript path. If either is unreadable, **ABORT**: record unreadable; name the path.
+<!-- abort: advance-record-is-closed -->
 3. If the registry status is `closed` or `archived`, **ABORT**: record is closed.
+<!-- abort: advance-active-phase-missing -->
 4. Resolve the current phase from registry `activePhase`. If missing or unknown, **ABORT**: active phase missing in metadata.
+<!-- abort: advance-no-next-phase -->
 5. Resolve the next phase from **Phase sequence** in **Notes**. If no next phase exists, **ABORT**: no next phase; sequence exhausted.
 6. Call `commands/collab/engine/registry.py advance <target> next` to update registry `activePhase` to the next phase and render the transcript status table from the resulting registry state. The first output line is `NEXT:` guidance naming the next expected role or Completion execution state; display it before the phase and transition-notice output.
 7. If the next phase is `Conclusion`, the helper removes the moderator role from registry `turnOrder` and syncs the Turn order cell before accepting Conclusion contributions.
@@ -24,11 +28,13 @@ Open the next moderator-selected phase in a collaboration record and update the 
 ## Notes
 
 - **Parameters:** target collab slug, id, or numeric `#N` as the first token after `advance`; when absent, resolved per **Registry targeting** in **Notes**.
+<!-- abort: advance-registry-target-unavailable -->
 - **Registry targeting:** Resolve the target collab from the resolved registry, using `commands/collab/engine/registry.py` as the shared helper. When the first token after the route is present, treat it as a collab slug, id, or stable numeric position. Otherwise use `activeCollabId`. If the registry is unreadable or invalid, the token does not match any entry, or `activeCollabId` is empty, **ABORT**: registry target unavailable; name the registry field or token.
 - **Phase sequence:** `Audit` -> `Discussion` -> `Conclusion` -> `Action Plan` -> `Handoff` -> `Completion`.
 - **Moderator gate:** The moderator decides when this route runs. The route never checks whether participants have said enough.
 - **`NEXT:` guidance:** `advance` emits a `NEXT:` line before the phase line and any structured transition notice. In ordinary speak phases, it names the role that should run `(collab speak)` next. When entering `Completion`, it names the role that should run `(collab run plan)` next.
 - **Transition notices:** The helper emits structured JSON notices on select transitions after the first-line `NEXT:` guidance and phase line. `{"notice": "compact", "transition": "Discussion->Conclusion", "message": "Run /compact before continuing to Conclusion."}` when entering Conclusion; `{"notice": "subagent", "transition": "Handoff->Completion", "message": "Use a subagent or compacted execution context before (collab run plan)."}` when entering Completion. The same notices are emitted when `speak-lifecycle-live` auto-advances through these transitions. Route docs describe this output; they do not duplicate the decision. See [invariants.md](../../../commands/collab/reference/invariants.md).
-- **Recovery path:** If `commands/collab/engine/registry.py advance <target> next` returns without the expected registry phase or transcript status table change, **ABORT**: treat the missing mirror as a helper defect and do not hand-edit the status table except through a dedicated repair route.
+<!-- abort: advance-helper-mirror-defect -->
+- **Recovery path:** If `commands/collab/engine/registry.py advance <target> next` returns without the expected registry phase or transcript status table change, **ABORT** (agent-honor-system): treat the missing mirror as a helper defect and do not hand-edit the status table except through a dedicated repair route.
 - **Post-state resume signal:** After `(collab advance)` completes, re-establish collab context with `commands/collab/engine/registry.py speak-state --resume <target> <role>` before writing the next contribution.
 - **Sync contract compliance:** Step 9's missing-heading repair is a prose-rendered transcript write. `commands/collab/engine/registry.py advance` owns registry phase, turn-order normalization, and status-table rendering. The heading repair is declared under the sync contract in [`platform/standards/route-invariants.md`](../../../platform/standards/route-invariants.md).

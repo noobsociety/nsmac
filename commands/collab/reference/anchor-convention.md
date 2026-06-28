@@ -2,7 +2,7 @@
 
 # Anchor convention
 
-Defines the `<phase-slug>-<role>-<counter>` anchor shape used in collab transcripts. This convention is helper-enforced; the emitter is the single source of truth.
+Defines the `<phase-slug>-<role>-<counter>` anchor shape used in collab transcripts. The convention is helper-enforced; the emitter is the single source of truth.
 
 ## Trigger
 
@@ -52,7 +52,7 @@ Counter assignment is computed by `next_anchor_counter` in `commands/collab/engi
 
 **Maintainer note**
 
-This convention is helper-enforced, not advisory. Changes to the anchor shape must be paired with changes to `transcript_render.py` and `normalizers.py`. A doc change that does not update the emitter, or an emitter change that does not update this doc, creates a spec/helper divergence (show-policy Drift).
+The convention is helper-enforced, not advisory. Changes to the anchor shape must be paired with changes to `transcript_render.py` and `normalizers.py`. A doc change that does not update the emitter, or an emitter change that does not update this doc, creates a spec/helper divergence (show-policy drift).
 
 **References in the transcript**
 

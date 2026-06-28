@@ -173,7 +173,7 @@ Examples: `commands/git/commit/index.md`, `commands/quality/assess-game/index.md
 |Skills         |`SKILL.md` inside named folder              |Host-assigned path under the editor’s skills directory (not part of the `platform/standards/` canon tree)             |
 |Devblog entries|`{n}-{slug}.md`                             |`1-week.md`, `0-foreword.md` (position 0 is reserved for the foreword; slug is fixed as `foreword`)|
 |Course notes   |`notes-{variant}-{course}.md`               |`notes-full-domain-driven-design.md`                                                               |
-|Test harnesses |`tests/<source-path>/<source-name>__<behavior>.test.sh`|`tests/commands/collab/reference/roles/roles__json_schema.test.sh`                          |
+|Test harnesses |`tests/<source-path>/<source-name>__<behavior>.test.sh`|`tests/commands/<ns>/<source-name>__<behavior>.test.sh` (pattern placeholder)                |
 
 ### JSON data files
 

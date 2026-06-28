@@ -13,13 +13,13 @@
 
 ## Notes
 
-This file is the canonical owner of registry field lifecycle rules. Both `registry.schema.json` (load-time validation) and any load-time validation note in `commands/collab/engine/registry.py` must link to this file rather than restating the rules inline.
+The file is the canonical owner of registry field lifecycle rules. Both `registry.schema.json` (load-time validation) and any load-time validation note in `commands/collab/engine/registry.py` must link to this file rather than restating the rules inline.
 
 ### Field classification
 
 **Known fields** are fields whose names and types are declared in `registry.schema.json`. A known field with the wrong type or an out-of-range value is **rejected** at load time; the helper exits with a structured error naming the field and constraint.
 
-**Unknown fields** are fields not declared in `registry.schema.json`. An unknown field at any schema depth — top-level, inside a collab entry, or inside a nested lifecycle object — is **preserved unchanged** through every mutating operation. Unknown fields must survive a load-validate-write cycle without modification. This is the "unknown fields preserved" contract; breaking it is a breaking schema change regardless of field name.
+**Unknown fields** are fields not declared in `registry.schema.json`. An unknown field at any schema depth — top-level, inside a collab entry, or inside a nested lifecycle object — is **preserved unchanged** through every mutating operation. Unknown fields must survive a load-validate-write cycle without modification. The rule is the "unknown fields preserved" contract; breaking the rule is a breaking schema change regardless of field name.
 
 The preserved-unknown rule applies to:
 - Top-level registry fields other than those declared in the schema
@@ -52,7 +52,7 @@ The registry uses two distinct counters with non-overlapping roles:
 
 **`revision`** — write-guard counter. Stored as the top-level `revision` field in `registry.json`. Incremented by `bump_registry_revision()` on every registry write. The stale-write guard (`speak-render`, `execute`) reads this field to detect concurrent writes. This field must not be renamed unless the rename is atomic across: the stored field name, every read site in `commands/collab/engine/registry.py`, and all helper-output labels that reference it.
 
-**`registryRevision`** — helper-output presentation label. This name appears in `speak-state` and similar helper JSON output as a human-readable label sourced from the `revision` field (`registry.py:229`). It is not an independently stored counter. The label may be retired or renamed in a future collab without touching the stored `revision` field.
+**`registryRevision`** — helper-output presentation label. This name appears in `speak-state` and similar helper JSON output as a human-readable label sourced from the `revision` field (`registry.py:229`). The label is not an independently stored counter. The label may be retired or renamed in a future collab without touching the stored `revision` field.
 
 **`eventIndex`** — log sequence counter. A new counter to be introduced with the append-only revision writer (`<state-root>/revisions/`). Increments only on explicit registry log events. Header rewrites, transcript rendering, and state repair must not increment `eventIndex` unless they deliberately emit a registry log event.
 
@@ -62,4 +62,4 @@ The registry uses two distinct counters with non-overlapping roles:
 |---|---|---|---|
 | `registryRevision` (top-level in `registry.json`) | `1552` | collab #52 `collab-state-observability` | Vestigial. The `revision` field became the canonical write-guard counter; `registryRevision` was never updated after the rename and no read path consulted it. |
 
-**Seal-evidence sub-key `registryRevision`:** The seal-evidence object uses `registryRevision` as a sub-key (`registry.py:1238`, `:5560`) to record the registry revision at seal time. This sub-key is sourced from the `revision` field (not from the retired top-level `registryRevision`). It is retained as a named evidence anchor; its source must remain `revision`.
+**Seal-evidence sub-key `registryRevision`:** The seal-evidence object uses `registryRevision` as a sub-key (`registry.py:1238`, `:5560`) to record the registry revision at seal time. The sub-key is sourced from the `revision` field (not from the retired top-level `registryRevision`). The sub-key is retained as a named evidence anchor; its source must remain `revision`.

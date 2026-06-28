@@ -14,7 +14,7 @@ Patch `REPOSITORY.md` in the current repository with repo-specific multi-agent m
 3. Verify `REPOSITORY.md` exists in the repo root. If absent, **ABORT**: `REPOSITORY.md` not found; run `(agent install)` first.
 4. Read `REPOSITORY.md` in full.
 5. Locate all `<!-- TODO(patch): <description> -->` placeholders. If none are found, **ABORT**: no `<!-- TODO(patch): ... -->` placeholders found; `REPOSITORY.md` may already be patched or was not installed via `(agent install)`.
-6. For each placeholder, infer repo-specific content from the current repository context. For validation commands, include a command path only when that exact path exists in the target repo; see **Validation inference scope** in **Notes**. When no eligible command is found, leave a bounded `<!-- TODO(patch): list repo-specific validation commands -->` placeholder. Use the `<description>` as the inference prompt. Display all inferred values. For placeholders that cannot be inferred, collect the values from the user before presenting the gate. When `--force` is supplied, compute `the candidate patch`, render the diff from `the candidate patch`, then present the same gate. Gate the write per `platform/standards/command-argument.md`:
+6. For each placeholder, infer repo-specific content from the current repository context. For validation commands, include a command path only when that exact path exists in the target repo; see **Validation inference scope** in **Notes**. When no eligible command is found, infer explicit prose stating that no repo-specific validation commands are currently defined. Use the `<description>` as the inference prompt. Display all inferred values. For placeholders that cannot be inferred, collect the values from the user before presenting the gate. When `--force` is supplied, compute `the candidate patch`, render the diff from `the candidate patch`, then present the same gate. Gate the write per `platform/standards/command-argument.md`:
 
    ```route-gate
    gate-class: destructive
@@ -39,9 +39,9 @@ Patch `REPOSITORY.md` in the current repository with repo-specific multi-agent m
 - **Examples:** `(agent patch)`, `(agent patch --force)`.
 - **Boundary:** Edits `REPOSITORY.md` only. Leaves `CLAUDE.md`, `AGENTS.md`, template sources, command sources, rule sources, and agent settings JSON unchanged.
 - **Validation:** The patch workflow validates scaffold-local state only: `REPOSITORY.md` remains present and every `<!-- TODO(patch): ... -->` marker is resolved after the write.
-- **Validation inference scope:** Validation commands may be inferred only from the target repo — do not copy command paths from sibling route playbooks or any other source outside the target repo root. Concrete failed example: copying a command path from a sibling route file that resolves under `~/.cursor/` but does not exist in the target repo. When the exact path does not resolve under the target repo, leave a bounded `<!-- TODO(patch): list repo-specific validation commands -->` placeholder.
+- **Validation inference scope:** Validation commands may be inferred only from the target repo — do not copy command paths from sibling route playbooks or any other source outside the target repo root. Concrete failed example: copying a command path from a sibling route file that resolves under `~/.cursor/` but does not exist in the target repo. When no exact validation path resolves under the target repo, write explicit prose that no repo-specific validation commands are currently defined.
 - **Confirm-before-write:** `patch.md` is a confirm-before-write route; the confirmation step is mandatory and not optional for any placeholder. Gate contract: `platform/standards/command-argument.md`.
-- **Force flag:** `--force` is eligible only for the route's gated overwrite path. It does not bypass missing-file, idempotency, inference, validation, or permission failures.
+- **Force flag:** `--force` is eligible only for the route's gated overwrite path. `--force` does not bypass missing-file, idempotency, inference, validation, or permission failures.
 
 ```route-arg
 dispatch: (agent patch [--force])

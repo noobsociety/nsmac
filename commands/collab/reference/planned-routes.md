@@ -13,13 +13,23 @@
 
 ## Notes
 
-Spec for `commands/collab/engine/planned_routes.py` — the planned-route prerequisite gate. This module guards against enabling routes that would change the committed workflow model (seal-terminal as default; see [`workflow-models.md` § Committed workflow model](workflow-models.md#committed-workflow-model); see also [`REPOSITORY.md` § Collab Workflow Models](../../../REPOSITORY.md#6-collab-workflow-models)) before the required contract surface is present in the repository.
+The spec covers `commands/collab/engine/planned_routes.py` — the planned-route prerequisite gate. The module guards against enabling routes that would change the committed workflow model (seal-terminal as default; see [`workflow-models.md` § Committed workflow model](workflow-models.md#committed-workflow-model); see also [`REPOSITORY.md` § Collab Workflow Models](../../../REPOSITORY.md#6-collab-workflow-models)) before the required contract surface is present in the repository.
+
+**Current issue-terminal status:** active and tested. The issue bridge
+prerequisites are present, `--terminal issue` is selectable, and
+`tests/commands/collab/registry.py/export-issues-flow.test.sh` proves
+`(collab export-issues)` closes an issue-terminal collab end to end after
+execution evidence and issue handoff evidence are recorded. Beyond the close
+flow, `export-issues` ABORT-clause coverage is now anchored and tested: each
+guard carries a stable `<!-- abort: export-issues-... -->` anchor with a matching
+P9 test for the six helper-enforced guards, and the step-2 record-unreadable
+clause is marked `(agent-honor-system)`.
 
 ### Public entry
 
 `validate_planned_route_prerequisites(config_root: Path) -> None`
 
-Called by `commands/collab/engine/registry.py` via `validate_registry()` at load time. Calls the issue-bridge gate with `include_issue_route=True`, meaning the `commands/git/issue/index.md` route file is also checked as a prerequisite when the issue bridge is declared.
+Called by `commands/collab/engine/registry_validation.py` via `validate_registry()` at load time. Calls the issue-bridge gate with `include_issue_route=True`, meaning the `commands/git/issue/index.md` route file is also checked as a prerequisite when the issue bridge is declared.
 
 ### Prerequisite semantics
 
@@ -46,7 +56,7 @@ A **planned route** is any route that, if implemented, would activate a non-defa
 
 ### Firing point
 
-Load-time, during `validate_registry()` in `commands/collab/engine/registry.py`. The gate fires before any registry data is returned to the caller, on every registry-loading command.
+Load-time, during `validate_registry()` in `commands/collab/engine/registry_validation.py`. The gate fires before any registry data is returned to the caller, on every registry-loading command.
 
 ### Abort family
 
@@ -59,3 +69,7 @@ Exit-1 message (exact): `issue bridge blocked until prerequisite artifacts are p
 Where `<issue_clause>` is `third prerequisite: commands/git/issue/index.md (output contract); ` when the issue route file is included as a required prerequisite, otherwise empty; and `<labels>` is the comma-space-joined list of missing label names.
 
 **Module-to-subcommand map row:** `planned-route-gates` in `commands/collab/reference/helper-output.md`.
+
+## Current gate status
+
+**Issue bridge prerequisites: PASS** as of 2026-06-24 (structural-architecture-completion-audit). All 15 prerequisite substrings are present; `validate_planned_route_prerequisites` exits without error. Issue-terminal is active: `--terminal issue` is a selectable value at init time, and `(collab export-issues)` closes a collab end-to-end. End-to-end proof: `tests/commands/collab/registry.py/issue-terminal-close-flow.test.sh` and `tests/commands/collab/registry.py/export-issues-flow.test.sh`. Beyond the close flow, `export-issues` ABORT coverage is anchored and tested per-guard; the only non-tested clause is the step-2 record-unreadable guard, marked `(agent-honor-system)`. This section should be updated whenever the gate status changes.

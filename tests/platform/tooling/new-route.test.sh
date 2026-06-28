@@ -36,8 +36,7 @@ fi
 
 "$ROOT/platform/tooling/coverage-gate.sh" \
   --routes-dir "$fixture" \
-  --tests-dir "$fixture/tests/commands/collab/registry.py" \
-  --allowlist /dev/null >/dev/null
+  --tests-dir "$fixture/tests/commands/collab/registry.py" >/dev/null
 
 # audit.sh conformance: full audit.sh cannot run on a fixture (requires CLAUDE.md,
 # commands.md, generated/, and other repo-level scaffolding). The coverage-gate

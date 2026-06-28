@@ -9,9 +9,13 @@ Select the active collab in the registry so subsequent routes do not need an exp
 
 ## Steps
 
+<!-- abort: activate-record-required -->
 1. Read [invariants.md](../../../commands/collab/reference/invariants.md) before executing; call the relevant helper fresh and do not trust prior reads from conversation context (Invariant #4). Resolve `<record>` from the next positional token after `activate`. If missing, **ABORT**: `<record>` is required.
+<!-- abort: activate-registry-unreadable -->
 2. Read the resolved registry. If unreadable, **ABORT**: registry unreadable; name the path.
+<!-- abort: activate-registry-target-unavailable -->
 3. Resolve `<record>` against collab `slug`, `id`, or stable numeric position. If no entry matches, **ABORT**: registry target unavailable; name the token.
+<!-- abort: activate-registry-target-archived -->
 4. If the matched collab is archived, **ABORT**: registry target archived; name the token.
 5. Write the matched collab id to `activeCollabId`.
 6. Stop after selecting the active collab. Do not modify the transcript.

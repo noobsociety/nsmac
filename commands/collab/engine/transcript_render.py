@@ -40,7 +40,7 @@ COMMAND_SYSTEM_DIR = ROOT / 'platform' / 'tooling'
 if str(COMMAND_SYSTEM_DIR) not in sys.path:
     sys.path.insert(0, str(COMMAND_SYSTEM_DIR))
 
-from roles import load_projector, load_role, participant_row, projectors_dir_for_roles  # noqa: E402
+from roles import load_role, participant_row  # noqa: E402
 
 from commands.collab.engine.dispatch_forms import collab_dispatch  # noqa: E402
 from commands.collab.engine.errors import die  # noqa: E402
@@ -64,18 +64,19 @@ from commands.collab.engine.registry_constants import (  # noqa: E402
     PHASES,
 )
 from commands.collab.engine.transcript_readers import (  # noqa: E402
+    ANCHOR_RE,
     DETAILS_CLOSE_RE,
     DETAILS_OPEN_RE,
+    STANCE_DECLARATION_RE,
+    section_bounds,
     summary_role,
 )
 
-ANCHOR_RE = re.compile(r'^<a name="(?P<anchor>[A-Za-z0-9_-]+)"></a>$')
 DETAILS_CONTROL_LINE_RE = re.compile(r'^</?details(?:\s+[^>]*)?\s*>$')
 PROHIBITION_SEPARATOR = ' \u00b7 '
 AUTHOR_DECLARED_STANCES = {'converges', 'dissents', 'qualifies'}
 MISSING_STANCE = 'missing-stance'
 DEFAULT_ROLES_DIR = ROOT / 'commands/collab/reference/roles'
-STANCE_DECLARATION_RE = re.compile(r'^\s*STANCE:\s*(converges|dissents|qualifies)\s*$', re.IGNORECASE)
 TIMESTAMP_WRAPPER_RE = re.compile(r'^\s*<p><em>.*</em></p>\s*$')
 CONTENT_ONLY_GUARD_RE = re.compile(r'^\s*<!--\s*collab:content-only;\s*do-not-execute\s*-->\s*$')
 EFFORT_OVERRIDE_LINE_RE = re.compile(r'^\s*EFFORT OVERRIDE:\s*.+$', re.IGNORECASE)
@@ -155,30 +156,7 @@ def excerpt_source(value: str) -> str:
 
 
 def load_participant_metadata(roles_dir: Path, role: str) -> dict:
-    try:
-        return load_role(roles_dir, role)
-    except SystemExit as exc:
-        try:
-            return load_projector(projectors_dir_for_roles(roles_dir), role)
-        except SystemExit:
-            raise exc
-
-
-def section_bounds(lines: list[str], heading: str) -> tuple[int, int]:
-    start: int | None = None
-    for index, line in enumerate(lines):
-        if line.strip() == heading:
-            start = index
-            break
-    if start is None:
-        die(f'transcript section missing: {heading}')
-
-    end = len(lines)
-    for index in range(start + 1, len(lines)):
-        if lines[index].startswith('## ') and lines[index].strip() in {f'## {item}' for item in PHASES}:
-            end = index
-            break
-    return start, end
+    return load_role(roles_dir, role)
 
 
 def toc_bounds(lines: list[str]) -> tuple[int, int]:

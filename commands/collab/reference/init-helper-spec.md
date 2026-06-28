@@ -73,30 +73,31 @@ When absent: omit `reviewerRole`, `reviewerMode`, and `reviewerOptionalPhases` f
 
 ### Strict-flag set
 
-The init helper accepts exactly one required flag and four optional flags:
+The init helper accepts exactly one required flag and five optional flags:
 
 - Required: `--agent-id <agentId>`
 - Optional: `--reviewer <role>`
-- Optional: `--participant-verification` (boolean; no value)
-- Optional: `--verification-cap <N>` (positive integer; requires `--participant-verification`)
-- Optional: `--preview` (boolean; no value)
+- Optional: `--terminal <seal|issue>`
+- Optional: `--no-participant-verification` (boolean; no value)
+- Optional: `--work-repo <path>`
+- Optional: `--open` (boolean; no value)
 
 All other flag-shaped tokens (any token beginning with `--`) must be rejected before any file write with: `unknown flag: <token>`.
 
 `--force` is ineligible for this route per [`command-argument.md`](../../../platform/standards/command-argument.md) guard class `registry-integrity`. The guards against duplicate records and registry corruption must not be bypassable.
 
-### `--preview` flag schema
+### `--open` flag schema
 
-Flag: `--preview` (optional, boolean, no value).
+Flag: `--open` (optional, boolean, no value).
 
 When present:
 
-- Accept the flag as a no-value boolean. If a value token follows `--preview` and it is not another declared flag, it is treated as part of `<name>` per normal init token parsing.
+- Accept the flag as a no-value boolean. If a value token follows `--open` and it is not another declared flag, it is treated as part of `<name>` per normal init token parsing.
 - After the registry and transcript transaction succeeds, derive an absolute `file://` URI from the transcript path using `transcript_path.resolve().as_uri()` and invoke `webbrowser.open_new_tab(uri)`.
 - On success, emit `OPEN: file://<abs-path>` as an advisory line after the first output line.
 - On failure (any exception from `webbrowser.open_new_tab()`), emit `OPEN: failed: <reason>` as an advisory line. Do not alter the exit code, roll back registry or transcript writes, or re-raise the exception.
-- Provide a test injection seam (e.g. a module-level open function) so tests can exercise the `--preview` path without launching a real browser.
+- Provide a test injection seam (e.g. a module-level open function) so tests can exercise the `--open` path without launching a real browser.
 
-When absent: skip the browser-open step entirely. Existing non-`--preview` output is byte-for-byte unchanged.
+When absent: skip the browser-open step entirely. Existing non-`--open` output is byte-for-byte unchanged.
 
 No future flags may be added to the helper CLI without updating this spec first.

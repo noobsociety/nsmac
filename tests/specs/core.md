@@ -15,18 +15,28 @@ Deterministic QA for `~/.cursor/platform/standards/*.md` canon documents.
 
 ## Required roster
 
-- `role-standard.md`
 - `author-voice.md`
 - `command-argument.md`
 - `command-convention.md`
+- `command-default.md`
+- `command-grammar.md`
 - `command-standard.md`
+- `context-gate.md`
 - `context-management.md`
+- `devblog-discipline.md`
+- `doctrine.md`
 - `document-standard.md`
 - `flag-taxonomy.md`
 - `framework-boundaries.md`
+- `git-convention.md`
 - `helper-subcommands.md`
+- `markdown-workflow.md`
+- `playbook-discipline.md`
+- `quality-learning.md`
+- `role-standard.md`
 - `route-invariants.md`
 - `route-sufficiency.md`
+- `runtime-contract.md`
 - `style-guide.md`
 
 ## Output

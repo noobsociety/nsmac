@@ -13,7 +13,7 @@
 
 ## Notes
 
-This document explains what effort levels mean, how to interpret the phase-role matrix, and how the advisory helper uses it.
+The document explains what effort levels mean, how to interpret the phase-role matrix, and how the advisory helper uses it.
 
 **Authoritative source:** [`agent-effort.json`](agent-effort.json). The table below is a human-readable rendering of that file; if they diverge, the JSON is correct.
 
@@ -21,7 +21,7 @@ This document explains what effort levels mean, how to interpret the phase-role 
 
 **audit-effort-matrix:** Run `commands/collab/engine/registry.py audit-effort-matrix` to verify that the human-readable projection in [`agent-model.md`](agent-model.md) matches `agent-effort.json`. Run before Handoff to catch projection drift before implementation commits the effort matrix as a documented contract. Drift between the two is a defect; resolve it by updating `agent-effort.json` and regenerating the projection.
 
-**Change-motivation convention:** Every change to `agent-effort.json` or to the escalation signal taxonomy in this file must cite the collab, signal, or rationale that motivated the change. This prevents invisible drift and gives reviewers an anchor for "this default is wrong" claims.
+**Change-motivation convention:** Every change to `agent-effort.json` or to the escalation signal taxonomy in this file must cite the collab, signal, or rationale that motivated the change. The convention prevents invisible drift and gives reviewers an anchor for "this default is wrong" claims.
 
 ## Effort levels
 
@@ -35,7 +35,7 @@ This document explains what effort levels mean, how to interpret the phase-role 
 
 ## Phase-role matrix
 
-This matrix is rendered from `agent-effort.json`. The helper's `EFFORT:` advisory output and `audit-effort-matrix` check read the same JSON source.
+The matrix is rendered from `agent-effort.json`. The helper's `EFFORT:` advisory output and `audit-effort-matrix` check read the same JSON source.
 
 | Phase | mod | tw | pe | pa |
 |---|---|---|---|---|
@@ -50,7 +50,7 @@ This matrix is rendered from `agent-effort.json`. The helper's `EFFORT:` advisor
 
 **`—`** means the role is not on the turn-order roster for that phase by default. Optional admission is available via `reviewerOptionalPhases` in the registry (defaults to `["Discussion"]`; extended via `(collab set) reviewer-optional-phases`); when admitted to a non-Discussion phase, the effort level is `xhigh`. Implemented by `reviewer_optional_phases` in `commands/collab/engine/registry.py`.
 
-Roles that exist in `commands/collab/reference/roles/` but are absent from this advisory matrix receive the helper's open-roster fallback: `medium`. This keeps join and speak advisories non-blocking for newly added roles while preserving explicit matrix values for the curated roles.
+Roles that exist in `commands/collab/reference/roles/` but are absent from this advisory matrix receive the helper's open-roster fallback: `medium`. The open-roster fallback keeps join and speak advisories non-blocking for newly added roles while preserving explicit matrix values for the curated roles.
 
 ## How to use this
 
@@ -76,13 +76,13 @@ The following phase-role combinations require an explicit `EFFORT OVERRIDE: <lev
 - The reviewer's Completion.verification turn — reviewer seal turn; one bad judgment stales the seal and blocks close
 - Implementation-bearing Handoff turns (technical-writer and platform-engineer roles) — at the Handoff-to-Completion boundary
 
-`EFFORT OVERRIDE: matrix` is the explicit "considered and did not escalate" form. It satisfies the mandatory-declaration requirement without claiming elevated effort.
+`EFFORT OVERRIDE: matrix` is the explicit "considered and did not escalate" form. The form satisfies the mandatory-declaration requirement without claiming elevated effort.
 
 The override declaration is stored and machine-inspectable for audit (via `audit-closed` and reviewer inspection) but is suppressed from reader-facing rendered prose; readers see the effort signal through the advisory `EFFORT:` output, not inline contribution text.
 
 **Helper symbols:** `MANDATORY_EFFORT_OVERRIDE_TURNS` (`commands/collab/engine/registry.py`, the declared phase-role list), `validate_effort_override` (aborts missing, misplaced, or malformed override lines), `effort_override_metadata_comment` (stores the accepted declaration as a hidden base64 comment in the transcript). `audit-closed` exposes stored override metadata and mandatory-turn coverage for reviewer inspection.
 
-**Post-deadlock Discussion turns** are agent-judged mandatory-declaration triggers: if the Discussion phase reached a deadlock before the current turn, the contributing agent must include an override line. This trigger is not helper-detected; reviewers assess compliance from the transcript.
+**Post-deadlock Discussion turns** are agent-judged mandatory-declaration triggers. If the Discussion phase reached a deadlock before the current turn, the contributing agent must include an override line. The trigger is not helper-detected; reviewers assess compliance from the transcript.
 
 ## Escalation signal taxonomy
 
@@ -104,7 +104,7 @@ Categories are the closed testable vocabulary. Example signals are illustrative 
 
 At the $100 Claude Code tier, declared effort levels are enforceable: the reviewer (claude-opus-4-7) and the platform-engineer role run without silent model degradation, and Codex `/fast` provides sustained throughput for narrow implementation and inspection loops. Codex `/fast` is a throughput mode — it does not replace explicit effort escalation for turns with coherence, migration, or delivery risk.
 
-**Historical note ($20 tier):** At the $20 tier, `opus` access was metered and model fall-back was silent — the harness declared `xhigh` but the underlying model degraded without notifying the operator. The reviewer and the platform-engineer role were the highest-priority roles to upgrade; their convergent-gate and implementation-bearing turns were where silent degradation was most costly.
+**Historical note ($20 tier):** At the $20 tier, `opus` access was metered and model fallback was silent — the harness declared `xhigh` but the underlying model degraded without notifying the operator. The reviewer and the platform-engineer role were the highest-priority roles to upgrade; their convergent-gate and implementation-bearing turns were where silent degradation was most costly.
 
 ## Invariants
 

@@ -13,7 +13,7 @@
 
 ## Notes
 
-This document specifies when to run lifecycle commands during a collab session. It supplements [`agent-effort.md`](agent-effort.md) (effort levels) and [`agent-model.md`](agent-model.md) (join-time model and harness).
+The document specifies when to run lifecycle commands during a collab session. The document supplements [`agent-effort.md`](agent-effort.md) (effort levels) and [`agent-model.md`](agent-model.md) (join-time model and harness).
 
 ## `/compact`
 
@@ -35,7 +35,7 @@ Effort changes per phase per role as defined in `agent-effort.md` and `agent-mod
 
 ## `(collab join)`
 
-`(collab join)` is metadata-only admission work. It does not produce a phase contribution and runs at `low` for any role. The per-phase effort matrix governs speak turns only.
+`(collab join)` is metadata-only admission work. `(collab join)` does not produce a phase contribution and runs at `low` for any role. The per-phase effort matrix governs speak turns only.
 
 ## `Completion.verification`
 
@@ -54,11 +54,11 @@ Run only at the **close → init** boundary — after a collab closes and before
 
 ## `/exit`
 
-A harness-level session command. It does not affect collab state; the transcript and registry persist on disk after exit. Use when leaving the session entirely, not as a collab lifecycle step.
+A harness-level session command. The command does not affect collab state; the transcript and registry persist on disk after exit. Use when leaving the session entirely, not as a collab lifecycle step.
 
 ## Token visibility
 
-Token consumption during collab participation is visible through harness commands only — the registry has no telemetry channel to model or agent-counted totals.
+Token consumption during collab participation is visible through harness commands only — the registry has no telemetry channel to model-counted or agent-counted totals.
 
 **Codex:** Run `/status` to get a snapshot of current context usage. Record the value at collab join and again after each collab command. The per-command delta and collab-total delta are user-measured percentages relative to the context window.
 
@@ -72,4 +72,4 @@ Token consumption during collab participation is visible through harness command
 
 These values are harness-scoped and user-measured. They are not collab-authoritative: the registry does not record them, and agents cannot derive them without user action.
 
-**Automatic per-command `TOKENS:` emission is out of scope for this repo.** No process authored here sits in the per-command execution loop with access to token counts. Any automatic path terminates in code this repo does not own (harness internals) or in agent self-report (a fabrication risk). This is a harness concern per Invariant #7. If a future harness wrapper supplies telemetry, the advisory shape must include `denominator=context-window` and `source=harness|unavailable` provenance; a bare percentage implying live precision is rejected.
+**Automatic per-command `TOKENS:` emission is out of scope for this repo.** No process authored here sits in the per-command execution loop with access to token counts. Any automatic path terminates in code this repo does not own (harness internals) or in agent self-report (a fabrication risk). Automatic token emission is a harness concern per Invariant #7. If a future harness wrapper supplies telemetry, the advisory shape must include `denominator=context-window` and `source=harness|unavailable` provenance; a bare percentage implying live precision is rejected.

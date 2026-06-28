@@ -1,8 +1,8 @@
-# Command Argument
+# Command argument
 
 Command argument contract for command routes. Routes adopt named flags by declaring a `route-flag` block, and routes with user-facing mutation gates declare a `route-gate` block.
 
-## Flag Parsing Semantics
+## Flag parsing semantics
 
 - **Long-form tokens only.** Flags use the `--name` form. Short aliases (e.g., `-f`) are not recognized.
 - **Exact case-sensitive match.** `--force` and `--Force` are distinct tokens; only the declared form matches.
@@ -10,7 +10,7 @@ Command argument contract for command routes. Routes adopt named flags by declar
 - **Flag-and-positional interleaving is not supported.** Interleaving flags with positional arguments is not supported. A future route requiring trailing flags must amend this document; the absence of that support is intentional, not an oversight.
 - **Unsupported flags abort before any route mutation.** A route that does not declare a `route-flag` block for a given flag must abort with a clear error when that flag is supplied; it must not silently ignore or pass through the flag.
 
-## `route-flag` Block Schema
+## `route-flag` block schema
 
 Every route that supports or explicitly rejects a named flag must carry a fenced `route-flag` block. The block is machine-readable and validated by `platform/tooling/audit-flag-scope.sh` (eligibility schema declared below; cross-scope override declarations governed by [`platform/tooling/flag-scope-validator-contract.md`](../tooling/flag-scope-validator-contract.md)).
 
@@ -47,7 +47,7 @@ guard-class: registry-integrity
 ineligibility-reason: Bypass would create state that other helpers assume cannot exist.
 ````
 
-## Force Eligibility Table
+## Force eligibility table
 
 | Guard class | Description |
 |-------------|-------------|
@@ -55,7 +55,7 @@ ineligibility-reason: Bypass would create state that other helpers assume cannot
 | `gated-overwrite` | Route already presents a destructive gate on conflict; `--force` computes the candidate patch before entering that gate. |
 | `recovery-only` | Route normally delegates mutation to lifecycle-specific routes; `--force` admits a narrowly documented metadata repair path. |
 
-## Force Ineligibility Table
+## Force ineligibility table
 
 | Guard class | Ineligibility reason | Governing contract |
 |-------------|----------------------|--------------------|
@@ -66,30 +66,30 @@ ineligibility-reason: Bypass would create state that other helpers assume cannot
 | `unreadable-context` | Guard aborts on unreadable input; there is no artifact to diff. | Route-specific abort steps |
 | `destructive-delete` | Guard covers `delete`, `archive`, `kick`, `purge`, `reset`, `overwrite` verbs. | Command argument destructive verb set |
 
-## Diff-Then-Write Atomicity Invariant
+## Diff-then-write atomicity invariant
 
 A route adopting a flag with diff-then-write semantics must produce a single patch object. Use the canonical phrase `the candidate patch` to name it. The diff renderer takes `the candidate patch` as its sole input. The post-confirmation write applies `the candidate patch` without recomputation or re-read of source. The phrase `the candidate patch` must appear in both the diff step and the write step of the adopting route.
 
-This invariant closes the TOCTOU window between diff display and write. A route that recomputes the patch after user confirmation provides weaker guarantees than what the gate contract implies.
+The invariant closes the TOCTOU window between diff display and write. A route that recomputes the patch after user confirmation provides weaker guarantees than what the gate contract implies.
 
-## Gate Tiers
+## Gate tiers
 
 **Standard** — the operation modifies state that is reversible by an obvious counter-operation the user already knows (for example, `git reset` for commits). Standard gates use `confirm` to proceed and `cancel` to abort.
 
 **Destructive** — the operation modifies state that is not reversible by an obvious counter-operation. Destructive gates use a closed-set action verb plus a required operand to proceed, and `cancel` to abort.
 
-## Gate Interaction
+## Gate interaction
 
 Flag adoption does not change the gate shape or exact-confirmation-token contract.
 
-## Author-Intent Decision Tree
+## Author-intent decision tree
 
 Apply this tree when choosing a gate tier for a new mutation gate:
 
 1. Does the operation modify state outside framework-owned ungated write paths (such as registry-mediated writes performed by `(collab speak)`)? If no, no gate. If yes, continue.
 2. Is the modification reversible by an obvious counter-operation the user already knows? If yes, **standard** tier. If no, **destructive** tier.
 
-## Reserved Keyword Vocabulary
+## Reserved keyword vocabulary
 
 Gate tokens are reserved keywords recognized only when a route is in a documented gate state. They are not public commands, do not appear in `commands/`, and are not listed in the command roster.
 
@@ -111,17 +111,17 @@ Gate tokens are reserved keywords recognized only when a route is in a documente
 
 A new destructive route must map its proceed verb to one of these. If no existing verb fits, extend this list by amending this file — never invent a route-local verb.
 
-## Match Semantics
+## Match semantics
 
 A gate input matches a token when the input string, after stripping leading and trailing whitespace, equals the token string exactly. Matching is case-sensitive. No regex, no aliases, no shell-completion, no substring matching.
 
 For destructive gates the full `<verb> <operand>` string must match — both verb and operand must be present and correct.
 
-## Token Equivalence
+## Token equivalence
 
 `confirm` == `(confirm)` as syntax sugar; the bare word is canonical. The same equivalence applies to `cancel` and to destructive verb tokens. Both forms satisfy the gate check.
 
-## Gate Declaration Block
+## Gate declaration block
 
 Every mutating route must carry a fenced `route-gate` block declaring its gate. The block is machine-readable and validated by the route-gate lint in `platform/tooling/`.
 
@@ -158,13 +158,13 @@ invalid-input: re-prompt
 re-prompt-template: Type "confirm" to proceed, or "cancel" to abort.
 ````
 
-## Re-Prompt Contract
+## Re-prompt contract
 
 On invalid input or silence, the gate re-displays the `re-prompt-template` verbatim. The gate remains unresolved until the user types a valid proceed or abort token. There is no "later" or "defer" path — the gate resolves to proceed or abort only.
 
-This file defines what the prompt must convey: proceed token, abort token, and artifact identity for destructive gates. The route's gate declaration block carries the exact `re-prompt-template` text.
+The file defines what the prompt must convey: proceed token, abort token, and artifact identity for destructive gates. The route's gate declaration block carries the exact `re-prompt-template` text.
 
-## Verb Extension Procedure
+## Verb extension procedure
 
 To add a verb to the closed destructive set:
 
@@ -174,7 +174,7 @@ To add a verb to the closed destructive set:
 
 Never add a verb at the route level without amending this file first.
 
-## `route-arg` Block Schema
+## `route-arg` block schema
 
 Every route that declares user-facing arguments must carry a fenced `route-arg` block. The block is machine-readable and validated by `platform/tooling/audit.sh`.
 
@@ -231,7 +231,7 @@ param: name=--target; required=optional; placeholder=<role>; class=dynamic; sour
 param: name=--dry-run; required=optional; placeholder=--dry-run; class=type; rule=boolean flag; default=literal:false
 ````
 
-## Negative-Test Category Table
+## Negative-test category table
 
 The following categories must each have at least one test before the first flag-adopting batch ships. Test scope is derivable from this table without tracing individual route steps.
 

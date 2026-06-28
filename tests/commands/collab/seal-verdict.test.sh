@@ -53,10 +53,26 @@ import json
 from pathlib import Path
 
 data = json.loads(Path('show-verdict.json').read_text())
+assert data['target'].endswith('seal-verdict')
+assert data['status'] == 'closed'
+assert data['activePhase'] == 'Completion'
+assert data['completionSubState'] == 'verification'
+assert data['verificationReviewSubState'] == 'assessment'
+assert data['verdict']['outcome'] == 'success'
+assert data['verificationSeal']['sealedBy'] == 'pa'
 assert data['sealVerdict']['authoritative'] is False, data
 assert data['sealVerdict']['closeGate'] == 'verificationSeal', data
 assert data['sealVerdict']['verdict']['outcome'] == 'success', data
 PY
+
+set +e
+missing_output="$("$ROOT/commands/collab/engine/registry.py" show-verdict "$RUN_DATE-seal-verdict-missing" 2>&1)"
+missing_status=$?
+set -e
+if [[ "$missing_status" -eq 0 || "$missing_output" != *"registry target not found"* ]]; then
+  printf 'FAIL: show-verdict missing target rejection mismatch\n%s\n' "$missing_output" >&2
+  exit 1
+fi
 
 python3 - "$REGISTRY" "$TARGET" <<'PY'
 import json

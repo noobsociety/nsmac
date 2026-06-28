@@ -16,7 +16,7 @@ Shared vocabulary for the `agentId` value recorded in collab registry `participa
 
 ## Notes
 
-- **Purpose:** `agentId` is an at-join forensic marker for the active runtime harness. It is not authentication and is not a model-enforcement mechanism.
+- **Purpose:** `agentId` is an at-join forensic marker for the active runtime harness. `agentId` is not authentication and is not a model-enforcement mechanism.
 
 - **Precedence:** Declare the first usable value from this list:
   1. Stable model-family token when the harness exposes one: `opus`, `sonnet`, `haiku`, `claude`, `gpt`, `gpt-mini`, `gemini`, or `codex`.
@@ -28,6 +28,6 @@ Shared vocabulary for the `agentId` value recorded in collab registry `participa
 
 - **Harness-inaccessible identity:** `unknown` is reserved for the harness-inaccessible case only: the harness cannot expose any identity. Free-form alternatives such as `UNKNOWN`, `unspecified`, and `n/a` are rejected by the helper. Do not pass `unknown` when the harness exposes an identity that the caller chooses not to declare — use `caller-declined` instead.
 
-- **Caller-declined identity:** `caller-declined` is the token for explicit opt-out: the harness exposes a usable identity but the caller deliberately chooses not to declare it. This is a distinct state from harness-inaccessible (`unknown`). The helper counts `caller-declined` joins before any rejection enforcement; policy on whether to reject or allow caller-declined identity is determined by the governing collab configuration.
+- **Caller-declined identity:** `caller-declined` is the token for explicit opt-out: the harness exposes a usable identity but the caller deliberately chooses not to declare it. `caller-declined` is a distinct state from harness-inaccessible (`unknown`). The helper counts `caller-declined` joins before any rejection enforcement; policy on whether to reject or allow caller-declined identity is determined by the governing collab configuration.
 
-- **Trust model:** The helper enforces presence, whitespace stripping, the exact lowercase `unknown` and `caller-declined` tokens, and invalid unavailable-identity aliases. It cannot verify whether the caller chose the highest-precedence available token or whether the harness is genuinely inaccessible.
+- **Trust model:** The helper enforces presence, whitespace stripping, the exact lowercase `unknown` and `caller-declined` tokens, and invalid unavailable-identity aliases. The helper cannot verify whether the caller chose the highest-precedence available token or whether the harness is genuinely inaccessible.

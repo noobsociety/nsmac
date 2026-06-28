@@ -75,7 +75,7 @@ Public command documentation and runtime advisory output present dispatch forms 
 
 ## Validator
 
-A naming validator under `platform/tooling/` enforces this table. It runs in CI on every PR that touches `commands/` or `commands/collab/engine/registry.py`, and blocks merge on unknown verbs, invalid namespace tokens, and `re-`-prefixed routes. The validator is authoritative at PR time; runtime rejection is too late. Any route that fails the validator must be fixed or must add an operation class row to this table before the PR lands; local exceptions are not permitted.
+A naming validator under `platform/tooling/` enforces this table. The validator runs in CI on every PR that touches `commands/` or `commands/collab/engine/registry.py`, and blocks merge on unknown verbs, invalid namespace tokens, and `re-`-prefixed routes. The validator is authoritative at PR time; runtime rejection is too late. Any route that fails the validator must be fixed or must add an operation class row to this table before the PR lands; local exceptions are not permitted.
 
 ## Paren-form grammar extension
 

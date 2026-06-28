@@ -1,8 +1,8 @@
-# Flag-Scope Validator Contract
+# Flag-scope validator contract
 
-Specifies what `platform/tooling/audit-flag-scope.sh` must check when validating the three-tier flag inheritance model used in the restructured command tree.
+The document specifies what `platform/tooling/audit-flag-scope.sh` must check when validating the three-tier flag inheritance model used in the restructured command tree.
 
-## Scope Tiers
+## Scope tiers
 
 Flags are declared at one of three tiers, ordered from broadest to narrowest:
 
@@ -12,11 +12,11 @@ Flags are declared at one of three tiers, ordered from broadest to narrowest:
 
 Non-conflicting flags across tiers union automatically. No declaration is required.
 
-## Conflict Definition
+## Conflict definition
 
 A **conflict** exists when the same flag name (the long-form token, e.g. `--dry-run`) appears at two or more tiers for the same command resolution path.
 
-## Override Declaration Form
+## Override declaration form
 
 When a narrower scope declares a flag that conflicts with a broader scope, the narrower scope's flag block must include the following field:
 
@@ -38,7 +38,7 @@ Example:
 override: namespace — command-scoped --dry-run affects only catalog write, not registry state
 ```
 
-## Error Conditions
+## Error conditions
 
 ### Missing override declaration — error
 
@@ -79,6 +79,6 @@ ERROR: unresolved inherited flag origin for flag '<name>' at <narrow-scope> scop
   missing origin: <parent-scope>
 ```
 
-## Implementation Target
+## Implementation target
 
 `platform/tooling/audit-flag-scope.sh`

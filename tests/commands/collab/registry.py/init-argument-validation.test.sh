@@ -45,6 +45,25 @@ if [[ "$retired_cap_status" -eq 0 || "$retired_cap_output" != *'unknown flag: --
 fi
 
 set +e
+preview_output="$($ROOT/commands/collab/engine/registry.py init --agent-id codex --preview "Argument Validation" 2>&1)"
+preview_status=$?
+set -e
+if [[ "$preview_status" -eq 0 || "$preview_output" != *'unknown flag: --preview'* ]]; then
+  printf 'FAIL: init accepted retired --preview flag
+%s
+' "$preview_output" >&2
+  exit 1
+fi
+
+init_help="$($ROOT/commands/collab/engine/registry.py init --help 2>&1)"
+if [[ "$init_help" != *'--open'* || "$init_help" == *'--preview'* ]]; then
+  printf 'FAIL: init help does not expose only --open
+%s
+' "$init_help" >&2
+  exit 1
+fi
+
+set +e
 none_terminal_output="$("$ROOT/commands/collab/engine/registry.py" init --agent-id codex --terminal none "None Terminal" 2>&1)"
 none_terminal_status=$?
 set -e
@@ -74,26 +93,29 @@ if [[ "$default_output" != records/*default-seal.md || "$default_output" == *-ra
   exit 1
 fi
 
-python3 - "$COLLAB_STATE_HOME" <<'PY'
+python3 - "$COLLAB_STATE_HOME" "$ROOT" <<'PY'
 import json
 import sys
 from pathlib import Path
 
 state_home = Path(sys.argv[1])
+sys.path.insert(0, sys.argv[2])
+from commands.collab.engine.contribution_store import contribution_store_path_for_entry
+
 registries = list(state_home.glob('*/registry.json'))
 assert len(registries) == 1, registries
 data = json.loads(registries[0].read_text())
 entry = next(item for item in data['collabs'] if item['slug'] == 'default-seal')
 assert entry['terminal'] == 'seal', entry
 projection = registries[0].parent / entry['transcriptPath']
-store = projection.with_name(f'{projection.stem}-contributions.json')
+store = contribution_store_path_for_entry(registries[0], entry)
 assert projection.exists(), projection
 assert store.exists(), store
 issue = next(item for item in data['collabs'] if item['slug'] == 'issue-terminal')
 assert issue['terminal'] == 'issue', issue
 issue_projection = registries[0].parent / issue['transcriptPath']
 assert issue_projection.exists(), issue_projection
-assert issue_projection.with_name(f'{issue_projection.stem}-contributions.json').exists()
+assert contribution_store_path_for_entry(registries[0], issue).exists()
 assert 'verificationSeal' not in issue, issue
 assert 'verification' not in issue, issue
 PY
@@ -138,4 +160,41 @@ if failures:
     )
 PY
 
-printf 'OK: init argument validation rejects missing names, invalid reviewer values, retired verification flags, invalid terminal selectors, and empty slugs; default terminal is seal and issue terminal initializes without seal state\n'
+python3 - "$ROOT" <<'INNER_PY'
+import sys
+from pathlib import Path
+
+sys.path.insert(0, sys.argv[1])
+from commands.collab.engine import registry as module
+
+parsed = module.parse_init_tokens(['--agent-id', 'codex', '--open', 'Quoted Title'])
+assert parsed[0] == 'Quoted Title', parsed
+assert parsed[3] is True, parsed
+
+quoted = module.parse_init_tokens(['--agent-id', 'codex', 'Route UX Cleanup'])
+assert quoted[0] == 'Route UX Cleanup', quoted
+
+try:
+    module.parse_init_tokens(['--agent-id', 'codex', 'Route', 'UX'])
+except SystemExit as exc:
+    assert 'unknown positional argument: UX' in str(exc), str(exc)
+else:
+    raise AssertionError('unquoted trailing positional was accepted')
+
+help_text = (Path(sys.argv[1]) / 'commands/collab/reference/init-helper-spec.md').read_text()
+documented_flags = set()
+for line in help_text.splitlines():
+    if line.startswith('- Required: `') or line.startswith('- Optional: `'):
+        documented_flags.add(line.split('`', 2)[1].split()[0])
+expected = {
+    '--agent-id',
+    '--reviewer',
+    '--terminal',
+    '--no-participant-verification',
+    '--work-repo',
+    '--open',
+}
+assert documented_flags == expected, documented_flags
+INNER_PY
+
+printf 'OK: init argument validation rejects missing names, invalid reviewer values, retired verification flags, retired preview flag, invalid terminal selectors, and empty slugs; default terminal is seal and issue terminal initializes without seal state\n'

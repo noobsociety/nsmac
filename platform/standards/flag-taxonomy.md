@@ -13,7 +13,7 @@
 
 ## Notes
 
-Defines the three-class taxonomy for collab command flags. Authoritative for the flag inventory generator under items #7, #11, and #15.
+The three-class taxonomy for collab command flags is defined here. The taxonomy is authoritative for the flag inventory generator under items #7, #11, and #15.
 
 ## Three classes
 

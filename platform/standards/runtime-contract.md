@@ -1,6 +1,6 @@
-# Runtime Contract
+# Runtime contract
 
-Specifies the execution prerequisites for `~/.cursor` tooling. A host that does not meet these requirements may fail with an opaque error mid-run rather than a named failure at startup. `platform/tooling/audit.sh` runs a preflight against these requirements and fails early with a named message before downstream validators run.
+The document specifies the execution prerequisites for `~/.cursor` tooling. A host that does not meet these requirements may fail with an opaque error mid-run rather than a named failure at startup. `platform/tooling/audit.sh` runs a preflight against these requirements and fails early with a named message before downstream validators run.
 
 ## Python
 
@@ -16,7 +16,7 @@ Affected files: `check-source-ledger.py`, `audit-reachability.sh`, `coverage-gat
 
 All shell scripts target bash. The declared convention is `set -euo pipefail`.
 
-Scripts invoke Python tooling as `python3 <script>` from the repository root. This requires `python3` on `$PATH` to resolve to a conforming interpreter.
+Scripts invoke Python tooling as `python3 <script>` from the repository root. The invocation requires `python3` on `$PATH` to resolve to a conforming interpreter.
 
 ## Required binaries
 
@@ -32,4 +32,4 @@ POSIX utilities (`find`, `grep`, `sort`, `awk`, `sed`, `cut`, `tr`, `wc`) are us
 
 ## No third-party packages
 
-Python tooling uses only the standard library. There is no `requirements.txt`, `pyproject.toml`, or `.tool-versions`. Adding a third-party import breaks this and silently fails on any host that hasn't installed it.
+Python tooling uses only the standard library. There is no `requirements.txt`, `pyproject.toml`, or `.tool-versions`. Adding a third-party import violates this constraint and silently fails on any host that has not installed the package.

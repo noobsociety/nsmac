@@ -257,34 +257,6 @@ def git_unstaged_paths(paths: list[str], repo_root: Path = ROOT) -> set[str]:
 def working_tree_path_exists(path: str, repo_root: Path = ROOT) -> bool:
     return os.path.lexists(repo_root / path)
 
-def assert_execution_touched_paths_in_git_state(entry: dict) -> None:
-    from commands.collab.engine.digests import touched_paths_for_execution
-
-    touched = touched_paths_for_execution(entry)
-    if not touched:
-        return
-    repo_root = work_repo_root(entry)
-    in_git = git_index_or_staged_paths(touched, repo_root)
-    staged = git_staged_paths(touched, repo_root)
-    unstaged = git_unstaged_paths(touched, repo_root)
-    committed_deletions = git_committed_deletion_paths(touched, repo_root)
-    invalid: list[str] = []
-    for path in touched:
-        if path in staged or path in unstaged:
-            invalid.append(path)
-            continue
-        if path in in_git:
-            continue
-        if path in committed_deletions and not working_tree_path_exists(path, repo_root):
-            continue
-        invalid.append(path)
-    invalid = sorted(invalid)
-    if invalid:
-        die(
-            'SEAL-GIT-STATE: implementation not in git; '
-            f'unstaged or uncommitted touchedPath(s) in {repo_root}: {json.dumps(invalid, separators=(",", ":"))}'
-        )
-
 def assert_touched_paths_recordable_in_work_repo(entry: dict, touched_paths: list[str]) -> None:
     if not touched_paths:
         return

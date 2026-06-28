@@ -10,6 +10,8 @@ export COLLAB_STATE_HOME="$TMPDIR/state-home"
 
 RUN_DATE="$(date +%Y-%m-%d)"
 
+# Rationale: reviewer-aware rewrite output also proves reviewer-cell mirroring.
+
 observed_revision() {
   "$ROOT/commands/collab/engine/registry.py" speak-state "$1" "$2" \
     | python3 -c 'import json,sys; print(json.load(sys.stdin)["registryRevision"])'
@@ -83,6 +85,18 @@ NOTICE_TARGET="$(init_target "Rewrite Speak Render Reviewer Notice")"
 "$ROOT/commands/collab/engine/registry.py" join-participants "$NOTICE_TARGET" pa --agent-id claude >/dev/null
 "$ROOT/commands/collab/engine/registry.py" set "$NOTICE_TARGET" turn-order pe --caller-role mod >/dev/null
 "$ROOT/commands/collab/engine/registry.py" set "$NOTICE_TARGET" reviewer pa --caller-role mod >/dev/null
+python3 - "$("$ROOT/commands/collab/engine/registry.py" registry-path)" "$NOTICE_TARGET" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+registry = Path(sys.argv[1])
+target = sys.argv[2]
+entry = next(item for item in json.loads(registry.read_text())['collabs'] if item['id'] == target)
+transcript = (registry.parent / Path(entry['transcriptPath'])).read_text()
+assert '| Status | Active phase | Turn order | Reviewer |' in transcript
+assert '| open | Audit | pe | pa |' in transcript
+PY
 "$ROOT/commands/collab/engine/registry.py" set "$NOTICE_TARGET" active-phase Discussion --force --caller-role mod >/dev/null
 printf 'Initial pe contribution before reviewer.\n' >notice-pe-initial.md
 "$ROOT/commands/collab/engine/registry.py" speak-render "$NOTICE_TARGET" pe \

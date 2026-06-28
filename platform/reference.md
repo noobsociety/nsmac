@@ -1,6 +1,6 @@
 # dotcursor system reference
 
-This document maps the `~/.cursor` platform for readers who need to navigate the system as a whole. Consult it when the per-route playbooks or reference docs leave the connecting tissue unclear. Do not duplicate generated-mirror tables; follow the links to the authoritative sources.
+The document maps the `~/.cursor` platform for readers who need to navigate the system as a whole. Consult the document when the per-route playbooks or reference docs leave system-level context unclear. Do not duplicate generated-mirror tables; follow the links to the authoritative sources.
 
 ## Audience routing
 
@@ -62,10 +62,9 @@ All collab commands are dispatched through the `~/.cursor` routing system.
 - [`commands/collab/reference/verification.md`](../commands/collab/reference/verification.md) — `Completion.verification` sub-state semantics, seal object, cap-exit options, reviewer obligation
 - [`commands/collab/reference/invariants.md`](../commands/collab/reference/invariants.md) §17–21 — charter coverage, seal content-addressing, reopen carry-forward
 
-## Ledgers
+## Source ledger
 
 - [`platform/data/source-ledger.md`](data/source-ledger.md) — disposition record for retired source carriers and embedded metadata blocks
-- [`platform/data/weekly-review-ledger.md`](data/weekly-review-ledger.md) — durable weekly-review row dispositions that affect repo workflow obligations
 
 ## Generated mirrors
 

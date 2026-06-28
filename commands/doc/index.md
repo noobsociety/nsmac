@@ -1,6 +1,6 @@
 # (doc)
 
-Route documentation workflows through one singular namespace so the command palette stays compact.
+Route documentation workflows through one namespace so the command palette stays compact.
 
 ## Trigger
 

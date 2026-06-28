@@ -34,6 +34,7 @@ from pathlib import Path
 root = Path(sys.argv[1]).resolve()
 speak_path = root / 'commands/collab/speak/index.md'
 registry_path = root / 'commands/collab/engine/registry.py'
+validation_path = root / 'commands/collab/engine/contribution_validation.py'
 expected_gates = (
     'DIRECTIVE TEST',
     'AUDIT CONFIRMED',
@@ -52,6 +53,7 @@ def read(path: Path) -> str:
 
 speak = read(speak_path)
 registry = read(registry_path)
+validation = read(validation_path)
 
 audit_note = speak.partition('**Reviewer-discipline gates (Audit phase):**')[2]
 if not audit_note:
@@ -65,18 +67,18 @@ else:
     if 'agent judgment' not in audit_note or 'no helper enforcement' not in audit_note:
         failures.append('Audit reviewer gate note must preserve the honor-system enforcement boundary')
 
-if 'def validate_reviewer_conclusion_gates' not in registry:
-    failures.append('registry.py missing validate_reviewer_conclusion_gates')
-if "if phase != 'Conclusion' or role != reviewer_role(entry):" not in registry:
+if 'def validate_reviewer_conclusion_gates' not in validation:
+    failures.append('contribution_validation.py missing validate_reviewer_conclusion_gates')
+if "if phase != 'Conclusion' or role != reviewer_role(entry):" not in validation:
     failures.append('reviewer Conclusion gate must target only the active reviewer in Conclusion')
-if 'REVIEWER-CONCLUSION-GATE-MISSING:' not in registry:
+if 'REVIEWER-CONCLUSION-GATE-MISSING:' not in validation:
     failures.append('reviewer Conclusion gate missing stable abort family')
 if 'validate_reviewer_conclusion_gates(content, phase, role, current_entry)' not in registry:
     failures.append('speak-render must call reviewer Conclusion gate before mutation')
 
-tuple_match = re.search(r'REVIEWER_DISCIPLINE_GATES = \((?P<body>.*?)\)', registry, re.S)
+tuple_match = re.search(r'REVIEWER_DISCIPLINE_GATES = \((?P<body>.*?)\)', validation, re.S)
 if not tuple_match:
-    failures.append('registry.py missing REVIEWER_DISCIPLINE_GATES tuple')
+    failures.append('contribution_validation.py missing REVIEWER_DISCIPLINE_GATES tuple')
 else:
     tuple_body = tuple_match.group('body')
     for gate in expected_gates:

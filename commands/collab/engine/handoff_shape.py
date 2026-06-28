@@ -19,6 +19,7 @@ from commands.collab.engine.registry_constants import (
     MAX_VALIDATION_COMMANDS,
     SHELL_PATTERN_RE,
 )
+from commands.collab.engine.transcript_readers import STANCE_DECLARATION_RE
 
 STRUCTURED_HANDOFF_HEADING_RE = re.compile(r'^\s*\*\*(?P<field>writeScope|validationCommands):?\*\*:?\s*(?P<rest>.*)$')
 CODE_SPAN_RE = re.compile(r'`([^`]+)`')
@@ -30,7 +31,6 @@ EFFORT_OVERRIDE_RE = re.compile(
 EFFORT_OVERRIDE_COMMENT_RE = re.compile(
     r'^<!-- collab:effort-override b64:(?P<payload>[A-Za-z0-9_-]+={0,2}) -->$'
 )
-STANCE_DECLARATION_RE = re.compile(r'^\s*STANCE:\s*(converges|dissents|qualifies)\s*$', re.IGNORECASE)
 
 
 def effort_override_metadata_comment(line: str) -> str:

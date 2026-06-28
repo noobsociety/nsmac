@@ -1,6 +1,6 @@
 # Role prohibitions
 
-Reference inventory for role-local advisory prohibitions. This file is prose documentation only; helpers do not parse it and role JSON remains the machine-readable metadata source.
+Reference inventory for role-local advisory prohibitions. The file is prose documentation only; helpers do not parse it and role JSON remains the machine-readable metadata source.
 
 ## Trigger
 
@@ -14,6 +14,8 @@ Reference inventory for role-local advisory prohibitions. This file is prose doc
 2. Do not mutate registry or transcript state from this documentation-only reference.
 
 ## Notes
+
+The inventories below list mutating commands and the prohibited behaviors for each role.
 
 ## Moderator mutating-command inventory
 
