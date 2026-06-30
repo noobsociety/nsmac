@@ -1,13 +1,31 @@
 """Effort advisory calculation and projection-drift checks."""
 from __future__ import annotations
 
+import base64
 import json
 import re
 import sys
 from pathlib import Path
 
 from commands.collab.engine.errors import die
-from commands.collab.engine.registry_constants import DEFAULT_OPEN_ROSTER_EFFORT
+from commands.collab.engine.registry_constants import (
+    DEFAULT_OPEN_ROSTER_EFFORT,
+    ONE_SPEAK_PHASES,
+    PHASES,
+)
+from commands.collab.engine.registry_io import load_registry, resolve_collab
+from commands.collab.engine.participants import has_participant
+from commands.collab.engine.phase_lifecycle import next_phase_name
+from commands.collab.engine.handoff_shape import EFFORT_OVERRIDE_COMMENT_RE
+from commands.collab.engine.transcript_readers import (
+    DETAILS_CLOSE_RE,
+    DETAILS_OPEN_RE,
+    phase_section,
+    summary_role,
+)
+from commands.collab.engine.contribution_validation import (
+    MANDATORY_EFFORT_OVERRIDE_TURNS,
+)
 
 EFFORT_MODEL_MARKER = 'generated; do not edit'
 
@@ -178,3 +196,87 @@ def audit_effort_matrix(effort_defaults_path: Path, model_path: Path) -> int:
         return 1
     print('OK: agent-model.md effort projection matches agent-effort.json')
     return 0
+
+def effort_phase_after_speak(source_phase: str) -> str:
+    if source_phase == 'Discussion':
+        return 'Conclusion'
+    if source_phase in ONE_SPEAK_PHASES:
+        next_phase = next_phase_name(source_phase)
+        if next_phase:
+            return next_phase
+    return source_phase
+
+def effort_state(path: Path, target: str, role: str, effort_defaults_path: Path) -> int:
+    data = load_registry(path)
+    entry = resolve_collab(data, target)
+    if not has_participant(entry, role):
+        die(f'effort role must already be a participant: {role}')
+    defaults = load_effort_defaults(effort_defaults_path)
+    phase = entry['activePhase']
+    effort = effort_value(defaults, phase, role)
+    result = {
+        'advisory': True,
+        'effort': effort,
+        'phase': phase,
+        'role': role,
+        'source': str(effort_defaults_path),
+        'target': entry['id'],
+    }
+    if effort is None:
+        result['notOnRoster'] = True
+    print(json.dumps(result, sort_keys=True))
+    return 0
+
+def effort_override_from_metadata_comment(line: str) -> str | None:
+    match = EFFORT_OVERRIDE_COMMENT_RE.match(line.strip())
+    if not match:
+        return None
+    try:
+        return base64.urlsafe_b64decode(match.group('payload').encode()).decode()
+    except (ValueError, UnicodeDecodeError):
+        die('EFFORT OVERRIDE metadata is invalid')
+
+def effort_override_audit_items(target: str, transcript: str) -> list[dict]:
+    findings: list[dict] = []
+    for phase in PHASES:
+        try:
+            lines = phase_section(transcript, phase)
+        except SystemExit:
+            continue
+        details_depth = 0
+        current_role: str | None = None
+        current_override: str | None = None
+        for line in lines:
+            stripped = line.strip()
+            if DETAILS_OPEN_RE.match(stripped):
+                details_depth += 1
+                if details_depth == 1:
+                    current_role = None
+                    current_override = None
+                continue
+            if DETAILS_CLOSE_RE.match(stripped):
+                if details_depth == 1 and current_role:
+                    mandatory = (phase, current_role) in MANDATORY_EFFORT_OVERRIDE_TURNS
+                    if mandatory or current_override:
+                        item = {
+                            'target': target,
+                            'phase': phase,
+                            'role': current_role,
+                            'mandatory': mandatory,
+                            'hasOverride': current_override is not None,
+                        }
+                        if current_override:
+                            item['effortOverride'] = current_override
+                        findings.append(item)
+                details_depth = max(0, details_depth - 1)
+                continue
+            if details_depth != 1:
+                continue
+            role = summary_role(line)
+            if role is not None:
+                current_role = role
+                continue
+            override = effort_override_from_metadata_comment(stripped)
+            if override:
+                current_override = override
+    return findings

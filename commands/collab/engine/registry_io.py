@@ -20,6 +20,7 @@ from commands.collab.engine.registry_constants import (
     REGISTRY_EVENT_IGNORED_ROOT_KEYS,
     REGISTRY_EVENT_SCHEMA,
     RETIRED_ROOT_KEYS,
+    STALE_LOCK_SECONDS,
 )
 from commands.collab.engine.registry_state import (
     assert_registry_project_binding,
@@ -88,6 +89,14 @@ def registry_revision(data: dict) -> int:
     if not isinstance(revision, int) or revision < 0:
         die('registry revision must be a non-negative integer')
     return revision
+
+def next_sequence(data: dict) -> int:
+    sequences = [
+        entry.get('sequence')
+        for entry in data.get('collabs', [])
+        if isinstance(entry.get('sequence'), int)
+    ]
+    return max(sequences, default=0) + 1
 
 def retire_legacy_registry_fields(data: dict) -> None:
     for key in RETIRED_ROOT_KEYS:
@@ -296,6 +305,34 @@ def registry_lock_nonblocking(path: Path):
             yield
         finally:
             fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+
+
+def stale_registry_lock_message(path: Path, now: float | None = None) -> str | None:
+    lock_path = path.with_name(f'{path.name}.lock')
+    if not lock_path.exists():
+        return None
+    age = (now if now is not None else dt.datetime.now().timestamp()) - lock_path.stat().st_mtime
+    if age < STALE_LOCK_SECONDS:
+        return None
+    try:
+        with lock_path.open('a+') as lock_file:
+            try:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                return (
+                    f'stale registry lock: {lock_path}; a collab command has held it for '
+                    f'at least {STALE_LOCK_SECONDS} seconds. Confirm whether a collab command '
+                    'is stuck before terminating it.'
+                )
+            os.utime(lock_path, None)
+            try:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+            except OSError:
+                pass
+    except OSError as exc:
+        return f'stale registry lock check failed: {lock_path}: {exc}'
+    return None
+
 
 def load_registry_or_bootstrap(path: Path) -> dict:
     if not path.exists():

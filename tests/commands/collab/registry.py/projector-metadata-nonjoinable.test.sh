@@ -29,7 +29,7 @@ records.mkdir()
 (roles / 'dp.json').write_text(json.dumps({
     'key': 'dp',
     'displayName': 'Deterministic Projector',
-    'concerns': ['historical rendering'],
+    'concerns': ['stored-record rendering'],
     'joinable': False,
 }) + '\n')
 registry_path = tmp / 'registry.json'
@@ -47,7 +47,7 @@ registry = {
         'moderatorRole': 'mod',
         'participants': [
             {'role': 'mod', 'agentId': 'codex'},
-            {'role': 'dp', 'agentId': 'gemini-cli'},
+            {'role': 'dp', 'agentId': 'fixture-cli'},
         ],
         'turnOrder': ['dp'],
         'transcriptPath': f'records/{target}.md',
@@ -76,7 +76,7 @@ assert ' dp ' not in roles_output, roles_output
 assert 'Deterministic Projector' not in roles_output, roles_output
 
 try:
-    module.join_participants(registry_path, target, 'dp', 'gemini-cli', roles)
+    module.join_participants(registry_path, target, 'dp', 'fixture-cli', roles)
 except SystemExit as exc:
     assert 'role not joinable: dp' in str(exc), str(exc)
 else:
@@ -85,7 +85,7 @@ else:
 from commands.collab.engine.transcript_render import rendered_participants_table
 
 rendered = rendered_participants_table(registry['collabs'][0], roles)
-assert '| 2 | dp | Deterministic Projector | gemini-cli | historical rendering |' in rendered, rendered
+assert '| 2 | dp | Deterministic Projector | fixture-cli | stored-record rendering |' in rendered, rendered
 PY
 
-printf 'OK: projector metadata remains nonjoinable while historical participants render\n'
+printf 'OK: projector metadata remains nonjoinable while stored participants render\n'

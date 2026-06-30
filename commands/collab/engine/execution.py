@@ -40,8 +40,10 @@ from commands.collab.engine.participants import (
 from commands.collab.engine.phase_lifecycle import lifecycle_status_notice
 from commands.collab.engine.registry_constants import (
     ALLOWED_EXECUTION_STATUSES,
+    ALLOWED_TERMINALS,
     ALLOWED_VALIDATION_SCOPES,
     CALLER_DECLINED_AGENT_ID,
+    DEFAULT_TERMINAL,
 )
 from commands.collab.engine.registry_io import load_registry, registry_lock, resolve_collab, save_registry
 from commands.collab.engine.transcript_readers import (
@@ -49,13 +51,30 @@ from commands.collab.engine.transcript_readers import (
     read_transcript_for_entry,
     transcript_path_for_entry,
     unchecked_assigned_item_count,
+    unchecked_assigned_items_by_role,
 )
+
+
+def terminal_value(entry: dict) -> str:
+    if 'terminal' in entry:
+        terminal = entry['terminal']
+        if isinstance(terminal, str) and terminal in ALLOWED_TERMINALS:
+            return terminal
+    if entry.get('createdAt') is None:
+        return DEFAULT_TERMINAL
+    die(f'registry: collab terminal must be one of {sorted(ALLOWED_TERMINALS)}')
+
+
+def seal_terminal(entry: dict) -> bool:
+    return terminal_value(entry) == 'seal'
+
+
+def issue_terminal(entry: dict) -> bool:
+    return terminal_value(entry) == 'issue'
 
 
 @dataclass(frozen=True)
 class ExecutionCallbacks:
-    seal_terminal: Callable[[dict], bool]
-    issue_terminal: Callable[[dict], bool]
     close_eligible_after_execution: Callable[[dict, list[str]], bool]
     initialize_completion_state: Callable[..., None]
     invalidate_verification_seal: Callable[[dict, str], None]
@@ -190,6 +209,22 @@ def all_execution_completed(entry: dict) -> bool:
     return all(execution.get(role, {}).get('status') == 'completed' for role in roles)
 
 
+def completed_execution_unchecked_items(entry: dict, transcript: str) -> list[dict]:
+    completed_roles = [
+        role for role, state in sorted(entry.get('execution', {}).items())
+        if state.get('status') == 'completed'
+    ]
+    if not completed_roles:
+        return []
+    unchecked = unchecked_assigned_items_by_role(transcript)
+    violations: list[dict] = []
+    for role in completed_roles:
+        count = unchecked.get(role, 0)
+        if count:
+            violations.append({'role': role, 'uncheckedCount': count})
+    return violations
+
+
 def assert_execution_touched_paths_in_git_state(entry: dict) -> None:
     touched = touched_paths_for_execution(entry)
     if not touched:
@@ -284,17 +319,17 @@ def record_execution_state(
             execution_state['touchedPaths'] = normalized_touched_paths
         previous_signature = execution_signature(entry)
         entry.setdefault('execution', {})[role] = execution_state
-        if callbacks.seal_terminal(entry) and reviewer_backed(entry) and previous_signature != execution_signature(entry):
+        if seal_terminal(entry) and reviewer_backed(entry) and previous_signature != execution_signature(entry):
             callbacks.invalidate_verification_seal(entry, f'execution changed for {role}')
             callbacks.write_seal_verdict_companion(path, entry)
         closed = False
-        if callbacks.issue_terminal(entry) and entry['activePhase'] == 'Completion':
+        if issue_terminal(entry) and entry['activePhase'] == 'Completion':
             if auto_close and callbacks.close_eligible_after_execution(entry, assigned_roles):
                 entry['status'] = 'closed'
                 closed = True
                 if data.get('activeCollabId') == entry['id']:
                     data['activeCollabId'] = None
-        elif callbacks.seal_terminal(entry) and reviewer_backed(entry) and entry['activePhase'] == 'Completion':
+        elif seal_terminal(entry) and reviewer_backed(entry) and entry['activePhase'] == 'Completion':
             if callbacks.close_eligible_after_execution(entry, assigned_roles):
                 if auto_close:
                     entry['status'] = 'closed'

@@ -97,6 +97,7 @@ def workflow_model_selection_gaps(config_root: Path) -> list[str]:
     helper_text = '\n'.join([
         source_text(config_root / 'commands/collab/engine/registry.py'),
         source_text(config_root / 'commands/collab/engine/registry_core.py'),
+        source_text(config_root / 'commands/collab/engine/onboarding_commands.py'),
     ])
 
     init_required = {

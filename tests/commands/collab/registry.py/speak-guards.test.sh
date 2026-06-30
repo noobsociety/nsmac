@@ -41,7 +41,7 @@ assert_command_fails_containing \
   "stale registry revision: observed 0, live 2" \
   "$ROOT/commands/collab/engine/registry.py" speak-render "${RUN_DATE}-stale-speak-render" mod --content-file content.md --observed-revision 0
 
-python3 - "$ROOT/commands/collab/engine/registry_core.py" <<'PY'
+python3 - "$ROOT/commands/collab/engine/speak_commands.py" <<'PY'
 import re
 import sys
 from pathlib import Path

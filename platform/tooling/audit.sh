@@ -67,7 +67,7 @@ require_dir() {
 
 is_source_path() {
   case "$1" in
-    .gitignore|.collab.json|CLAUDE.md|AGENTS.md|GEMINI.md|README.md|REPOSITORY.md|registry.schema.json) return 0 ;;
+    .gitignore|.collab.json|CLAUDE.md|AGENTS.md|README.md|REPOSITORY.md|registry.schema.json) return 0 ;;
     .github/*) return 0 ;;
     platform/reference.md) return 0 ;;
     platform/standards/*|platform/data/*|platform/tooling/*|generated/*|platform/templates/*|tests/specs/*|commands/*|tests/*) return 0 ;;
@@ -78,7 +78,6 @@ is_source_path() {
 check_required_surface() {
   require_file CLAUDE.md
   require_file AGENTS.md
-  require_file GEMINI.md
   require_file README.md
   require_file .collab.json
   require_file commands/commands.md
@@ -91,7 +90,6 @@ check_required_surface() {
 
 check_adapters() {
   grep -Fq 'AGENTS.md' CLAUDE.md || fail "CLAUDE.md does not route to AGENTS.md"
-  grep -Fq 'AGENTS.md' GEMINI.md || fail "GEMINI.md does not route to AGENTS.md"
   grep -Fq 'commands/commands.md' AGENTS.md || fail "AGENTS.md does not route to commands/commands.md"
   grep -Fq 'generated/registry-cli.md' AGENTS.md || fail "AGENTS.md Fail-fast section is missing availability-check carve-out (generated/registry-cli.md)"
   ok "adapter entry surfaces are named"
@@ -594,7 +592,7 @@ check_public_dispatch_surface() {
 
 check_verification_round_call_sites() {
   local status=0
-  python3 - commands/collab/engine/registry_core.py commands/collab/engine/seal_verification.py <<'PY' || status=$?
+  python3 - commands/collab/engine/registry_core.py commands/collab/engine/seal_verification_render.py <<'PY' || status=$?
 import ast
 import sys
 from pathlib import Path
@@ -637,7 +635,7 @@ def calls_name(function: FunctionNode, callee_name: str) -> bool:
     return False
 
 
-def delegates_to_seal_verification(
+def delegates_to_seal_verification_render(
     function: FunctionNode,
     callee_name: str,
 ) -> bool:
@@ -648,7 +646,7 @@ def delegates_to_seal_verification(
                 isinstance(callee, ast.Attribute)
                 and callee.attr == callee_name
                 and isinstance(callee.value, ast.Name)
-                and callee.value.id == '_seal_verification'
+                and callee.value.id == '_seal_verification_render'
             ):
                 return True
     return False
@@ -667,33 +665,33 @@ registry_core_render_seal = require_function(
 seal_participant_verify_render = require_function(
     seal_functions,
     'participant_verify_render',
-    'seal_verification.py must define the participant_verify_render implementation',
+    'seal_verification_render.py must define the participant_verify_render implementation',
 )
 seal_write = require_function(
     seal_functions,
     'seal_write',
-    'seal_verification.py must define the seal_write implementation',
+    'seal_verification_render.py must define the seal_write implementation',
 )
 record_verdict = require_function(
     seal_functions,
     'record_verdict',
-    'seal_verification.py must define the record_verdict implementation',
+    'seal_verification_render.py must define the record_verdict implementation',
 )
 legacy_render_seal = require_function(
     seal_functions,
     'render_seal',
-    'seal_verification.py must define the legacy render_seal dispatch shim',
+    'seal_verification_render.py must define the legacy render_seal dispatch shim',
 )
 
-assert delegates_to_seal_verification(
+assert delegates_to_seal_verification_render(
     registry_core_participant_verify_render,
     'participant_verify_render',
 ), (
     'registry_core.py participant_verify_render facade must delegate to '
-    '_seal_verification.participant_verify_render'
+    '_seal_verification_render.participant_verify_render'
 )
-assert delegates_to_seal_verification(registry_core_render_seal, 'render_seal'), (
-    'registry_core.py render_seal shim must delegate to _seal_verification.render_seal'
+assert delegates_to_seal_verification_render(registry_core_render_seal, 'render_seal'), (
+    'registry_core.py render_seal shim must delegate to _seal_verification_render.render_seal'
 )
 assert calls_name(seal_participant_verify_render, 'record_verification_round_for_execution'), (
     'participant_verify_render must record the paired verification round'
@@ -712,7 +710,7 @@ for function_name, function in [
     ('render_seal', legacy_render_seal),
 ]:
     assert not calls_name(function, 'record_verification_round_for_execution'), (
-        'protected seal recorder boundary: seal_verification.py '
+        'protected seal recorder boundary: seal_verification_render.py '
         f'{function_name} must not call record_verification_round_for_execution'
     )
 

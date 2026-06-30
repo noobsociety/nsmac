@@ -87,8 +87,8 @@ _scaffold "$outbound_ok"
 mkdir -p "$outbound_ok/platform/templates"
 printf '# A\n' >"$outbound_ok/platform/templates/CLAUDE.md"
 printf '# B\n' >"$outbound_ok/platform/templates/AGENTS.md"
-printf '# C\n' >"$outbound_ok/platform/templates/GEMINI.md"
-printf 'Templates: `platform/templates/{CLAUDE,AGENTS,GEMINI}.md`.\n' >"$outbound_ok/REPOSITORY.md"
+printf '# C\n' >"$outbound_ok/platform/templates/REPOSITORY.md"
+printf 'Templates: `platform/templates/{CLAUDE,AGENTS,REPOSITORY}.md`.\n' >"$outbound_ok/REPOSITORY.md"
 
 if ! COMMAND_CONFIG_ROOT="$outbound_ok" "$GATE" >/dev/null 2>&1; then
   printf 'FAIL: resolved brace-expanded contract references should pass\n' >&2

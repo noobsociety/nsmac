@@ -152,6 +152,19 @@ def project_metadata_from_identity(identity: dict | None = None) -> dict | None:
     return {'projectId': project_id, 'label': label.strip()}
 
 
+def project_metadata_for_display(data: dict) -> dict | None:
+    metadata = project_metadata_from_identity()
+    if metadata is not None:
+        return metadata
+    project = data.get('project')
+    if isinstance(project, dict):
+        project_id = project.get('projectId')
+        label = project.get('label')
+        if isinstance(project_id, str) and project_id.strip() and isinstance(label, str) and label.strip():
+            return {'projectId': project_id, 'label': label.strip()}
+    return None
+
+
 def assert_registry_project_binding(data: dict, registry_path: Path) -> None:
     expected = project_metadata_from_identity()
     if expected is None:

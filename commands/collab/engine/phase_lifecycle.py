@@ -18,7 +18,7 @@ from commands.collab.engine.participants import (
 )
 from commands.collab.engine.registry_constants import MOD_EXCLUDED_PHASES, PHASES
 from commands.collab.engine.registry_io import load_registry, registry_lock, resolve_collab
-from commands.collab.engine.transcript_readers import transcript_path_for_entry
+from commands.collab.engine.transcript_readers import completion_summary_empty, transcript_path_for_entry
 
 
 @dataclass(frozen=True)
@@ -27,7 +27,6 @@ class PhaseLifecycleCallbacks:
     initialize_completion_state: Callable[..., None]
     invalidate_verification_seal: Callable[[dict, str], None]
     render_managed_header_text: Callable[[str, dict, Path], tuple[str, bool]]
-    add_completion_summary_notice: Callable[[dict | None, str], dict | None]
     print_header_overwrite: Callable[[bool], None]
     commit_registry_and_transcript: Callable[[Path, dict, Path, str], None]
     print_post_action_advisories: Callable[[dict, str | None, str | None, dict | None, str], None]
@@ -83,6 +82,26 @@ def lifecycle_status_notice(status: str) -> dict:
         'status': status,
         'message': 'Run /clear before starting another collab.',
     }
+
+def add_completion_summary_notice(notice: dict | None, transcript: str) -> dict | None:
+    if notice and notice.get('transition') == 'Handoff->Completion' and completion_summary_empty(transcript):
+        notice = dict(notice)
+        notice['summaryEmpty'] = True
+    return notice
+
+def efficiency_line_from_notice(notice: dict | None) -> str | None:
+    if not notice:
+        return None
+    notice_type = notice.get('notice')
+    transition = notice.get('transition')
+    status = notice.get('status')
+    if notice_type == 'compact' and transition in {'Discussion-turn', 'Discussion->Conclusion'}:
+        return 'EFFICIENCY: Run /compact before next collab command.'
+    if notice_type == 'subagent' and transition == 'Handoff->Completion':
+        return 'EFFICIENCY: Run /compact, then prepare or use the assigned subagent work.'
+    if notice_type == 'clear' or status in {'closed', 'archived'}:
+        return 'EFFICIENCY: Run /clear before starting another collab.'
+    return None
 
 def notice_message(notice: dict) -> str:
     message = notice.get('message')
@@ -160,7 +179,7 @@ def advance_phase_state(
 
         notice = transition_notice(from_phase, entry['activePhase'])
         rendered, header_changed = callbacks.render_managed_header_text(transcript, entry, roles_dir)
-        notice = callbacks.add_completion_summary_notice(notice, rendered)
+        notice = add_completion_summary_notice(notice, rendered)
         callbacks.print_header_overwrite(header_changed)
         callbacks.commit_registry_and_transcript(path, data, transcript_path, rendered)
     callbacks.print_post_action_advisories(

@@ -54,6 +54,9 @@ def participant_agent_id(entry: dict, role: str) -> str | None:
 def has_participant(entry: dict, role: str) -> bool:
     return role in participant_roles(entry)
 
+def role_is_joinable(role_data: dict) -> bool:
+    return role_data.get('joinable') is not False
+
 def reviewer_state(entry: dict) -> dict:
     reviewer = reviewer_role(entry)
     if reviewer is None:

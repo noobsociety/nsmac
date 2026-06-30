@@ -148,7 +148,7 @@ For remediation guidance when `workRepo` binding or reachability issues surface 
 
 ## Operator guidance: participant verify inactive
 
-When `(collab participant verify)` reports that verification cannot run, the active sub-state determines the correct next action. The message is emitted by `participant_verification_inactive_message` in `commands/collab/engine/seal_verification.py`; the branch logic lives there while the operator guidance text lives here, so the guidance prose is authored once rather than duplicated in code. The `platform/tooling/audit-vocabulary.sh` gate enforces that the engine's `verification.md#…` anchor resolves to a real heading, so the runtime pointer cannot silently dangle.
+When `(collab participant verify)` reports that verification cannot run, the active sub-state determines the correct next action. The message is emitted by `participant_verification_inactive_message` in `commands/collab/engine/seal_verification_logic.py`; the branch logic lives there while the operator guidance text lives here, so the guidance prose is authored once rather than duplicated in code. The `platform/tooling/audit-vocabulary.sh` gate enforces that the engine's `verification.md#…` anchor resolves to a real heading, so the runtime pointer cannot silently dangle.
 
 | Condition | Reason | Correct action |
 |-----------|--------|----------------|

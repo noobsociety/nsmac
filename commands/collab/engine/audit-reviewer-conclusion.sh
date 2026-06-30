@@ -33,8 +33,7 @@ from pathlib import Path
 
 root = Path(sys.argv[1]).resolve()
 speak_path = root / 'commands/collab/speak/index.md'
-registry_core_path = root / 'commands/collab/engine/registry_core.py'
-registry_path = registry_core_path if registry_core_path.exists() else root / 'commands/collab/engine/registry.py'
+speak_commands_path = root / 'commands/collab/engine/speak_commands.py'
 validation_path = root / 'commands/collab/engine/contribution_validation.py'
 expected_gates = (
     'DIRECTIVE TEST',
@@ -53,7 +52,7 @@ def read(path: Path) -> str:
 
 
 speak = read(speak_path)
-registry = read(registry_path)
+speak_commands = read(speak_commands_path)
 validation = read(validation_path)
 
 audit_note = speak.partition('**Reviewer-discipline gates (Audit phase):**')[2]
@@ -74,7 +73,7 @@ if "if phase != 'Conclusion' or role != reviewer_role(entry):" not in validation
     failures.append('reviewer Conclusion gate must target only the active reviewer in Conclusion')
 if 'REVIEWER-CONCLUSION-GATE-MISSING:' not in validation:
     failures.append('reviewer Conclusion gate missing stable abort family')
-if 'validate_reviewer_conclusion_gates(content, phase, role, current_entry)' not in registry:
+if 'validate_reviewer_conclusion_gates(content, phase, role, current_entry)' not in speak_commands:
     failures.append('speak-render must call reviewer Conclusion gate before mutation')
 
 tuple_match = re.search(r'REVIEWER_DISCIPLINE_GATES = \((?P<body>.*?)\)', validation, re.S)

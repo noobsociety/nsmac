@@ -16,7 +16,6 @@ REPO_PREFIXES = (
     "tests/",
     "AGENTS.md",
     "CLAUDE.md",
-    "GEMINI.md",
     "README.md",
     "REPOSITORY.md",
 )

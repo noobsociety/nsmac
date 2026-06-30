@@ -11,7 +11,6 @@ Each agent reads files in this order before acting:
 - Codex: `AGENTS.md` → `~/.cursor/commands/commands.md`
 - GPT: `AGENTS.md` → `~/.cursor/commands/commands.md`
 - Claude: `CLAUDE.md` → `AGENTS.md` → `~/.cursor/commands/commands.md`
-- Gemini: `GEMINI.md` → `AGENTS.md` → `~/.cursor/commands/commands.md`
 
 After reading this file, read `~/.cursor/commands/commands.md`.
 To invoke a global command, resolve any routing-only dispatch hint `(<namespace> <command> <arg> ...)` through `~/.cursor/commands/commands.md`, then execute the matching route playbook. Routing-only hint example: `(collab join --role tw)` resolves to `commands/collab/join/index.md`.
