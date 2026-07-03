@@ -303,6 +303,7 @@ check_generated_freshness() {
   platform/tooling/sync-framework-boundaries.sh --check || failures=$((failures + 1))
   platform/tooling/sync-roles-roster.sh --check || failures=$((failures + 1))
   python3 platform/tooling/command-advisories.py --check || failures=$((failures + 1))
+  python3 platform/tooling/roles.py validate || failures=$((failures + 1))
   python3 platform/tooling/command-reference.py --check || failures=$((failures + 1))
   commands/collab/engine/registry.py registry-cli-doc --check || failures=$((failures + 1))
   platform/tooling/audit-topology.sh || failures=$((failures + 1))

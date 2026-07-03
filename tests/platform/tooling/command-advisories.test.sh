@@ -49,6 +49,43 @@ PY
 assert_fails_with "unknown capabilityTier: missing" \
   python3 platform/tooling/command-advisories.py --check --data-dir "$TMPDIR/unknown-alias"
 
+cp -R platform/data "$TMPDIR/unknown-concern"
+python3 - "$TMPDIR/unknown-concern/advisories/agent.json" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+data = json.loads(path.read_text())
+data["advisories"][0]["concerns"] = ["missing"]
+path.write_text(json.dumps(data, indent=2) + "\n")
+PY
+assert_fails_with "concerns contain unknown value(s): missing" \
+  python3 platform/tooling/command-advisories.py --check --data-dir "$TMPDIR/unknown-concern"
+
+cp -R platform/data "$TMPDIR/schema-drift"
+python3 - "$TMPDIR/schema-drift/command-advisory.schema.json" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+data = json.loads(path.read_text())
+data["$defs"]["advisory"]["properties"]["concerns"]["items"]["enum"] = [
+    "architecture",
+    "narrative",
+    "product",
+    "structure",
+]
+path.write_text(json.dumps(data, indent=2) + "\n")
+PY
+assert_fails_with "concerns enum must mirror domain-taxonomy.json" \
+  python3 platform/tooling/command-advisories.py --check --data-dir "$TMPDIR/schema-drift"
+
 cp -R platform/data "$TMPDIR/flat-override"
 python3 - "$TMPDIR/flat-override/advisories/agent.json" <<'PY'
 from __future__ import annotations

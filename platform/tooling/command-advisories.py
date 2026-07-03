@@ -20,6 +20,7 @@ ROLES_DIR = CONFIG_ROOT / "commands/collab/reference/roles"
 ARTIFACT = CONFIG_ROOT / "generated" / "command-reference.md"
 SCHEMA_PATH = DATA_DIR / "command-advisory.schema.json"
 POLICY_PATH = DATA_DIR / "command-advisory-policy.json"
+DOMAIN_TAXONOMY_PATH = DATA_DIR / "domain-taxonomy.json"
 BEGIN_MARKER = "<!-- BEGIN GENERATED:COMMAND_REFERENCE -->"
 END_MARKER = "<!-- END GENERATED:COMMAND_REFERENCE -->"
 
@@ -79,6 +80,33 @@ def load_json(path: Path) -> Any:
         raise AdvisoryError(f"missing required file: {path}") from exc
     except json.JSONDecodeError as exc:
         raise AdvisoryError(f"invalid JSON: {path}: {exc}") from exc
+
+
+def load_domain_taxonomy(data_dir: Path = DATA_DIR) -> list[str]:
+    path = data_dir / "domain-taxonomy.json"
+    data = load_json(path)
+    if not isinstance(data, list) or not data:
+        raise AdvisoryError(f"{path}: domain taxonomy must be a non-empty array")
+    if any(not isinstance(item, str) or not item.strip() for item in data):
+        raise AdvisoryError(f"{path}: domain taxonomy entries must be non-empty strings")
+    normalized = [item.strip() for item in data]
+    if len(set(normalized)) != len(normalized):
+        raise AdvisoryError(f"{path}: domain taxonomy entries must be unique")
+    if normalized != sorted(normalized):
+        raise AdvisoryError(f"{path}: domain taxonomy entries must be alphabetical")
+    return normalized
+
+
+def check_schema_taxonomy_mirror(data_dir: Path = DATA_DIR) -> None:
+    taxonomy = load_domain_taxonomy(data_dir)
+    schema_path = data_dir / "command-advisory.schema.json"
+    schema = load_json(schema_path)
+    try:
+        schema_enum = schema["$defs"]["advisory"]["properties"]["concerns"]["items"]["enum"]
+    except (KeyError, TypeError) as exc:
+        raise AdvisoryError(f"{schema_path}: concerns enum missing") from exc
+    if schema_enum != taxonomy:
+        raise AdvisoryError(f"{schema_path}: concerns enum must mirror domain-taxonomy.json")
 
 
 def string_list_field(data: dict[str, Any], field: str, path: Path) -> set[str]:
@@ -263,6 +291,7 @@ def validate_advisory(
     effort_tiers: set[str],
     role_keys: set[str],
     runtime_refs: set[str],
+    domain_taxonomy: set[str],
 ) -> Advisory:
     if not isinstance(raw, dict):
         raise AdvisoryError(f"{path}: advisory {index} must be an object")
@@ -301,6 +330,9 @@ def validate_advisory(
     if concerns is not None:
         if not isinstance(concerns, list) or not all(isinstance(item, str) and item.strip() for item in concerns):
             raise AdvisoryError(f"{path}: advisory {index} concerns must be a list of non-empty strings")
+        unknown_concerns = sorted({item for item in concerns if item not in domain_taxonomy})
+        if unknown_concerns:
+            raise AdvisoryError(f"{path}: advisory {index} concerns contain unknown value(s): {', '.join(unknown_concerns)}")
 
     runtime_policy_ref = raw.get("runtimePolicyRef")
     if runtime_policy_ref is not None:
@@ -342,6 +374,7 @@ def load_catalog(
     routes = load_routes(commands_dir)
     public_namespaces = load_public_namespaces(commands_dir)
     role_keys = load_role_keys(roles_dir)
+    domain_taxonomy = set(load_domain_taxonomy(data_dir))
     capability_aliases = load_alias_keys(data_dir / "capability-aliases.json", "capability alias")
     effort_tiers = load_alias_keys(data_dir / "effort-tiers.json", "effort tier")
     runtime_policy = load_json(data_dir / "runtime-policy.json")
@@ -407,6 +440,7 @@ def load_catalog(
                 effort_tiers,
                 role_keys,
                 runtime_refs,
+                domain_taxonomy,
             )
             if advisory.route not in route_names:
                 raise AdvisoryError(f"{path}: advisory {index} route is not invocable in namespace {namespace}: {advisory.route}")
@@ -506,6 +540,7 @@ def check(
     artifact: Path = ARTIFACT,
 ) -> int:
     try:
+        check_schema_taxonomy_mirror(data_dir=data_dir)
         load_catalog(data_dir=data_dir, commands_dir=commands_dir, roles_dir=roles_dir)
         check_generated_leakage(artifact=artifact, data_dir=data_dir)
     except AdvisoryError as exc:

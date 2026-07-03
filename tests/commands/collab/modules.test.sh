@@ -477,11 +477,14 @@ def test_registry_io() -> None:
 def write_test_roles(roles: Path, *role_keys: str) -> None:
     roles.mkdir()
     for key in role_keys:
-        roles.joinpath(f'{key}.json').write_text(json.dumps({
+        data = {
             'key': key,
             'displayName': key.upper(),
             'concerns': ['test'],
-        }) + '\n')
+        }
+        if key != 'mod':
+            data['dimensions'] = ['structure']
+        roles.joinpath(f'{key}.json').write_text(json.dumps(data) + '\n')
 
 
 @contextlib.contextmanager
@@ -753,11 +756,14 @@ def test_registry_validation_module() -> None:
         roles = tmp_path / 'roles'
         roles.mkdir()
         for role in ('mod', 'pe'):
-            (roles / f'{role}.json').write_text(json.dumps({
+            data = {
                 'key': role,
                 'displayName': role.upper(),
                 'concerns': ['test'],
-            }) + '\n')
+            }
+            if role != 'mod':
+                data['dimensions'] = ['structure']
+            (roles / f'{role}.json').write_text(json.dumps(data) + '\n')
 
         valid = {
             'revision': 1,
