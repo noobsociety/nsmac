@@ -54,7 +54,10 @@ def render_registry_cli_doc() -> str:
         if actions:
             lines.append('Arguments and flags:')
             for action in actions:
-                required = 'required' if getattr(action, 'required', False) or not action.option_strings else 'optional'
+                if action.option_strings:
+                    required = 'required' if getattr(action, 'required', False) else 'optional'
+                else:
+                    required = 'optional' if action.nargs == '?' else 'required'
                 lines.append(
                     f'- `{action_display_name(action)}` {required}; {action_value_shape(action)}'
                 )
@@ -244,6 +247,23 @@ def build_parser() -> argparse.ArgumentParser:
     repair_execution_parser.add_argument('--work-repo')
     repair_execution_parser.add_argument('--commit', action='append', default=[])
     repair_execution_parser.add_argument('--caller-role')
+
+    tag_parser = subparsers.add_parser('tag')
+    tag_parser.add_argument('target', nargs='?')
+    tag_parser.add_argument('--tag', dest='tag_name')
+    tag_parser.add_argument('--confirm', action='store_true')
+    tag_parser.add_argument('--push', action='store_true')
+    tag_parser.add_argument('--caller-role')
+
+    release_parser = subparsers.add_parser('release')
+    release_parser.add_argument('target', nargs='?')
+    release_parser.add_argument('--tag', dest='tag_name')
+    release_parser.add_argument('--confirm', action='store_true')
+    release_parser.add_argument('--push', action='store_true')
+    release_parser.add_argument('--direct-merge', action='store_true')
+    release_parser.add_argument('--github-release', action='store_true')
+    release_parser.add_argument('--auto-fire', action='store_true')
+    release_parser.add_argument('--caller-role')
 
     execute_spawn_parser = subparsers.add_parser('execute-spawn')
     execute_spawn_parser.add_argument('target')

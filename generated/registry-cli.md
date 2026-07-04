@@ -80,7 +80,7 @@ Arguments and flags:
 Usage: `registry.py diff [-h] [target]`
 
 Arguments and flags:
-- `target` required; nargs=?
+- `target` optional; value
 
 ### `effort-state`
 
@@ -307,6 +307,23 @@ Usage: `registry.py registry-path [-h]`
 
 Arguments and flags: none
 
+### `release`
+
+Usage: `registry.py release [-h] [--tag TAG_NAME] [--confirm] [--push]
+                           [--direct-merge] [--github-release] [--auto-fire]
+                           [--caller-role CALLER_ROLE]
+                           [target]`
+
+Arguments and flags:
+- `target` optional; value
+- `--tag` optional; value
+- `--confirm` optional; flag
+- `--push` optional; flag
+- `--direct-merge` optional; flag
+- `--github-release` optional; flag
+- `--auto-fire` optional; flag
+- `--caller-role` optional; value
+
 ### `remove-participant`
 
 Usage: `registry.py remove-participant [-h] [--roles-dir ROLES_DIR]
@@ -474,7 +491,7 @@ Usage: `registry.py seal-state [-h] [--resume] target [role]`
 
 Arguments and flags:
 - `target` required; required
-- `role` required; nargs=?
+- `role` optional; value
 - `--resume` optional; flag
 
 ### `seal-write`
@@ -507,7 +524,7 @@ Usage: `registry.py set [-h] [--force] [--clear] [--roles-dir ROLES_DIR]
 Arguments and flags:
 - `target` required; required
 - `field` required; required
-- `value` required; nargs=?
+- `value` optional; value
 - `--force` optional; flag
 - `--clear` optional; flag
 - `--roles-dir` optional; value
@@ -585,6 +602,19 @@ Usage: `registry.py summary-role [-h] line`
 
 Arguments and flags:
 - `line` required; required
+
+### `tag`
+
+Usage: `registry.py tag [-h] [--tag TAG_NAME] [--confirm] [--push]
+                       [--caller-role CALLER_ROLE]
+                       [target]`
+
+Arguments and flags:
+- `target` optional; value
+- `--tag` optional; value
+- `--confirm` optional; flag
+- `--push` optional; flag
+- `--caller-role` optional; value
 
 ### `timestamp`
 

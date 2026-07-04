@@ -159,6 +159,18 @@
       "rationale": "Creates issue handoffs or grounded implementation plans tied to repository state and owner metadata."
     },
     {
+      "route": "tag",
+      "capabilityTier": "execution",
+      "effortTier": "medium",
+      "rationale": "Creates or previews a git tag; confirmation and clean work-tree checks guard release provenance."
+    },
+    {
+      "route": "release",
+      "capabilityTier": "execution",
+      "effortTier": "high",
+      "rationale": "Plans or executes release orchestration; outward actions require explicit confirmation and opt-in flags."
+    },
+    {
       "route": "rewrite execution",
       "capabilityTier": "execution",
       "effortTier": "medium",

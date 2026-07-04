@@ -8,6 +8,7 @@ from types import ModuleType
 from typing import Callable
 
 from commands.collab.engine.errors import die
+from commands.collab.engine.release import release_collab, tag_collab
 from commands.collab.engine.registry_parser import build_parser, render_registry_cli_doc
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -242,6 +243,31 @@ def _repair_execution_provenance(ctx: ModuleType, args: object, path: Path) -> i
     )
 
 
+def _tag(ctx: ModuleType, args: object, path: Path) -> int:
+    return tag_collab(
+        path,
+        args.target,
+        args.tag_name,
+        args.confirm,
+        args.push,
+        args.caller_role,
+    )
+
+
+def _release(ctx: ModuleType, args: object, path: Path) -> int:
+    return release_collab(
+        path,
+        args.target,
+        args.tag_name,
+        args.confirm,
+        args.push,
+        args.direct_merge,
+        args.github_release,
+        args.auto_fire,
+        args.caller_role,
+    )
+
+
 def _execute_spawn(ctx: ModuleType, args: object, path: Path) -> int:
     return ctx.execute_spawn(path, args.target, args.role, args.scope, args.sibling_scope, args.returned_path)
 
@@ -417,6 +443,7 @@ DISPATCH: dict[str, Handler] = {
     'participant-verify-render': _participant_verify_render,
     'participant-verify-state': _participant_verify_state,
     'record-verdict': _record_verdict,
+    'release': _release,
     'registry-cli-doc': _registry_cli_doc,
     'registry-path': _registry_path,
     'remove-participant': _remove_participant,
@@ -444,6 +471,7 @@ DISPATCH: dict[str, Handler] = {
     'status-view': _status_view,
     'summarize': _summarize,
     'summary-role': _summary_role,
+    'tag': _tag,
     'timestamp': _timestamp,
     'transcript-repair': _transcript_repair,
     'transcript-view': _transcript_view,

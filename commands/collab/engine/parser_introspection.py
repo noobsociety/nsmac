@@ -23,6 +23,8 @@ def action_value_shape(action: argparse.Action) -> str:
         if action.nargs == 0:
             return 'flag'
         return 'value'
+    if action.nargs == '?':
+        return 'value'
     if action.nargs in (None, 1):
         return 'required'
     return f'nargs={action.nargs}'
