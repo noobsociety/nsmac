@@ -21,7 +21,7 @@ ROOT_PREFIXES = (
     "platform/templates/",
     "generated/",
 )
-ROOT_FILES = frozenset({"AGENTS.md", "CLAUDE.md", "GEMINI.md", "README.md", "REPOSITORY.md"})
+ROOT_FILES = frozenset({"AGENTS.md", "CLAUDE.md", "README.md", "REPOSITORY.md"})
 ROOT_CONTRACT_DOCS = (*sorted(ROOT_FILES), "commands/commands.md")
 CODE_SPAN_RE = re.compile(r"`([^`]+)`")
 FENCE_RE = re.compile(r"^\s*(`{3,}|~{3,})")

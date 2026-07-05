@@ -42,7 +42,7 @@ Effort changes per phase per role as defined in `agent-effort.md` and `agent-mod
 `Completion.verification` has two ordered sub-phases:
 
 1. **`verification.seal`** — Reviewer calls `(collab seal verification)`; mechanical execution-truth check. Run at the current effort level for `Completion.verification` (`xhigh` for the reviewer role).
-2. **`verification.assessment`** — Reviewer evaluates goal achievement and records a verdict. Opens after a successful seal; also re-enters when the seal becomes stale or a cap-exit is recorded. Assessment is budget-exempt when a cap-exit trigger opened it.
+2. **`verification.assessment`** — Reviewer evaluates goal achievement and records a verdict. Opens after a successful seal and re-enters when the seal becomes stale.
 
 ## Subagents
 

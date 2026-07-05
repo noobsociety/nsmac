@@ -25,10 +25,7 @@ Public command routers under `~/.cursor/commands/`:
 - `agent/index.md`
 - `commands.md`
 - `collab/index.md`
-- `doc/index.md`
-- `git/index.md`
 - `help/index.md`
-- `quality/index.md`
 - `test/index.md`
 
 Route playbooks under `~/.cursor/commands/`:
@@ -40,10 +37,11 @@ Route playbooks under `~/.cursor/commands/`:
 - `collab/advance/index.md`
 - `collab/archive/index.md`
 - `collab/close/index.md`
+- `collab/commit/index.md`
 - `collab/delete/index.md`
 - `collab/diff/index.md`
-- `collab/export-issues/index.md`
 - `collab/init/index.md`
+- `collab/issue/index.md`
 - `collab/join/index.md`
 - `collab/list/index.md`
 - `collab/log/index.md`
@@ -55,7 +53,6 @@ Route playbooks under `~/.cursor/commands/`:
 - `collab/retract-speak/index.md`
 - `collab/rewrite-execution/index.md`
 - `collab/rewrite-speak/index.md`
-- `collab/rewrite-summary/index.md`
 - `collab/run-plan/index.md`
 - `collab/seal-verification/index.md`
 - `collab/set/index.md`
@@ -65,19 +62,8 @@ Route playbooks under `~/.cursor/commands/`:
 - `collab/speak/index.md`
 - `collab/status/index.md`
 - `collab/summarize/index.md`
+- `collab/tag/index.md`
 - `collab/unset/index.md`
-- `collab/write-summary/index.md`
-- `doc/write-changelog/index.md`
-- `doc/write-manual/index.md`
-- `doc/write-readme/index.md`
-- `git/commit/index.md`
-- `git/issue/index.md`
-- `quality/assess-game/index.md`
-- `quality/assess-interface/index.md`
-- `quality/assess-operations/index.md`
-- `quality/assess-web/index.md`
-- `quality/show-notes/index.md`
-- `quality/tune/index.md`
 
 ## Output
 

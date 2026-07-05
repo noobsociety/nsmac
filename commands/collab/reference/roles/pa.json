@@ -6,5 +6,9 @@
     "coherence",
     "judgment",
     "risk"
+  ],
+  "dimensions": [
+    "structure",
+    "architecture"
   ]
 }

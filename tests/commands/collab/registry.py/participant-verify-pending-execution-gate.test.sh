@@ -69,9 +69,7 @@ entry = next(item for item in data['collabs'] if item['id'] == target)
 entry['completion'] = {'subState': 'verification'}
 entry['verification'] = {
     'rounds': 1,
-    'cap': 3,
     'subState': 'seal',
-    'participantVerification': True,
     'participants': {'pe': {'stage': 'completed', 'attempts': 1, 'writeScopeSignature': 'fixture'}},
 }
 registry.write_text(json.dumps(data, indent=2) + '\n')
@@ -84,11 +82,11 @@ if [[ "$seal_state" != *'"readyToSeal": false'* || "$seal_state" != *'"execution
 fi
 revision="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["registryRevision"])' <<<"$seal_state")"
 set +e
-seal_output="$("$ROOT/commands/collab/engine/registry.py" seal-render "$TARGET" pa --observed-revision "$revision" --caller-role pa 2>&1)"
+seal_output="$("$ROOT/commands/collab/engine/registry.py" seal-write "$TARGET" pa --observed-revision "$revision" --caller-role pa 2>&1)"
 seal_status=$?
 set -e
 if [[ "$seal_status" -eq 0 || "$seal_output" != *"verification seal blocked: pending execution role(s): tw; unchecked assigned Action Plan item(s): tw=1; run (collab run plan) for role tw"* ]]; then
-  printf 'FAIL: seal-render did not reject pending execution blocker\n%s\n' "$seal_output" >&2
+  printf 'FAIL: seal-write did not reject pending execution blocker\n%s\n' "$seal_output" >&2
   exit 1
 fi
 

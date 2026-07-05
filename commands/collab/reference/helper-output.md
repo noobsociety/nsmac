@@ -123,19 +123,19 @@ Writes one atomic three-turn participant-verification sequence. When the last as
 1. `participant verification <completed|failed> for <role>`
 2. `NEXT: Run (collab participant verify) for role <role>.` when another participant remains, otherwise `NEXT: Run (collab seal verification) for role <reviewer>.`
 
-Exit 0 on success. Exit 1 when the observed revision is stale, no active participant-verification lock exists for the role, another participant role is next, the attempt cap is reached, or touched paths fall outside the role's declared `writeScope`.
+Exit 0 on success. Exit 1 when the observed revision is stale, no active participant-verification lock exists for the role, another participant role is next, or touched paths fall outside the role's declared `writeScope`.
 
 ### `seal-state`
 
-Emits JSON object with fields: `target`, `activePhase`, `registryRevision`, `reviewerRole`, `reviewerState`, `verificationSubState`, `completionSubState`, `verificationReviewSubState`, `verificationRounds`, `verificationCap`, `executionEntries`, `validationScopes`, `touchedPaths`, `participantVerification`, `participantVerificationRoles`, `participantVerificationParticipants`, `nextParticipantVerificationRole`, `sealStale`, `verdict`, `freshRegistryRead`. When a `<role>` argument is provided, also emits `roleAgentId`, `readyToSeal`, and `readyToAssess`. When `--resume` is supplied, also emits `resume`.
+Emits JSON object with fields: `target`, `activePhase`, `registryRevision`, `reviewerRole`, `reviewerState`, `verificationSubState`, `completionSubState`, `verificationReviewSubState`, `verificationRounds`, `executionEntries`, `validationScopes`, `touchedPaths`, `participantVerification`, `participantVerificationRoles`, `participantVerificationParticipants`, `nextParticipantVerificationRole`, `sealStale`, `verdict`, `freshRegistryRead`. When a `<role>` argument is provided, also emits `roleAgentId`, `readyToSeal`, and `readyToAssess`. When `--resume` is supplied, also emits `resume`.
 
 Exit 0 on valid input. Exit 1 when the collab is closed, the phase is not `Completion`, or the target is unresolvable.
 
-### `seal-render`
+### `seal-write`
 
-Two modes share the subcommand: bare seal (no verdict flags) and assessment verdict (with `--outcome` and optional verdict fields). The modes are mutually exclusive; `--cap-exit` and verdict flags cannot be combined.
+Writes the immutable verification seal snapshot.
 
-**Bare seal path** (no verdict flags; `verificationReviewSubState` must be `seal`):
+`verificationReviewSubState` must be `seal`.
 
 Post-write advisories in order:
 
@@ -143,11 +143,11 @@ Post-write advisories in order:
 2. `EFFORT: <phase> · <role> · <level> · <scale phrase>`
 3. `EFFICIENCY:` (only when action crosses a lifecycle boundary)
 4. `<status>` — registry status after the write
-5. Phase-transition notice JSON when a cap-exit transitions the phase; assessment-transition notice `{"notice": "assessment", "transition": "Completion.verification.seal->Completion.verification.assessment", "message": "Verification seal recorded; reviewer assessment required."}` when no cap-exit is applied
+5. Assessment-transition notice JSON: `{"notice": "assessment", "transition": "Completion.verification.seal->Completion.verification.assessment", "message": "Verification seal recorded; reviewer assessment required."}`
 
-When `--cap-exit` is provided, the `NEXT:` line reflects the new state after the transition rather than prompting for an assessment verdict. For `--cap-exit follow-up-collab`, it requires `--restore-reason`, `--evidence`, and `--failure-category`, records them on `verificationSeal.followUp`, and emits `NEXT: Open a follow-up collab {"evidence":...,"failureCategory":...,"restoreReason":...}.`
+### `record-verdict`
 
-**Assessment verdict path** (with `--outcome`; `verificationReviewSubState` must be `assessment`):
+Records the assessment verdict and owns the terminal close/reopen mutation path. `verificationReviewSubState` must be `assessment`.
 
 Post-write advisories in order:
 
@@ -169,13 +169,6 @@ Post-write advisories in order:
 
 Exit 0 on success. Exit 1 when the collab is closed, the role is not a participant, unchecked assigned Action Plan items remain (for `completed` status), or touched paths fall outside the role's declared `writeScope`.
 
-### `export-issues`
-
-Post-write advisories in order:
-
-1. `NEXT: <state guidance>`
-2. `EFFORT: <phase> · <role> · <level> · <scale phrase>`
-3. `EFFICIENCY:` (only when the export closes the record)
 4. `<status>` — registry status after the write
 5. Terminal close notice JSON when the export closes the record: `{"notice": "clear", "status": "closed", "message": "..."}`
 
@@ -214,17 +207,13 @@ Exit-1 messages (exact):
 - `record is closed`
 - `(collab seal verification) is valid only in the Completion phase`
 
-### Module: `seal-render`
+### Module: `seal-write`
 
 **Paired-execution-signature double-increment guard**
 
-`seal-render` tracks a `pairedExecutionSignature` alongside the verification round counter. When a seal attempt occurs without any change to execution state since the previous seal, the guard suppresses the round increment, leaving `rounds` unchanged. If `rounds` remains zero after the guard fires (no execution-state change has ever been paired with a seal), the helper aborts:
+`seal-write` checks the verification round counter before writing the seal. If `rounds` remains zero, the helper aborts:
 
 Exit-1 message (exact): `zero verification rounds; at least one reviewer-executor paired event is required before sealing`
-
-**`seal-verification-archive-protocol-violation`** *(agent-honor-system)*
-
-`--cap-exit archive` is reserved for scenarios where unresolved findings remain at the cap. Using it when participant verification passed cleanly (no findings) is a protocol violation. The helper does not abort — this constraint is agent-honor-system and route-prose-enforced. Violation triggers the rollback condition in `invariants.md` Invariant #10 (detection remains active).
 
 **Stale revision guard**
 
@@ -242,7 +231,7 @@ Exit-1 messages (exact):
 - `record is closed`
 - `(collab seal verification) is valid only in the Completion phase`
 - `verification seal requires an active reviewer role`
-- `reviewer role is not a registered participant; run (collab join) --role <reviewer> first`
+- `reviewer role is not a registered participant; run (collab join --role <reviewer>) first`
 - `seal must be authored by the reviewer role; current role: <role>; expected: <reviewer>`
 
 **Sub-state guards**
@@ -253,7 +242,6 @@ Exit-1 messages (exact):
 - `participant verification is active; next role: <pending_role>`
 - `verification assessment is active; seal block is immutable; provide --outcome to record a verdict`
 - `verification assessment is not active; current verification.subState: <state>`
-- `verification assessment cannot mutate seal cap-exit; omit --cap-exit when writing a verdict`
 
 **Execution completeness guard**
 
@@ -261,7 +249,7 @@ Exit-1 message (exact): `verification seal requires all execution entries to be 
 
 **Execution content-completeness guard**
 
-Before sealing, `seal-render` verifies that every declared `touchedPath` in
+Before sealing, `seal-write` verifies that every declared `touchedPath` in
 each execution entry resolves to committed content at `HEAD` — either a
 committed blob or a committed-deletion tombstone. Staged and unstaged changes
 are rejected because they are not part of `HEAD`.
@@ -270,7 +258,7 @@ Exit-1 message prefix (exact): `SEAL-CONTENT-INCOMPLETE:`
 
 **Content-drift guard**
 
-On the `success` verdict path, `seal-render` recomputes the scope digest from
+On the `success` verdict path, `record-verdict` recomputes the scope digest from
 `HEAD` and compares it against `verificationSeal.contentDigest`. A mismatch
 means the sealed content is no longer what is in the branch.
 
@@ -278,23 +266,10 @@ Exit-1 message prefix (exact): `SEAL-CONTENT-DRIFT:`
 
 **Execution agent-conflation guard**
 
-Before sealing, `seal-render` rejects a verification round where two role
+Before sealing, `seal-write` rejects a verification round where two role
 execution entries share the same concrete `agentId`.
 
 Exit-1 message prefix (exact): `PARTICIPANT-VERIFY-AGENT-CONFLATION:`
-
-**Round cap guard**
-
-Exit-1 message (exact): `round cap reached; reissue with --cap-exit reopen-action-plan, --cap-exit reopen-handoff, --cap-exit follow-up-collab, or --cap-exit archive`
-
-**Cap-exit argument guards**
-
-Exit-1 messages (exact):
-
-- `invalid cap-exit value <value>; must be one of: reopen-action-plan, reopen-handoff, follow-up-collab, archive`
-- `follow-up-collab cap-exit cannot include assessment outcome fields`
-- `follow-up-collab cap-exit requires --restore-reason, --evidence, and --failure-category`
-- `cap-exit metadata is only valid with --cap-exit follow-up-collab`
 
 **Assessment verdict guards**
 
@@ -439,8 +414,9 @@ Exit-1 messages (exact):
 - `agent-id is required`
 - `duplicate flag: --reviewer`
 - `--reviewer requires a role key`
-- `duplicate flag: --preview`
-- `duplicate flag: --no-participant-verification`
+- `duplicate flag: --open`
+- `duplicate flag: --work-repo`
+- `--work-repo requires a path`
 - `unknown flag: <flag>`
 - `<name> is required`
 
@@ -509,7 +485,8 @@ Maps each documented `## Abort families` module family to its implementing subco
 |---|---|---|
 | `speak-render` / `rewrite-speak-render` | `speak-render`, `rewrite-speak-render` | `render_speak()`, `render_re_speak()` |
 | `seal-state` | `seal-state` | `seal_state()` |
-| `seal-render` | `seal-render` | `render_seal()` |
+| `seal-write` | `seal-write` | `seal_write()` |
+| `record-verdict` | `record-verdict` | `record_verdict()` |
 | `handoff-shape` | `speak-render`, `rewrite-speak-render` | `parse_handoff_content()`, `validate_handoff_write_scope()`, `validate_handoff_validation_commands()`, `validate_handoff_state()` |
 | `participant-verify-state` | `participant-verify-state` | `participant_verify_state()` |
 | `participant-verify-render` | `participant-verify-render` | `participant_verify_render()` |

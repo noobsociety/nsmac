@@ -36,7 +36,7 @@ The script refuses to delete non-empty directories; only empty orphans are eligi
 
 ## Collision suffixing
 
-`project_id_for_project()` derives the preferred slug from the project label or directory name: lowercase, non-alphanumeric runs replaced with hyphens, stripped of leading and trailing hyphens, padded to at least 8 characters. A project labeled `dotcursor` gets slug `dotcursor`; one labeled `noobsociety.com` gets `noobsociety-com`.
+`project_id_for_project()` derives the preferred slug from the project label or directory name: lowercase, non-alphanumeric runs replaced with hyphens, stripped of leading and trailing hyphens, padded to at least 4 characters. A project labeled `nsmac` gets slug `nsmac`; one labeled `noobsociety.com` gets `noobsociety-com`.
 
 When the preferred slug is already occupied by another project's user-scope collab state root directory, a deterministic 8-character disambiguator is appended — derived from the sha256 of the project's absolute path. Example: `noobsociety-com-3f4a1b2c`. The suffix is reproducible: re-running `project_id_for_project()` on the same project root always produces the same disambiguator. The "readable" half of the name remains human-recognizable; the disambiguator makes it collision-safe.
 

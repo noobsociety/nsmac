@@ -1,60 +1,190 @@
-# dotcursor
+# NoobSociety Multi Agent Collaboration
 
-Configuration framework for `~/.cursor` command routes and agent harnesses.
+[![CI](https://github.com/noobsociety/nsmac/actions/workflows/ci.yml/badge.svg)](https://github.com/noobsociety/nsmac/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
-## Entry points
+A routed command and agent-harness framework for NoobSociety multi-agent collaboration.
 
-Each adapter is a thin routing-only file that points to `commands/commands.md` as the shared command catalog.
+NSMAC (NoobSociety Multi Agent Collaboration) defines the routes, roles, records, and validation
+gates that agents use to coordinate work. NSMAC packages the adapter guides, command catalog,
+collaboration playbooks, registry helpers, standards, generated references, and repository QA
+harness for that workflow.
+
+## Contents
+
+- [Install](#install)
+- [Quick start](#quick-start)
+- [Command surface](#command-surface)
+- [Documentation](#documentation)
+- [Runtime state](#runtime-state)
+- [Quality](#quality)
+- [Repository layout](#repository-layout)
+- [Development](#development)
+- [Versioning and releases](#versioning-and-releases)
+- [License](#license)
+
+## Install
+
+Clone NSMAC into a local checkout when that directory does not already exist.
+
+```bash
+git clone https://github.com/noobsociety/nsmac.git ~/nsmac
+```
+
+For an existing checkout that should sync to the NoobSociety repository:
+
+```bash
+cd ~/nsmac
+git remote set-url origin https://github.com/noobsociety/nsmac.git
+git fetch origin --prune --tags
+git branch --set-upstream-to=origin/main main
+```
+
+Install local git hooks after cloning or rebinding the checkout:
+
+```bash
+~/nsmac/platform/tooling/install-git-hooks.sh
+```
+
+## Quick start
+
+Run the repository gate:
+
+```bash
+./tests/run.sh
+```
+
+Agent adapters bootstrap through the command catalog:
 
 | Adapter | For | Bootstrap chain |
-|---|---|---|
-| `CLAUDE.md` | Claude Code CLI | `CLAUDE.md` → `AGENTS.md` → `commands/commands.md` |
-| `AGENTS.md` | Codex, GPT, and other agent harnesses | `AGENTS.md` → `commands/commands.md` |
-| `GEMINI.md` | Gemini CLI | `GEMINI.md` → `AGENTS.md` → `commands/commands.md` |
+| --- | --- | --- |
+| `CLAUDE.md` | Claude Code CLI | `CLAUDE.md` -> `AGENTS.md` -> `commands/commands.md` |
+| `AGENTS.md` | Codex, GPT, and other agent harnesses | `AGENTS.md` -> `commands/commands.md` |
 
-## Directory layout
+Use routed command forms inside an agent session, not as shell commands:
 
-```
-~/.cursor/
-├── CLAUDE.md          — Claude Code adapter (routing only)
-├── AGENTS.md          — other-harness adapter (routing only)
-├── README.md          — this file
-├── .collab.json       — checked-in collab repo marker
-├── commands/          — command catalog, routers, route playbooks, and slices
-│   └── collab/        — collab routes plus engine/, reference/, and data/
-├── platform/          — shared cross-namespace infrastructure
-│   ├── standards/     — cross-cutting invariants and contracts
-│   ├── tooling/       — framework tooling and validators
-│   ├── templates/     — scaffolding templates
-│   └── data/          — shared advisory vocabulary and platform data
-├── generated/         — framework-generated catalogs (do not edit by hand)
-└── tests/             — agent-facing and shell QA harnesses
+```text
+(collab init "Dispatch Surface Polish")
+(collab join --role tw)
+(collab speak)
+(collab status)
 ```
 
-### `generated/` discovery
+## Command surface
 
-Files under `generated/` are produced by scripts in `platform/tooling/`. Edit the source files or templates, then re-run the relevant sync script — do not edit `generated/` directly.
+NSMAC publishes command routes and helper contracts instead of package exports. The public command
+catalog lives in [`commands/commands.md`](commands/commands.md).
 
-## User-scope collab state root
+| Surface | Purpose |
+| --- | --- |
+| `(commands)` | List public command routes and route playbooks |
+| `(agent <route>)` | Install or update downstream agent scaffolds |
+| `(collab <route>)` | Run collaboration lifecycle, transcript, verification, tagging, and issue-planning routes |
+| `(test <target>)` | Run Markdown-facing harness targets |
 
-`$HOME/.collabs/<projectId>/` is a fourth operating plane that holds live collab records and transcripts for this repository. The directory lives outside the repository tree and survives `git clean`, `/compact`, and agent swaps. `.collab.json` at the repo root is the tracked marker that binds this directory to the repo; agents resolve the state root by reading `.collab.json` and reading the `projectId` from it.
+Route bodies live under `commands/<namespace>/<route>/index.md`. Cross-route policy lives under
+`platform/standards/`, and executable backing helpers live under each namespace's engine
+directory.
 
-The state root is excluded from git — it is never source, never deployed, and never committed. The state root is the durable runtime side of the collab system: what the registry writes, agents read, and seals are computed against.
+## Documentation
 
-## Prerequisites
+Start with [`platform/reference.md`](platform/reference.md) for the system map. Generated mirrors
+under [`generated/`](generated/) expose the command reference, lifecycle projection, registry CLI
+surface, and content invariants. Edit their source inputs instead of editing generated files by hand.
 
-Before running the tooling, ensure the host satisfies [`platform/standards/runtime-contract.md`](platform/standards/runtime-contract.md): Python ≥ 3.9, bash ≥ 3.2, `git` and `python3` on `$PATH`, and stdlib-only Python tooling (no third-party packages).
+The main source contracts are:
 
-## Setup
+| Document | Purpose |
+| --- | --- |
+| [`REPOSITORY.md`](REPOSITORY.md) | Repository authority, mutation, validation, and reporting contract |
+| [`commands/commands.md`](commands/commands.md) | Public command catalog and dispatch routing |
+| [`platform/reference.md`](platform/reference.md) | System-level navigation map |
+| [`platform/standards/runtime-contract.md`](platform/standards/runtime-contract.md) | Host prerequisites |
 
-Run `platform/tooling/install-git-hooks.sh` to install pre-commit and pre-push hooks that run the full test suite before history moves. Pass `--no-verify` to `git commit` or `git push` to skip the hooks. Force-push blocking and deletion blocking on `main` are manual GitHub repository settings, not a source patch.
+## Runtime state
 
-## Done signal
+`$HOME/.collabs/<projectId>/` stores live collaboration records and transcripts for this repository.
+The tracked `.collab.json` marker binds this checkout to the readable project id `nsmac`.
 
-Run `platform/tooling/audit.sh` to verify the framework surface. The audit exits 0 when:
+Runtime state is intentionally excluded from git. Source lives in this repository; generated mirrors
+live under `generated/`; local runtime payloads such as agent runtime directories, tracking payloads,
+`argv.json`, `projects/`, `extensions/`, `ide_state.json`, `plugins/`, `skills/`, `plans/`, and
+`subagents/` remain ignored. Legacy host skill-cache payloads are also ignored by the repository
+allowlist.
 
-- Runtime paths (`$HOME/.collabs/<projectId>/` (a readable slug), `.claude/`, `projects/`) are excluded from git
-- No accidental untracked payload
-- Every tracked file is reachable from an adapter, platform document, or catalog entry
-- Framework-generated output is distinguishable from generated output
-- Reference graph has no broken links
+## Quality
+
+The GitHub Actions CI workflow runs the repository gate:
+
+```bash
+./tests/run.sh
+```
+
+The test runner starts with `./platform/tooling/audit.sh`, then runs the
+retained test manifest.
+
+Before opening a pull request or pushing main, run:
+
+```bash
+./tests/run.sh
+```
+
+## Repository layout
+
+| Path | Purpose |
+| --- | --- |
+| `CLAUDE.md` | Claude Code adapter |
+| `AGENTS.md` | Codex, GPT, and other agent-harness adapter |
+| `REPOSITORY.md` | Source authority and validation contract |
+| `.collab.json` | Tracked collab project marker |
+| `.github/workflows/` | Repository CI workflow |
+| `commands/` | Command catalog, routers, route playbooks, namespace data, and helpers |
+| `commands/collab/` | Collaboration routes, registry engine, references, and advisory data |
+| `platform/` | Shared standards, tooling, templates, and data |
+| `generated/` | Tool-generated command and lifecycle mirrors |
+| `registry.schema.json` | Reference registry schema projection |
+| `tests/` | Shell and Markdown-facing QA harnesses |
+
+## Development
+
+Use the host prerequisites in [`platform/standards/runtime-contract.md`](platform/standards/runtime-contract.md):
+Python 3.9 or newer, bash 3.2 or newer, `git`, `python3`, and POSIX shell utilities on `$PATH`.
+Python tooling uses only the standard library.
+
+Generated files are produced by platform tooling and checked by the audit. Do not edit these by
+hand:
+
+- files under `generated/`
+- the generated command roster block in `commands/commands.md`
+
+Run focused checks only when working on a narrow surface, then finish with the repository gate:
+
+```bash
+./platform/tooling/audit.sh
+./platform/tooling/sync-commands-catalog.sh --check
+./tests/run.sh
+```
+
+See [`REPOSITORY.md`](REPOSITORY.md) for ownership boundaries and reporting requirements.
+
+## Versioning and releases
+
+NSMAC does not publish an npm package. Repository snapshots are anchored with weekly tags that use a
+year-week naming pattern.
+
+Collab-specific tagging is explicit and dry-run first:
+
+```text
+(collab tag)
+```
+
+The tag route is lifecycle-adjacent tooling. It does not run automatically from `(collab close)`.
+
+## License
+
+NSMAC is released under the [MIT License](./LICENSE). MIT was selected using the guidance at [Choose
+a License](https://choosealicense.com/licenses/mit/) because it permits broad reuse with attribution
+and warranty disclaimers.
+
+Only add third-party code, assets, or documentation when the license is compatible with MIT and the
+source is documented in the relevant change.

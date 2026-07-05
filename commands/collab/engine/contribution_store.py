@@ -56,3 +56,51 @@ def write_contribution_store_for_entry(registry_path: Path, entry: dict, store: 
     store_path = contribution_store_path_for_entry(registry_path, entry)
     store_path.parent.mkdir(parents=True, exist_ok=True)
     store_path.write_text(json.dumps(store, indent=2, ensure_ascii=True) + '\n')
+
+
+def append_contribution_store_record(
+    registry_path: Path,
+    entry: dict,
+    record: dict,
+) -> None:
+    store = mutable_contribution_store_for_entry(registry_path, entry)
+    store.setdefault('contributions', []).append(record)
+    write_contribution_store_for_entry(registry_path, entry, store)
+
+
+def replace_latest_contribution_store_record(
+    registry_path: Path,
+    entry: dict,
+    phase: str,
+    role: str,
+    record: dict,
+) -> None:
+    store = mutable_contribution_store_for_entry(registry_path, entry)
+    contributions = store.setdefault('contributions', [])
+    for index in range(len(contributions) - 1, -1, -1):
+        existing = contributions[index]
+        if isinstance(existing, dict) and existing.get('phase') == phase and existing.get('role') == role:
+            contributions[index] = record
+            write_contribution_store_for_entry(registry_path, entry, store)
+            return
+    contributions.append(record)
+    write_contribution_store_for_entry(registry_path, entry, store)
+
+
+def mark_contribution_store_record_retracted(
+    registry_path: Path,
+    entry: dict,
+    anchor: str,
+    reason: str,
+    timestamp: str,
+) -> None:
+    store = mutable_contribution_store_for_entry(registry_path, entry)
+    contributions = store.setdefault('contributions', [])
+    for index in range(len(contributions) - 1, -1, -1):
+        existing = contributions[index]
+        if isinstance(existing, dict) and existing.get('anchor') == anchor:
+            existing['retracted'] = True
+            existing['retractionReason'] = reason
+            existing['retractionTimestamp'] = timestamp
+            write_contribution_store_for_entry(registry_path, entry, store)
+            return

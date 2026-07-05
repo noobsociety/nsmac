@@ -63,7 +63,7 @@ status_platform_tooling() {
 }
 
 status_adapters() {
-  if [[ -f "$ROOT/AGENTS.md" && -f "$ROOT/CLAUDE.md" && -f "$ROOT/GEMINI.md" && -f "${COMMAND_CONFIG_ROOT}/commands/commands.md" ]]; then
+  if [[ -f "$ROOT/AGENTS.md" && -f "$ROOT/CLAUDE.md" && -f "${COMMAND_CONFIG_ROOT}/commands/commands.md" ]]; then
     printf '%s' "present"
   else
     printf '%s' "absent"
@@ -120,7 +120,7 @@ generate_block() {
   row "Instructions" "$(status_instructions)" "Bootstrap adapters, rules, and \`platform/standards/\` docs define agent behavior."
   row "Workflows" "$(status_workflows)" "Command namespace routers and route \`index.md\` playbooks own repeatable workflows."
   row "Platform tooling" "$(status_platform_tooling)" "\`platform/tooling/\` contains shared shell and Python helpers; this is distinct from AI function-calling and MCP tool servers."
-  row "Adapters" "$(status_adapters)" "\`AGENTS.md\`, \`CLAUDE.md\`, \`GEMINI.md\`, and \`commands/commands.md\` keep agents routing-only."
+  row "Adapters" "$(status_adapters)" "\`AGENTS.md\`, \`CLAUDE.md\`, and \`commands/commands.md\` keep agents routing-only."
   row "Subagents" "$(status_subagents)" "Only Completion-phase execution workers are in scope; they are not collab participants."
   row "Hooks" "absent - host-specific" "Document hooks per harness when needed; do not add them to the portable layer."
   row "Skills" "$(status_skills)" "Command namespaces behave like framework skills, but model-loaded skill packaging is out of scope."

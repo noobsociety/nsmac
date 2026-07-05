@@ -25,7 +25,7 @@ Contract: [document-standard.md](document-standard.md#command-md), [style-guide.
 - Namespace routers use `# (<namespace>)`.
 - Route playbooks use `# (<namespace> <route>)`, except `commands/test/index.md` which uses `# (test)` because the target selector is the first argument.
 - `tests/specs/*.md` harness files use their own `#` title line required by the harness spec.
-- The first body paragraph is one declarative sentence that starts with the action verb and states purpose and when to open the playbook, per [document standard](document-standard.md). Only `(quality assess ...)` functions may use the bold-acronym-first opening described there.
+- The first body paragraph is one declarative sentence that starts with the action verb and states purpose and when to open the playbook, per [document standard](document-standard.md).
 
 ### Required sections
 
@@ -164,6 +164,7 @@ One sentence — purpose of the route and when to use it.
 - Required authority for command behavior may come only from command files, same-namespace backing files under `commands/<ns>/{reference,engine,data}/`, shared role JSON under `commands/collab/reference/roles/`, or cross-namespace contracts under `platform/standards/`.
 - `commands/test/index.md` may also require `~/.cursor/tests/specs/commands.md`, `~/.cursor/tests/specs/core.md`, `~/.cursor/tests/specs/roles.md`, `~/.cursor/tests/specs/settings.md`, `~/.cursor/tests/specs/tests.md`, and `REPOSITORY.md` at repo root.
 - External URLs are optional context only and never required authorities.
+- **Authority direction:** `platform/standards/` files may cross-reference other `platform/standards/` files freely; they must not cite a `commands/` route path as the sole authority for a rule. Inline the rule text in the standard instead — the route becomes a consumer of the rule, not its source.
 
 ## QA cadence
 

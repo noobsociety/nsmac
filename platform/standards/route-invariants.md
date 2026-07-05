@@ -22,6 +22,12 @@ The `<!-- collab:content-only; do-not-execute -->` comment identifies transcript
 
 The sync contract applies to registry-to-transcript write pairs.
 
+## Target resolution
+
+Any route that operates on an existing collab record resolves its target through the shared registry helper, `commands/collab/engine/registry.py`: when the route's target token is present, treat it as a collab slug, id, or stable numeric position; otherwise fall back to registry `activeCollabId`. When the registry is unreadable or invalid, the token matches no entry, or `activeCollabId` is empty, the route aborts: `registry target unavailable; name the registry field or token`. The shared `resolve_collab` helper (`commands/collab/engine/registry_io.py`) backstops a non-matching token with `registry target not found: <token>`.
+
+A route's own **Registry targeting** Note states only what varies for that route — the token's position in its argument order, a file-path exclusion, or a substituted abort tag (for example `(agent-honor-system)`) — and cites this section rather than restating the shared algorithm or base abort message.
+
 ## Compliance
 
 A route is compliant when:

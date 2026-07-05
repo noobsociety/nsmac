@@ -1,12 +1,15 @@
 # Managed-allowlist policy.
 #
-# The leading `*` ignores everything in this local local command config directory.
-# Source is opted in below. Runtime and IDE-produced state stays ignored by
+# The leading `*` ignores everything in this local command config directory.
+# Source is opted in below. Runtime and host-produced state stays ignored by
 # omission, including:
+#   agents/         — local agent runtime payload; not source
+#   ai-tracking/    — local agent runtime payload; not source
+#   argv.json       — local invocation/runtime payload; not source
 #   projects/       — local project state; not source
 #   extensions/     — local extension cache/state; not source
 #   ide_state.json  — local IDE state; not source
-#   /  — generated skill payload; not source
+#   legacy skill caches — host-generated skill payloads; not source
 #   plugins/        — local plugin cache; not source
 #   skills/         — personal skill payload; not source
 #   plans/          — local planning scratch; not source
@@ -17,9 +20,9 @@
 !.gitignore
 !CLAUDE.md
 !AGENTS.md
-!GEMINI.md
 !REPOSITORY.md
 !README.md
+!LICENSE
 !.collab.json
 !.github/
 !.github/**

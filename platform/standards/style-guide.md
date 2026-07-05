@@ -37,13 +37,13 @@ Never use `this`, `it`, or `that` as a subject in reference docs, role docs, or 
 ### Tense
 
 - Present tense for facts: `context-gate.md` in the rules layer (illustrative) sets `activation: true` with no path `path patterns`.
-- Imperative for instructions: `Open commands/git/commit/index.md in the commands layer before drafting the commit message.`
+- Imperative for instructions: `Open commands/collab/commit/index.md in the commands layer before drafting the commit message.`
 - Future tense only for planned but unbuilt features: `The migration command will handle schema versioning once the playbook is written.`
 - In personal accounts (see Personal account exception), future tense is also permitted for intentions: `Next week I'll focus on the auth flow.`
 
 ## Sentences
 
-- The first sentence of every document is a single declarative statement. Never open with “This document…”, “Welcome to…”, or “This guide covers…”. Exception: `quality/*.md` route playbooks may open with a bold acronym label as the subject — see the **Command** (`.md`) template in [document standard](document-standard.md) for the exact shape.
+- The first sentence of every document is a single declarative statement. Never open with “This document…”, “Welcome to…”, or “This guide covers…”.
 - One idea per sentence. Split compound sentences at conjunctions.
 - Plain words over jargon. If a technical term is necessary, use it without apology.
 - No filler openers. Never start a sentence with “Note that”, “Please”, “Feel free to”, or “It’s worth mentioning”.
@@ -153,7 +153,7 @@ Pattern: `markdown-workflow.md`
 |`group`|`docs`, `cmd`, `git`, `quality`, `review`, …|Domain that ties the rule to its command group. Matches the group prefix of related commands.                                                                                                                                           |
 |`name` |kebab-case noun                          |What the rule governs within the group.                                                                                                                                                                                                 |
 
-Examples: `markdown-workflow.md`, `markdown-workflow.md`, `quality-learning.md`
+Examples: `markdown-workflow.md`, `markdown-workflow.md`
 
 ### Commands (`.md`)
 
@@ -161,7 +161,7 @@ Pattern: `commands/{namespace}/index.md` for public routers and `commands/{names
 
 The public router name matches the related command family and rule group. Route directory names stay route-shaped so the runtime does not expose them as standalone public commands.
 
-Examples: `commands/git/commit/index.md`, `commands/quality/assess-game/index.md`, `commands/doc/write-readme/index.md`
+Examples: `commands/agent/install/index.md`, `commands/collab/join/index.md`
 
 ### Other files
 

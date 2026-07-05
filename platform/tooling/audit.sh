@@ -67,7 +67,7 @@ require_dir() {
 
 is_source_path() {
   case "$1" in
-    .gitignore|.collab.json|CLAUDE.md|AGENTS.md|GEMINI.md|README.md|REPOSITORY.md|registry.schema.json) return 0 ;;
+    .gitignore|.collab.json|CLAUDE.md|AGENTS.md|README.md|REPOSITORY.md|LICENSE|registry.schema.json) return 0 ;;
     .github/*) return 0 ;;
     platform/reference.md) return 0 ;;
     platform/standards/*|platform/data/*|platform/tooling/*|generated/*|platform/templates/*|tests/specs/*|commands/*|tests/*) return 0 ;;
@@ -78,7 +78,6 @@ is_source_path() {
 check_required_surface() {
   require_file CLAUDE.md
   require_file AGENTS.md
-  require_file GEMINI.md
   require_file README.md
   require_file .collab.json
   require_file commands/commands.md
@@ -91,7 +90,6 @@ check_required_surface() {
 
 check_adapters() {
   grep -Fq 'AGENTS.md' CLAUDE.md || fail "CLAUDE.md does not route to AGENTS.md"
-  grep -Fq 'AGENTS.md' GEMINI.md || fail "GEMINI.md does not route to AGENTS.md"
   grep -Fq 'commands/commands.md' AGENTS.md || fail "AGENTS.md does not route to commands/commands.md"
   grep -Fq 'generated/registry-cli.md' AGENTS.md || fail "AGENTS.md Fail-fast section is missing availability-check carve-out (generated/registry-cli.md)"
   ok "adapter entry surfaces are named"
@@ -111,6 +109,11 @@ check_runtime_boundary() {
   else
     ok "runtime-only paths remain ignored by policy"
   fi
+}
+
+check_behavior_smoke_floor() {
+  local floor="tests/commands/collab/registry.py/real-record-behavior-smoke.test.sh"
+  [[ -f "$floor" ]] && ok "mandatory behavior-smoke floor present ($floor)" || fail "missing mandatory behavior-smoke floor: $floor"
 }
 
 check_collab_contract_terms() {
@@ -163,7 +166,7 @@ if failures:
     sys.exit(1)
 PY
   ((status == 0)) || failures=$((failures + 1))
-  ((status == 0)) && ok "collab retired vocabulary and topology stay contained"
+  ((status == 0)) && ok "collab retired vocabulary and topology stay contained" || true
 }
 
 check_collab_registry_lock() {
@@ -235,11 +238,6 @@ def allowed(line: str, start: int) -> bool:
     lower = line.lower()
     if start >= 3 and lower[start - 3:start + 6] == '~/.cursor':
         return True
-    accepted_system = 'dot' + needle
-    if start >= 3 and lower[start - 3:start + 6] == accepted_system:
-        before = lower[start - 4] if start >= 4 else ' '
-        after = lower[start + 6] if start + 6 < len(lower) else ' '
-        return not (before.isalnum() or before in '_-') and not (after.isalnum() or after in '_-')
     return False
 
 
@@ -277,7 +275,7 @@ check_untracked_payload() {
     fi
   done < <(git ls-files --others --exclude-standard)
   ((bad == 0)) || failures=$((failures + 1))
-  ((bad == 0)) && ok "no accidental untracked payload"
+  ((bad == 0)) && ok "no accidental untracked payload" || true
 }
 
 check_tracked_source_boundary() {
@@ -291,24 +289,24 @@ check_tracked_source_boundary() {
     fi
   done < <(git ls-files)
   ((bad == 0)) || failures=$((failures + 1))
-  ((bad == 0)) && ok "tracked files stay inside the source boundary"
+  ((bad == 0)) && ok "tracked files stay inside the source boundary" || true
 }
 
 check_generated_freshness() {
-  python3 platform/tooling/check-source-ledger.py --check || failures=$((failures + 1))
   platform/tooling/sync-context-gate.sh --check || failures=$((failures + 1))
   platform/tooling/sync-commands-catalog.sh --check || failures=$((failures + 1))
   platform/tooling/sync-framework-boundaries.sh --check || failures=$((failures + 1))
   platform/tooling/sync-roles-roster.sh --check || failures=$((failures + 1))
   python3 platform/tooling/command-advisories.py --check || failures=$((failures + 1))
+  python3 platform/tooling/roles.py validate || failures=$((failures + 1))
   python3 platform/tooling/command-reference.py --check || failures=$((failures + 1))
   commands/collab/engine/registry.py registry-cli-doc --check || failures=$((failures + 1))
   platform/tooling/audit-topology.sh || failures=$((failures + 1))
   python3 platform/tooling/audit-collab-route-wiring.py || failures=$((failures + 1))
   python3 platform/tooling/audit-collab-readonly-contract.py || failures=$((failures + 1))
-  python3 platform/tooling/audit-projector-loader-symbols.py || failures=$((failures + 1))
   python3 platform/tooling/audit-doc-paths.py || failures=$((failures + 1))
   python3 platform/tooling/audit-present-state.py || failures=$((failures + 1))
+  python3 platform/tooling/audit-retired-systems.py || failures=$((failures + 1))
   platform/tooling/audit-flag-scope.sh || failures=$((failures + 1))
   platform/tooling/audit-placement.sh || failures=$((failures + 1))
   commands/collab/engine/lifecycle-doc.py --check || failures=$((failures + 1))
@@ -329,186 +327,11 @@ check_generated_boundary() {
     esac
   done < <(find generated -type f | sort)
   ((bad == 0)) || failures=$((failures + 1))
-  ((bad == 0)) && ok "framework-generated output is isolated in generated/"
+  ((bad == 0)) && ok "framework-generated output is isolated in generated/" || true
 }
 
-check_retired_collab_residue() {
-  local output status hits rel_source source_path bad=0
-  local help_output
-
-  if grep -R "RAW_PROVENANCE_BANNER" commands/collab/engine >/dev/null 2>&1; then
-    fail "RAW_PROVENANCE_BANNER remains in collab engine"
-  fi
-
-  help_output="$(commands/collab/engine/registry.py --help)"
-  if grep -Fq 'migrate-raw-transcript' <<<"$help_output"; then
-    fail "migrate-raw-transcript helper command remains in registry CLI"
-  fi
-
-  if grep -R "migrate_raw_transcript\\|legacy_raw_transcript\\|raw_transcript_path_for_entry" commands/collab/engine >/dev/null 2>&1; then
-    fail "raw transcript migration path remains in collab engine"
-  fi
-
-  for command in synthesize-state synthesize render-raw-transcript render-projection-transcript; do
-    if grep -Fq "$command" <<<"$help_output"; then
-      fail "registry.py help still exposes $command"
-    fi
-
-    set +e
-    output="$(commands/collab/engine/registry.py "$command" 2>&1)"
-    status=$?
-    set -e
-    if [[ "$status" -eq 0 || "$output" != *"invalid choice"* ]]; then
-      fail "registry.py $command remains invocable"
-    fi
-
-    if grep -Fq "### \`$command\`" generated/registry-cli.md; then
-      fail "generated registry CLI docs still list $command"
-    fi
-  done
-
-  if git ls-files --error-unmatch commands/collab/engine/synthesis.py >/dev/null 2>&1; then
-    fail "commands/collab/engine/synthesis.py is still tracked"
-  fi
-
-  if find tests/commands/collab/registry.py -maxdepth 1 -name 'synthesize-*.test.sh' -print -quit | grep -q .; then
-    fail "synthesize registry tests are still present"
-  fi
-
-  for source_path in \
-    tests/commands/collab/aggregate-transcript.test.sh \
-    tests/commands/collab/modules/transcript-render-projection-store.test.sh
-  do
-    if [[ -n "$(git ls-files "$source_path")" || -e "$source_path" ]]; then
-      fail "stale projection test remains: $source_path"
-    fi
-  done
-
-  hits="$(git grep -nE 'contribution_store_digest|projection_source_digest|projection_store_records' \
-    -- commands/collab/engine '*.py' 2>/dev/null || true)"
-  if [[ -n "$hits" ]]; then
-    fail "dead synthesis digest/store symbol remains: $hits"
-  fi
-
-  python3 - <<'PY' || failures=$((failures + 1))
-from commands.collab.engine import registry
-from commands.collab.engine import seal_verification
-from commands.collab.engine import transcript_render
-
-assert registry
-assert seal_verification
-for name in (
-    'excerpt_source',
-    'stance_for_content',
-    'is_hidden_metadata_line',
-):
-    assert hasattr(transcript_render, name), name
-assert not hasattr(transcript_render, 'projection_excerpt_source')
-assert not hasattr(transcript_render, 'projection_stance_for_content')
-assert not hasattr(transcript_render, 'is_projection_hidden_metadata_line')
-PY
-
-  if grep -Fq 'synthesis artifacts' commands/collab/summarize/index.md 2>/dev/null; then
-    fail "synthesis-artifact negation residue found in summarize route prose"
-  fi
-
-  if grep -Fq 'Projector metadata is intentionally absent' commands/collab/show-policy/index.md 2>/dev/null; then
-    fail "projector-metadata negation residue found in show-policy route prose"
-  fi
-
-  if grep -Fq '## Deterministic Projector (dp)' commands/collab/reference/role-prohibitions.md 2>/dev/null; then
-    fail "Deterministic Projector (dp) prohibition section still present in role-prohibitions.md"
-  fi
-
-  if grep -Fq '(collab aggregate)' commands/collab/init/index.md commands/collab/open/index.md 2>/dev/null; then
-    fail "retired (collab aggregate) dispatch reference found in init or open route docs"
-  fi
-
-  if grep -P 'records/[^`]*-raw\.md' commands/collab/init/index.md commands/collab/open/index.md >/dev/null 2>&1; then
-    fail "raw transcript sibling path reference found in init or open route docs"
-  fi
-
-  hits="$(git grep -nP '\bprojection-mode\b' \
-    -- 'commands/' 'platform/standards/' \
-    ':(exclude)commands/collab/engine/' \
-    ':(exclude)records/' 2>/dev/null || true)"
-  if [[ -n "$hits" ]]; then
-    fail "synthesis projection-mode flag found in live doc surfaces: $hits"
-  fi
-
-  hits="$(git grep -nP '\bper-piece\b' \
-    -- 'commands/' 'platform/standards/' \
-    ':(exclude)commands/collab/engine/' \
-    ':(exclude)records/' 2>/dev/null || true)"
-  if [[ -n "$hits" ]]; then
-    fail "synthesis per-piece mode found in live doc surfaces: $hits"
-  fi
-
-  hits="$(git grep -nP '\b(?:is_)?projection_[a-z_]+\s*[\(=]' \
-    -- 'commands/collab/engine/*.py' 2>/dev/null || true)"
-  if [[ -n "$hits" ]]; then
-    fail "legacy projection_* / is_projection_* render symbol found in engine Python: $hits"
-  fi
-
-  if [[ -d "commands/collab/reference/synthesizers" ]]; then
-    fail "commands/collab/reference/synthesizers/ directory still exists"
-  fi
-
-  if [[ -f "commands/collab/reference/synthesizers/sy.json" ]]; then
-    fail "synthesizers/sy.json still exists"
-  fi
-
-  if [[ -d "commands/collab/reference/projectors" ]]; then
-    fail "commands/collab/reference/projectors/ directory still exists"
-  fi
-
-  if [[ -f "commands/collab/reference/projectors/dp.json" ]]; then
-    fail "projectors/dp.json still exists"
-  fi
-
-  hits="$(git grep -nP '\bSynthesizer\b' \
-    -- 'commands/' 'platform/standards/' \
-    ':(exclude)commands/collab/engine/' \
-    ':(exclude)records/' \
-    ':(exclude)commands/collab/reference/roles/' 2>/dev/null || true)"
-  if [[ -n "$hits" ]]; then
-    fail "Synthesizer role identity prose found in live surfaces: $hits"
-  fi
-
-  if grep -Eq '\(collab synthesize\)|synthesize/index\.md' commands/commands.md 2>/dev/null; then
-    fail "synthesis dispatch found in commands/commands.md"
-  fi
-
-  if grep -Eq '\(collab synthesize\)|synthesize/index\.md' generated/command-reference.md 2>/dev/null; then
-    fail "synthesis dispatch found in generated/command-reference.md"
-  fi
-
-  for source_path in \
-    "commands/collab/reference/transcript-template.md" \
-    "commands/collab/reference/transcript-template-raw.md"
-  do
-    if [[ -e "$source_path" ]]; then
-      fail "retired target-format transcript template still exists: $source_path"
-    fi
-  done
-
-  if ! grep -Fq 'commands/collab/engine/transcript_render.py' commands/collab/reference/anchor-convention.md; then
-    fail "anchor convention missing transcript renderer emitter citation"
-  fi
-
-  while IFS= read -r source_path; do
-    rel_source="${source_path#"$ROOT"/}"
-    if [[ "$rel_source" == "platform/tooling/audit.sh" ]]; then
-      continue
-    fi
-    if grep -Eq 'transcript-template(-raw)?\.md' "$source_path"; then
-      fail "retired transcript template reference remains in live source: $rel_source"
-      bad=1
-    fi
-  done < <(rg -l 'transcript-template' "$ROOT/commands" "$ROOT/tests" "$ROOT/platform")
-
-  ((bad == 0)) || failures=$((failures + 1))
-  ((bad == 0)) && ok "retired raw/synthesis/template surfaces remain absent"
+check_deleted_path_references() {
+  python3 platform/tooling/audit-deleted-path-references.py || failures=$((failures + 1))
 }
 
 check_links() {
@@ -594,13 +417,13 @@ check_public_dispatch_surface() {
 
 check_verification_round_call_sites() {
   local status=0
-  python3 - commands/collab/engine/registry.py commands/collab/engine/seal_verification.py <<'PY' || status=$?
+  python3 - commands/collab/engine/registry_core.py commands/collab/engine/seal_verification_render.py <<'PY' || status=$?
 import ast
 import sys
 from pathlib import Path
 from typing import Union
 
-registry_path = Path(sys.argv[1])
+registry_core_path = Path(sys.argv[1])
 seal_path = Path(sys.argv[2])
 FunctionNode = Union[ast.FunctionDef, ast.AsyncFunctionDef]
 
@@ -614,7 +437,7 @@ def parse_functions(path: Path) -> dict[str, FunctionNode]:
     }
 
 
-registry_functions = parse_functions(registry_path)
+registry_core_functions = parse_functions(registry_core_path)
 seal_functions = parse_functions(seal_path)
 
 
@@ -637,7 +460,7 @@ def calls_name(function: FunctionNode, callee_name: str) -> bool:
     return False
 
 
-def delegates_to_seal_verification(
+def delegates_to_seal_verification_render(
     function: FunctionNode,
     callee_name: str,
 ) -> bool:
@@ -648,71 +471,67 @@ def delegates_to_seal_verification(
                 isinstance(callee, ast.Attribute)
                 and callee.attr == callee_name
                 and isinstance(callee.value, ast.Name)
-                and callee.value.id == '_seal_verification'
+                and callee.value.id == '_seal_verification_render'
             ):
                 return True
     return False
 
 
-registry_participant_verify_render = require_function(
-    registry_functions,
+registry_core_participant_verify_render = require_function(
+    registry_core_functions,
     'participant_verify_render',
-    'registry.py must define participant_verify_render as part of the permanent seal facade pair',
-)
-registry_render_seal = require_function(
-    registry_functions,
-    'render_seal',
-    'registry.py must define render_seal as part of the permanent seal facade pair',
+    'registry_core.py must define participant_verify_render as the participant verification facade',
 )
 seal_participant_verify_render = require_function(
     seal_functions,
     'participant_verify_render',
-    'seal_verification.py must define the participant_verify_render implementation',
+    'seal_verification_render.py must define the participant_verify_render implementation',
 )
-seal_render_seal = require_function(
+seal_write = require_function(
     seal_functions,
-    'render_seal',
-    'seal_verification.py must define the render_seal implementation',
+    'seal_write',
+    'seal_verification_render.py must define the seal_write implementation',
 )
-
-assert delegates_to_seal_verification(
-    registry_participant_verify_render,
+record_verdict = require_function(
+    seal_functions,
+    'record_verdict',
+    'seal_verification_render.py must define the record_verdict implementation',
+)
+assert delegates_to_seal_verification_render(
+    registry_core_participant_verify_render,
     'participant_verify_render',
 ), (
-    'registry.py participant_verify_render facade must delegate to '
-    '_seal_verification.participant_verify_render'
-)
-assert delegates_to_seal_verification(registry_render_seal, 'render_seal'), (
-    'registry.py render_seal facade must delegate to _seal_verification.render_seal'
+    'registry_core.py participant_verify_render facade must delegate to '
+    '_seal_verification_render.participant_verify_render'
 )
 assert calls_name(seal_participant_verify_render, 'record_verification_round_for_execution'), (
     'participant_verify_render must record the paired verification round'
 )
-assert not calls_name(registry_participant_verify_render, 'record_verification_round_for_execution'), (
-    'registry.py participant_verify_render facade must not call '
+assert not calls_name(registry_core_participant_verify_render, 'record_verification_round_for_execution'), (
+    'registry_core.py participant_verify_render facade must not call '
     'record_verification_round_for_execution; seal_verification.py owns the recorder call'
 )
-assert not calls_name(registry_render_seal, 'record_verification_round_for_execution'), (
-    'protected seal-render recorder boundary: registry.py render_seal must not call '
-    'record_verification_round_for_execution'
-)
-assert not calls_name(seal_render_seal, 'record_verification_round_for_execution'), (
-    'protected seal-render recorder boundary: seal_verification.py render_seal must not call '
-    'record_verification_round_for_execution'
-)
+for function_name, function in [
+    ('seal_write', seal_write),
+    ('record_verdict', record_verdict),
+]:
+    assert not calls_name(function, 'record_verification_round_for_execution'), (
+        'protected seal recorder boundary: seal_verification_render.py '
+        f'{function_name} must not call record_verification_round_for_execution'
+    )
 PY
   ((status == 0)) || failures=$((failures + 1))
-  ((status == 0)) && ok "verification round recorder call sites stay owned by participant verification"
+  ((status == 0)) && ok "verification round recorder call sites stay owned by participant verification" || true
 }
 
 check_contribution_validation_placement() {
   local status=0
-  python3 - commands/collab/engine/registry.py commands/collab/engine/contribution_validation.py <<'PY' || status=$?
+  python3 - commands/collab/engine/registry_core.py commands/collab/engine/contribution_validation.py <<'PY' || status=$?
 import ast
 import sys
 from pathlib import Path
 
-registry_path = Path(sys.argv[1])
+registry_core_path = Path(sys.argv[1])
 validation_path = Path(sys.argv[2])
 
 
@@ -725,7 +544,7 @@ def function_names(path: Path) -> set[str]:
     }
 
 
-registry_functions = function_names(registry_path)
+registry_core_functions = function_names(registry_core_path)
 validation_functions = function_names(validation_path)
 owned_by_validation = {
     'assert_turn_order_not_drifted',
@@ -743,15 +562,15 @@ assert not missing, (
     + ', '.join(missing)
 )
 
-leaked = sorted(owned_by_validation & registry_functions)
+leaked = sorted(owned_by_validation & registry_core_functions)
 assert not leaked, (
-    'registry.py must stay a facade for speak-time contribution gates; move back to '
+    'registry_core.py must stay a facade for speak-time contribution gates; move back to '
     'contribution_validation.py: '
     + ', '.join(leaked)
 )
 PY
   ((status == 0)) || failures=$((failures + 1))
-  ((status == 0)) && ok "speak-time contribution validation stays outside registry.py facade"
+  ((status == 0)) && ok "speak-time contribution validation stays outside registry.py facade" || true
 }
 
 check_route_arg_defaults() {
@@ -934,10 +753,11 @@ check_verification_round_call_sites
 check_contribution_validation_placement
 check_generated_freshness
 check_generated_boundary
-check_retired_collab_residue
+check_deleted_path_references
 check_links
 platform/tooling/audit-reachability.sh || failures=$((failures + 1))
 platform/tooling/audit-vocabulary.sh || failures=$((failures + 1))
+check_behavior_smoke_floor
 check_route_arg_defaults
 check_qa_spec_rosters
 

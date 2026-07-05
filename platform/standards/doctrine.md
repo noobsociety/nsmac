@@ -32,7 +32,7 @@ Per-design rules that have been deliberated and converged through the collab pro
 
 ## MCP boundary
 
-**MCP boundary.** The MCP (Model Context Protocol) surface is explicitly out of scope for this platform. The `dotcursor` framework routes through `~/.cursor/commands/` dispatch; platform tooling does not depend on or configure MCP endpoints. MCP integrations are application-layer concerns and belong outside the portable layer declared in `platform/standards/framework-boundaries.md`.
+**MCP boundary.** The MCP (Model Context Protocol) surface is explicitly out of scope for this platform. The `nsmac` framework routes through `~/.cursor/commands/` dispatch; platform tooling does not depend on or configure MCP endpoints. MCP integrations are application-layer concerns and belong outside the portable layer declared in `platform/standards/framework-boundaries.md`.
 
 **Source:** `platform/standards/framework-boundaries.md`; collab `2026-06-18-doctrine-naming-glossary-system-reference` (convergence: 2026-06-18)
 
@@ -40,9 +40,21 @@ Per-design rules that have been deliberated and converged through the collab pro
 
 ## Single-writer helper
 
-**Single-writer helper.** A single Python helper (`commands/collab/engine/registry.py`) owns every write to the registry and transcript. No route, agent, or external script writes registry JSON or transcript Markdown directly. The helper ensures consistent serialization, revision tracking, stale-write detection, and digest computation across all collab operations.
+**Single-writer helper.** A single Python helper entrypoint (`commands/collab/engine/registry.py`) owns every write to the registry and transcript. Its implementation delegates through table-driven dispatch (`commands/collab/engine/registry_dispatch.py`) and focused domain leaves; write paths receive registry I/O commit primitives through explicit configure seams. No route, agent, or external script writes registry JSON or transcript Markdown directly. The helper ensures consistent serialization, revision tracking, stale-write detection, and digest computation across all collab operations.
 
 **Source:** collab `2026-06-18-doctrine-naming-glossary-system-reference` (convergence: 2026-06-18)
+
+---
+
+## Thin registry core
+
+**Thin registry core.** `registry.py` is the single-writer helper entrypoint (see **Single-writer helper** above). Its thin-core target restricts what belongs in `registry.py`: package bootstrap, compatibility exports, and executable delegation only. Domain logic — field validation, schema migration, I/O operations, seal computation, transcript parsing, plan-item extraction, lifecycle state machines — belongs in owning modules (`registry_io.py`, `seal_verification_logic.py`, `seal_verification_render.py`, `transcript_readers.py`, `registry_constants.py`, and the focused command leaves), not inlined in `registry.py`. A function in `registry.py` that carries business logic is a thin-core violation.
+
+**Verification contract:** A change satisfies the thin-core target when: (a) `registry.py` has no domain helper definitions; (b) the CLI still executes through `registry.py`; and (c) every extracted function lives in its owning module, with `registry_core.py` limited to the keeper set below. The target is not only a line-count threshold; it is a structural gate — domain functions belong where the domain is owned.
+
+**Current state:** `registry.py` is a thin executable facade and the extraction reached its target end-state. `registry_parser.py` owns argv shape and CLI-doc rendering; `registry_dispatch.py` owns table-driven subcommand dispatch; `registry_io.py` owns registry/transcript commit primitives; and `registry_core.py` is limited to compatibility exports, facade configuration, the participant-verification render facade, the thin `validate_registry` wrapper, and the narrow orchestration wrappers (`record_execution`, `advance_phase`). Further work is boundary maintenance: new command handlers and domain logic land in owning leaves, not in the core.
+
+**Source:** collab `2026-06-29-coding-principles` (directive: "thin core + de-braid completion effort"; convergence: 2026-06-29)
 
 ---
 
@@ -74,8 +86,36 @@ Per-design rules that have been deliberated and converged through the collab pro
 
 **Verification three-plane separation.** `Completion.verification` is organized into three ordered planes, each certifying a distinct question. `verification.participant` is self-administered remediation: the certifying question is whether the owning role has self-audited and remediated its own write scope. `verification.seal` is content-integrity: the certifying question is whether the transcript content matches the committed tree at `HEAD`. `verification.assessment` is goal truth: the certifying question is whether the stated discussion goal was achieved.
 
-The three planes are not redundant because they answer different questions at different scopes. Passing the participant plane does not confirm that content is committed; passing the seal plane does not confirm the goal was met; passing the assessment plane presupposes both but cannot substitute for either. The participant plane is the sole production round-earning event when enabled; when disabled (`--no-participant-verification`), no production path earns the round and the zero-round seal gate blocks the seal. Canonical mechanics: [`verification.md` § Round definition](../../commands/collab/reference/verification.md#round-definition); disabled-path limitation: see the `--no-participant-verification` guardrail in [`(collab init)`](../../commands/collab/init/index.md).
-
-**Revision coupling:** The disabled-path claim above, the `--no-participant-verification` guardrail in [`(collab init)`](../../commands/collab/init/index.md), and the Round-earning event note in [`(collab participant verify)`](../../commands/collab/participant-verify/index.md) are a coupled set; when a production round-earning path for the disabled posture lands, all three must be revised in the same change or the docs contradict the code.
+The three planes are not redundant because they answer different questions at different scopes. Passing the participant plane does not confirm that content is committed; passing the seal plane does not confirm the goal was met; passing the assessment plane presupposes both but cannot substitute for either. The participant plane is the sole production round-earning event for reviewer-backed collabs. Canonical mechanics: [`verification.md` § Round definition](../../commands/collab/reference/verification.md#round-definition).
 
 **Source:** collab `2026-06-26-redundant-participant-verify` (directive: "settle the fate of `Completion.verification.participant`"; verdict: not redundant; convergence: 2026-06-26)
+
+---
+
+## Present-tense doctrine: closed-collab provenance carve-out
+
+**Present-tense doctrine: closed-collab provenance carve-out.** The present-tense-only principle ("the present tense is global") governs live, forward-facing description of system state: a doc must say what the system currently does, not what it used to do or will someday do. It does not extend to content whose subject is itself a past event — a closed collab's outcome, a retired mechanism's tombstone, a superseded registry value kept for forensic reference. Describing a historical fact in the past tense is not a present-tense violation; describing current system behavior in the past tense is. `agent-id.md`'s note that "existing versioned registry values remain historical records and must not be migrated" is one instance of this carve-out, not an exception to the present-tense rule; every retained closed-collab record (`records/*.md` in the user-scope collab state root) is the general case — each one narrates the deliberation and outcome of a closed collab in past tense, by necessity.
+
+**Determination (Lock 1):** the general clause is load-bearing independent of any single named instance. Every retained closed-collab record — including this collab's own eventual sealed record — narrates past deliberation in past tense and depends on this clause to pass a present-tense reading. Retiring one instance citation does not retire the general clause; the clause stays.
+
+This entry settles only the collision raised in the reviewer's second finding at conclusion — the global tense directive read against the then-retained role-key tombstone — so the two no longer read as contradictory. It does not charter a repo-wide present-tense sweep: the reviewer's first finding holds that such a sweep is unchartered work requiring its own `(collab init)` (Invariant #19), and that remains true; this entry neither performs nor authorizes it.
+
+**Source:** operator ruling, 2026-06-30. Recorded as a direct ruling per operator decision rather than through a new collab convergence.
+
+---
+
+## Namespace-retirement residue and seal-coverage correctness
+
+**Namespace-retirement residue and seal-coverage correctness.** Closing a collab without a declared `charteredDeliverables` block is not a seal-enforcement bypass. Per Invariant #19 (`commands/collab/reference/invariants.md`), `charteredDeliverables` is an optional moderator declaration; when absent, the seal-time coverage gate (Invariant #17) is a deliberate no-op — the mechanism exists to stop reviewer-driven scope expansion at seal, not to require every collab to pre-enumerate paths before its audit has run. Absence of a charter does not mean absence of execution attestation: Invariant #21's `reopenCoverage` re-validates every carried execution path against `HEAD` content at seal time, so a `success` verdict reflects real, content-verified work whether or not a charter was declared.
+
+**Determination.** `2026-07-01-namespace-consolidation` (retire `doc`/`quality`, fold `git` into `collab`) closed `success` correctly under this doctrine: no `charteredDeliverables` block was declared, which is correct for a collab whose scope firmed up through Audit and Discussion rather than before them; Invariant #17 was accordingly a legitimate no-op; and real execution attestation existed at seal regardless — 37 and 5 touched paths across the two assigned contributors in the first execution round, plus 1 and 0 (verification-only) in the reopened round, all content-validated against `HEAD` per Invariant #21. Reading this closure as having "bypassed its own charter/seal enforcement" does not hold: no enforcement was bypassed, because none was chartered to fire, and independent, real path coverage existed throughout.
+
+The one substantiated defect in this collab's execution was filesystem residue outside any tracked-path gate's reach: once the `doc`/`quality`/`git` route files were deleted from tracked source, their now-empty parent directories (`commands/{doc,quality,git}/` and emptied route subdirectories) remained on disk. Git does not track empty directories, so a clean `git status` and passing content-based checks (grep sweeps, `audit-doc-paths.py`, `audit.sh`) could not see it. This was filesystem hygiene, not a tracked-source or seal-enforcement defect, and it has since been fixed and guarded (below).
+
+**Two residue classes, two gates.** Retirement residue is not one problem; a retired system can leave behind two different kinds of trace, each caught by a different gate:
+- **(a) A tracked artifact returning to source** — a previously-retired mechanism (`.mdc` dormant tooling, the `gemini` adapter, the `dp` role key) reappearing in tracked source. Guarded by `platform/tooling/audit-retired-systems.py`, keyed on path/extension identity, never on prose.
+- **(b) Empty-directory residue after retirement** — a namespace's route files are deleted but empty parent directories survive on disk, invisible to any check that only inspects tracked file content. Guarded by `platform/tooling/audit-topology.sh`'s empty-command-directory and retired-namespace-directory checks, which run through `./platform/tooling/audit.sh` in the retained `./tests/run.sh` gate.
+
+Both gates key on path identity rather than prose, and both compose with the closed-collab provenance carve-out above: narrating either residue class in past tense inside a closed record is exempt historical content, not a live violation.
+
+**Source:** operator ruling, 2026-07-01. Recorded as a direct ruling settling the seal-enforcement characterization of `2026-07-01-namespace-consolidation` and naming the two retirement-residue guard classes, rather than through a new collab convergence (forward-only: the collab's closed transcript anchors are not rewritten by this entry).

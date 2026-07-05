@@ -17,27 +17,27 @@ Only the source plane is authoritative. Runtime planes are derived execution con
 Authority is strict and ordered:
 
 1. Repo-owned executable checks and scripts:
-   - `./tests/run.sh` (runs `./platform/tooling/audit.sh` then every `tests/**/*.test.sh`)
+   - `./tests/run.sh` (runs `./platform/tooling/audit.sh` then the retained test manifest)
    - `./platform/tooling/audit.sh` (adapter routing, runtime ignore rules, role-key prose drift guard)
-   - `./platform/tooling/check-source-ledger.py --check` (source-ledger schema, always-on retired-trace scan; declared carrier inventory validation is dormant-by-design: no active carriers exist — the `.mdc` context-carrier format is not used by this repo and `source-ledger.md` carries zero rows; the inventory check activates automatically if new carriers are introduced)
-   - `./platform/tooling/sync-context-gate.sh --check` (context-gate canonical source/projection parity)
+   - `./platform/tooling/sync-context-gate.sh --check` (context-gate canonical source shape: present, no frontmatter, at least one critical directive retained)
    - `./platform/tooling/audit-role-prose.sh` (role-key prose drift guard for Markdown and MDC surfaces)
    - `./platform/tooling/sync-commands-catalog.sh --check` (commands roster integrity)
    - `./platform/tooling/sync-framework-boundaries.sh` (framework boundary projections)
    - `./platform/tooling/sync-roles-roster.sh` (roles roster projection)
    - `./platform/tooling/audit-collab-route-wiring.py` (run by `audit.sh`; every public collab route resolves to a backing `registry.py` helper subcommand — catalogued routes stay wired, no documented-but-unbacked surface)
    - `./platform/tooling/audit-collab-readonly-contract.py` (run by `audit.sh`; every collab route doc that claims read-only calls only non-mutating `registry.py` subcommands)
-   - `./platform/tooling/audit-projector-loader-symbols.py` (run by `audit.sh`; the retired deterministic-projector loader machinery stays absent from the engine)
+   - `./platform/tooling/audit-deleted-path-references.py` (run by `audit.sh`; tracked source does not reference files that are absent at `HEAD` after deletion in git history)
    - `./platform/tooling/audit-doc-paths.py` (run by `audit.sh`; backticked repo-relative paths in tracked Markdown resolve — only deliberately-prohibited names are allowlisted)
    - `./platform/tooling/audit-present-state.py` (run by `audit.sh`; tracked source carries present state only, with no past/future outcome residue)
+   - The list above names the load-bearing checks; `./platform/tooling/audit.sh` runs the complete, authoritative set — including topology, placement, reachability, vocabulary, advisory, and behavior-smoke-floor (`check_behavior_smoke_floor`) checks not separately enumerated here.
 **Execution prerequisites** for the checks listed above are specified in [`platform/standards/runtime-contract.md`](platform/standards/runtime-contract.md): Python ≥ 3.9, bash ≥ 3.2, `git` and `python3` on `$PATH`, and stdlib-only Python tooling.
 
-`./platform/tooling/coverage-gate.sh` checks every public collab route in `commands/collab/` for full ABORT coverage: each discovered public-route ABORT clause must carry a stable `<!-- abort: <id> -->` anchor and have a matching P9 test, unless the clause is explicitly marked `**ABORT** (agent-honor-system):` with a reason. The migration buckets are retired; there is no allowlist, discovery-debt set, or deferred coverage path. The retired per-batch schedule and clause classification live in [`platform/tooling/coverage-gate-migration.md`](platform/tooling/coverage-gate-migration.md).
+`./platform/tooling/coverage-gate.sh` proves the mandatory behavior-smoke floor and reports opt-in per-clause coverage over public collab routes in `commands/collab/`. The floor is mandatory for every route; per-clause ABORT coverage — a stable `<!-- abort: <route>-<id> -->` anchor plus a matching P9 test — is opt-in, kept only for the reviewer-selected keep-list rather than required for every discovered ABORT clause. An anchor always means "tested": strip an anchor when its backing test retires, and keep an anchor only while its test remains on the keep-list. Guards that are discipline-only rather than helper-enforced use `agent-honor-system` as the sole vocabulary; no other escape term exists. The retired per-batch burn-down schedule and clause classification live in [`platform/tooling/coverage-gate-migration.md`](platform/tooling/coverage-gate-migration.md).
 
-`tests/commands/collab/registry.py/` is the `registry.py` behavior smoke gate; exercised via `./tests/run.sh`, it asserts the `speak-render` → `speak-state`/lifecycle round trip over live-shaped state built by real helpers in an isolated `COLLAB_STATE_HOME`, demonstrating RED on a desynchronized registry/transcript and GREEN on a valid round trip.
+`tests/commands/collab/registry.py/real-record-behavior-smoke.test.sh` is the mandatory behavior-smoke floor; exercised via `./tests/run.sh`, it asserts the `speak-render` → `speak-state`/lifecycle round trip over live-shaped state built by real helpers in an isolated `COLLAB_STATE_HOME`, demonstrating RED on a desynchronized registry/transcript and GREEN on a valid round trip. The rest of `tests/commands/collab/registry.py/` is the opt-in per-clause keep-list described above. `./platform/tooling/audit.sh` asserts this floor file exists (`check_behavior_smoke_floor`), so deleting it fails the audit rather than silently disabling the floor.
 
 2. Repo-owned source files and policy documents:
-   - Root adapters: `CLAUDE.md`, `AGENTS.md`, `REPOSITORY.md`, `README.md`, `.gitignore`, `.collab.json`
+   - Root adapters and source documents: `CLAUDE.md`, `AGENTS.md`, `REPOSITORY.md`, `README.md`, `LICENSE`, `.gitignore`, `.collab.json`
    - Public routers and routes: `commands/<namespace>/index.md`, `commands/<namespace>/<route>/index.md`
    - Command advisory source data: shared vocabulary under `platform/data/*.json`, central advisory files under `platform/data/advisories/<ns>.json`, per-slice advisory files under `commands/<ns>/data/<ns>.json` (for example `commands/collab/data/collab.json`), and `platform/data/command-advisory.schema.json`
    - Shared invariants and standards: `platform/standards/*.md`
@@ -48,7 +48,7 @@ Authority is strict and ordered:
    - Generated mirrors under `generated/`: `collab-lifecycle.md`, `command-reference.md`, `content-invariants.tsv`, `registry-cli.md` (generator: `commands/collab/engine/registry.py registry-cli-doc`)
    - Generated block `<!-- BEGIN GENERATED:COMMANDS_ROSTER --> ... <!-- END GENERATED:COMMANDS_ROSTER -->` inside `commands/commands.md`
    - Runtime invocation surface at `~/.cursor/*` (this checkout, developed in place)
-   - Ignored runtime state (not source): `projects/`, `extensions/`, `ide_state.json`, `plugins/`, `skills/`, `plans/`, `subagents/`
+   - Ignored runtime state (not source): agent runtime directories, tracking payloads, `argv.json`, `projects/`, `extensions/`, `ide_state.json`, `plugins/`, `skills/`, `plans/`, `subagents/`, and legacy host skill-cache payloads
 
 ## 3) Output chain contract
 
@@ -67,7 +67,7 @@ The repo projects the following root outputs, with deepest dependency chains and
 - Do not edit by hand:
   - Files under `generated/` — regenerated by `commands/collab/engine/lifecycle-doc.py`, `platform/tooling/command-reference.py`, `platform/tooling/sync-framework-boundaries.sh`, and `commands/collab/engine/registry.py registry-cli-doc` (for `generated/registry-cli.md`).
   - The `BEGIN GENERATED:COMMANDS_ROSTER` ... `END GENERATED:COMMANDS_ROSTER` block in `commands/commands.md` — regenerated by `platform/tooling/sync-commands-catalog.sh`.
-  - Any path matched by `.gitignore` (e.g. `projects/`, `extensions/`, `ide_state.json`, `plugins/`, `skills/`, `plans/`, `subagents/`) — runtime state, never source.
+  - Any path matched by `.gitignore` (e.g. agent runtime directories, tracking payloads, `argv.json`, `projects/`, `extensions/`, `ide_state.json`, `plugins/`, `skills/`, `plans/`, `subagents/`) — runtime state, never source.
 - Ownership boundaries:
   - `commands/<ns>/index.md` owns public routing; route bodies belong in `commands/<ns>/<route>/index.md`.
   - `platform/standards/*.md` owns cross-route invariants and standards; routes cite them rather than restating them.
@@ -88,7 +88,7 @@ The repo projects the following root outputs, with deepest dependency chains and
 
 The repo projects runtime state under `~/.cursor/*` and generated mirrors under `generated/`. Required validation:
 
-- `./platform/tooling/audit.sh` (includes `audit-role-prose.sh`, `check-source-ledger.py --check`, `sync-context-gate.sh --check`, `audit-collab-route-wiring.py`, `audit-collab-readonly-contract.py`, `audit-projector-loader-symbols.py`, `audit-doc-paths.py`, and `audit-present-state.py`)
+- `./platform/tooling/audit.sh` (includes `audit-role-prose.sh`, `sync-context-gate.sh --check`, `audit-collab-route-wiring.py`, `audit-collab-readonly-contract.py`, `audit-deleted-path-references.py`, `audit-doc-paths.py`, and `audit-present-state.py`)
 - `./platform/tooling/sync-commands-catalog.sh --check`
 - `./platform/tooling/sync-framework-boundaries.sh` (run and diff `generated/` if `--check` is unsupported)
 - `./platform/tooling/sync-roles-roster.sh` (run and diff `generated/` if `--check` is unsupported)
@@ -98,16 +98,16 @@ The repo projects runtime state under `~/.cursor/*` and generated mirrors under 
 
 No project-local overlay is owned by this repo. Consumer repos that carry their own overlay validate it through that repo's own gates; this repo does not gate overlays from upstream.
 
-## 6) Collab workflow models
+## 6) Collab workflow model
 
-The committed workflow-model doctrine — seal terminal (default), issue terminal, issue lifecycle, seal-free close, and replacement close-gate — is specified in [`commands/collab/reference/workflow-models.md`](commands/collab/reference/workflow-models.md). All close-path logic in `commands/collab/engine/registry.py` and related helpers is downstream of that specification. The planned-route gate ([`commands/collab/reference/planned-routes.md`](commands/collab/reference/planned-routes.md)) guards against activating non-default workflow models before their prerequisite contract surface is present.
+The committed workflow model is specified in [`commands/collab/reference/workflow-models.md`](commands/collab/reference/workflow-models.md). Reviewer-backed collabs close through execution completion, participant verification, a current reviewer seal, and a success verdict. All close-path logic in `commands/collab/engine/registry.py` and related helpers is downstream of that specification.
 
 ## 7) Reporting contract
 
 When work completes, report:
 
 - Each validation command executed and its pass/fail status, including any documented skips with rationale.
-- Whether root adapters (`CLAUDE.md`, `AGENTS.md`, `REPOSITORY.md`, `README.md`) and scaffold templates (`platform/templates/*`) were modified.
+- Whether root adapters and source documents (`CLAUDE.md`, `AGENTS.md`, `REPOSITORY.md`, `README.md`, `LICENSE`) and scaffold templates (`platform/templates/*`) were modified.
 - Whether any `generated/*` file or the `COMMANDS_ROSTER` block in `commands/commands.md` was regenerated, and which sync script produced the change.
 - Any unresolved install or patch placeholder markers remaining in installed scaffold files.
 - Any residual risks: known blockers in `tests/specs/*`, deferred test additions, or boundary cases that affected the run.

@@ -27,8 +27,8 @@ The document explains what effort levels mean, how to interpret the phase-role m
 
 | Level | Meaning |
 |---|---|
-| `low` | Routing and moderation only; no synthesis or generation required |
-| `medium` | Standard contribution; analysis and synthesis without deep implementation |
+| `low` | Routing and moderation only; no content generation required |
+| `medium` | Standard contribution; analysis and judgment without deep implementation |
 | `high` | Implementation-bearing or convergence-critical; sustained reasoning required |
 | `xhigh` | Convergent gate or reviewer pass; one bad judgment propagates; elevate before speaking |
 | `max` | Reserved for explicit escalation; not assigned by default |

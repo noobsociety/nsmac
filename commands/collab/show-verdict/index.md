@@ -16,8 +16,7 @@ Display the recorded verification verdict metadata for a collaboration record.
 ## Notes
 
 - **Parameters:** target collab slug, id, or numeric `#N` as the first token after `show verdict`; when absent, resolved per **Registry targeting** in **Notes**.
-<!-- abort: show-verdict-registry-target -->
-- **Registry targeting:** Resolve the target collab from the resolved registry, using `commands/collab/engine/registry.py` as the shared helper. When the first token after the route is present, treat it as a collab slug, id, or stable numeric position. Otherwise use `activeCollabId`. If the registry is unreadable or invalid, the token does not match any entry, or `activeCollabId` is empty, **ABORT**: registry target unavailable; name the registry field or token.
+- **Registry targeting:** Resolve the target collab from the first token after the route, falling back to `activeCollabId` when absent. The resolution algorithm and abort contract are owned by **Target resolution** in [`platform/standards/route-invariants.md`](../../../platform/standards/route-invariants.md); this route does not restate them.
 - **Output:** JSON with target id, status, active phase, completion sub-state, verification review sub-state, verdict object, and seal metadata when a seal is present.
 - **No verdict:** The helper aborts with `verdict unavailable for target` when no assessment verdict has been recorded.
 - **Read-only:** The route does not mutate registry state or transcript text.

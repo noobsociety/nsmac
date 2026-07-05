@@ -136,7 +136,7 @@ for path in paths:
             blocks_by_scope[block.scope].append(block)
 
 if not any(blocks_by_scope.values()):
-    print("audit-flag-scope: OK (no restructured route-flag blocks)")
+    print("audit-flag-scope: OK (route-flag blocks are optional; none found)")
     sys.exit(0)
 
 failures = 0

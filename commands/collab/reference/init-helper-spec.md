@@ -67,18 +67,16 @@ When present:
   - `reviewerRole`: the supplied `<role>` value
   - `reviewerMode`: `"last-in-convergent-phases"`
   - `reviewerOptionalPhases`: `["Discussion"]`
-- If the reviewer role is not yet in `participants`, add a transcript **Reviewer** section noting that the role must join via `(collab join) --role <role>` before any participant may contribute, and mark it as `(pending)`. Do not abort.
+- If the reviewer role is not yet in `participants`, add a transcript **Reviewer** section noting that the role must join via `(collab join --role <role>)` before any participant may contribute, and mark it as `(pending)`. Do not abort.
 
 When absent: omit `reviewerRole`, `reviewerMode`, and `reviewerOptionalPhases` from the new entry.
 
 ### Strict-flag set
 
-The init helper accepts exactly one required flag and five optional flags:
+The init helper accepts exactly one required flag and three optional flags:
 
 - Required: `--agent-id <agentId>`
 - Optional: `--reviewer <role>`
-- Optional: `--terminal <seal|issue>`
-- Optional: `--no-participant-verification` (boolean; no value)
 - Optional: `--work-repo <path>`
 - Optional: `--open` (boolean; no value)
 

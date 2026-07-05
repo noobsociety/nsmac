@@ -10,6 +10,8 @@ make_fixture() {
   mkdir -p "$dir/commands/collab/speak" "$dir/commands/collab/engine"
   cp "$ROOT/commands/collab/speak/index.md" "$dir/commands/collab/speak/index.md"
   cp "$ROOT/commands/collab/engine/registry.py" "$dir/commands/collab/engine/registry.py"
+  cp "$ROOT/commands/collab/engine/registry_core.py" "$dir/commands/collab/engine/registry_core.py"
+  cp "$ROOT/commands/collab/engine/speak_commands.py" "$dir/commands/collab/engine/speak_commands.py"
   cp "$ROOT/commands/collab/engine/contribution_validation.py" "$dir/commands/collab/engine/contribution_validation.py"
 }
 
@@ -42,7 +44,7 @@ fi
 missing_conclusion_call="$TMPDIR/missing-conclusion-call"
 make_fixture "$missing_conclusion_call"
 perl -0pi -e 's/validate_reviewer_conclusion_gates\(content, phase, role, current_entry\)/validate_reviewer_conclusion_gate_disabled(content, phase, role, current_entry)/' \
-  "$missing_conclusion_call/commands/collab/engine/registry.py"
+  "$missing_conclusion_call/commands/collab/engine/speak_commands.py"
 set +e
 "$ROOT/commands/collab/engine/audit-reviewer-conclusion.sh" --root "$missing_conclusion_call" >"$TMPDIR/missing-conclusion-call.out" 2>&1
 status=$?

@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 COLLAB_COMMAND_ROOT = Path("commands/collab")
+BEHAVIOR_SMOKE_TEST = "real-record-behavior-smoke"
 
 # Migration provenance: see platform/tooling/coverage-gate-migration.md.
 
@@ -129,10 +130,7 @@ def central_checker_test_stems(root: Path, inventory_path: Path) -> set[str]:
     if not inventory_path.exists():
         return set()
     stems: set[str] = set()
-    row_re = re.compile(
-        r"^\| `registry\.py/(?P<stem>[^`]+)\.test\.sh` \(removed; consolidated\) "
-        r"\| [^|]+ \| central-checker: `(?P<checker>[^`]+)` \|"
-    )
+    row_re = re.compile(r"^\| `(?P<stem>[^`]+)` \| `(?P<checker>[^`]+)` \|$")
     for raw in inventory_path.read_text().splitlines():
         match = row_re.match(raw)
         if not match:
@@ -148,6 +146,11 @@ def main() -> int:
     root = Path(args.routes_dir)
     tests_dir = Path(args.tests_dir)
     files = route_files(args, root)
+    strict_fixture_scan = bool(args.route_file)
+    enforce_behavior_smoke = (
+        not strict_fixture_scan
+        and (root / "tests/commands/collab/registry.py" / f"{BEHAVIOR_SMOKE_TEST}.test.sh").exists()
+    )
     if not files:
         print("coverage-gate: no public collab route files discovered", file=sys.stderr)
         return 1
@@ -160,16 +163,27 @@ def main() -> int:
         )
         return 1
 
-    discovered = existing_test_stems(tests_dir) | central_checker_test_stems(root, root / "tests/specs/tests.md")
+    direct_tests = existing_test_stems(tests_dir)
+    central_tests = central_checker_test_stems(root, root / "tests/specs/tests.md")
+    discovered = direct_tests | central_tests
+    opt_in_anchors: list[str] = []
     required: list[str] = []
+    stale_honor_system: list[str] = []
     errors: list[str] = []
+
+    if enforce_behavior_smoke and BEHAVIOR_SMOKE_TEST not in discovered:
+        errors.append(
+            "missing mandatory behavior-smoke floor: "
+            f"{tests_dir}/{BEHAVIOR_SMOKE_TEST}.test.sh"
+        )
 
     for clause in clauses:
         if clause.anchor is None:
-            errors.append(
-                f"unanchored ABORT: {clause.location}; "
-                f"add `<!-- abort: <stable-id> -->` immediately above it"
-            )
+            if strict_fixture_scan:
+                errors.append(
+                    f"unanchored ABORT: {clause.location}; "
+                    f"add `<!-- abort: <stable-id> -->` immediately above it"
+                )
             continue
         expected_prefix = f"{route_subcommand(clause.path)}-"
         if not clause.anchor.startswith(expected_prefix):
@@ -179,12 +193,21 @@ def main() -> int:
             )
             continue
         if clause.honor_system:
+            if clause.anchor in discovered:
+                stale_honor_system.append(clause.anchor)
             continue
-        required.append(clause.anchor)
+        opt_in_anchors.append(clause.anchor)
+        if clause.anchor in direct_tests:
+            required.append(clause.anchor)
 
-    missing = sorted(set(required) - discovered)
+    if stale_honor_system:
+        errors.append("stale agent-honor-system marker(s):")
+        for stem in sorted(set(stale_honor_system)):
+            errors.append(f"  {stem}: matching test exists; remove `(agent-honor-system)` from the route ABORT")
+
+    missing = sorted(set(opt_in_anchors) - discovered)
     if missing:
-        errors.append("missing P9-required tests:")
+        errors.append("missing opt-in ABORT tests:")
         for stem in missing:
             errors.append(f"  expected {tests_dir}/{stem}.test.sh")
 
@@ -202,9 +225,11 @@ def main() -> int:
 
     print(
         "coverage-gate: abort coverage check passed; "
-        f"{len(set(required))} required pair(s), {len(discovered)} discovered test(s)."
+        f"{len(set(required))} required pair(s), {len(direct_tests)} discovered test(s)."
     )
-    print("coverage-gate: extra tests beyond the required set are ignored.")
+    if enforce_behavior_smoke:
+        print("coverage-gate: behavior-smoke floor present.")
+    print("coverage-gate: extra tests beyond the opt-in set are ignored.")
     return 0
 
 

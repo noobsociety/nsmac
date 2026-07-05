@@ -8,15 +8,38 @@ import sys
 from pathlib import Path
 
 
-DEFAULT_CONFIG_ROOT = Path(os.environ.get('COMMAND_CONFIG_ROOT', '.')).expanduser()
+DEFAULT_CONFIG_ROOT = Path(
+    os.environ.get('COMMAND_CONFIG_ROOT', Path(__file__).resolve().parents[2])
+).expanduser().resolve()
+DEFAULT_DATA_DIR = DEFAULT_CONFIG_ROOT / 'platform/data'
 DEFAULT_ROLES_DIR = DEFAULT_CONFIG_ROOT / 'commands/collab/reference/roles'
+DEFAULT_DOMAIN_TAXONOMY_PATH = DEFAULT_DATA_DIR / 'domain-taxonomy.json'
 
 
 def die(message: str) -> None:
     raise SystemExit(message)
 
 
-def validate_role_data(data: dict, expected_key: str, source: str) -> None:
+def load_domain_taxonomy(path: Path = DEFAULT_DOMAIN_TAXONOMY_PATH) -> set[str]:
+    try:
+        data = json.loads(path.read_text())
+    except FileNotFoundError:
+        die(f'domain taxonomy missing: {path}')
+    except json.JSONDecodeError as exc:
+        die(f'domain taxonomy invalid JSON: {path}: {exc}')
+    if not isinstance(data, list) or not data:
+        die(f'{path}: domain taxonomy must be a non-empty array')
+    if any(not isinstance(item, str) or not item.strip() for item in data):
+        die(f'{path}: domain taxonomy entries must be non-empty strings')
+    normalized = [item.strip() for item in data]
+    if len(set(normalized)) != len(normalized):
+        die(f'{path}: domain taxonomy entries must be unique')
+    if normalized != sorted(normalized):
+        die(f'{path}: domain taxonomy entries must be alphabetical')
+    return set(normalized)
+
+
+def validate_role_data(data: dict, expected_key: str, source: str, domain_taxonomy: set[str]) -> None:
     if not isinstance(data, dict):
         die(f'{source}: role must be an object')
     if data.get('key') != expected_key:
@@ -29,6 +52,20 @@ def validate_role_data(data: dict, expected_key: str, source: str) -> None:
         die(f'{source}: concerns must be a non-empty array')
     if any(not isinstance(item, str) or not item.strip() for item in concerns):
         die(f'{source}: concerns must contain only non-empty strings')
+    dimensions = data.get('dimensions')
+    if dimensions is None:
+        if expected_key != 'mod':
+            die(f'{source}: dimensions must be a non-empty array')
+    else:
+        if not isinstance(dimensions, list) or not dimensions:
+            die(f'{source}: dimensions must be a non-empty array')
+        if any(not isinstance(item, str) or not item.strip() for item in dimensions):
+            die(f'{source}: dimensions must contain only non-empty strings')
+        unknown_dimensions = sorted({item for item in dimensions if item not in domain_taxonomy})
+        if unknown_dimensions:
+            die(f"{source}: dimensions contain unknown value(s): {', '.join(unknown_dimensions)}")
+        if expected_key == 'mod':
+            die(f'{source}: moderator role must not declare dimensions')
     prohibitions = data.get('prohibitions')
     if prohibitions is not None:
         if not isinstance(prohibitions, list):
@@ -38,6 +75,7 @@ def validate_role_data(data: dict, expected_key: str, source: str) -> None:
 
 
 def load_role(roles_dir: Path, role: str) -> dict:
+    domain_taxonomy = load_domain_taxonomy()
     path = roles_dir / f'{role}.json'
     if not path.exists():
         die(f'role missing: {path}')
@@ -45,7 +83,7 @@ def load_role(roles_dir: Path, role: str) -> dict:
         data = json.loads(path.read_text())
     except json.JSONDecodeError as exc:
         die(f'role invalid JSON: {path}: {exc}')
-    validate_role_data(data, role, str(path))
+    validate_role_data(data, role, str(path), domain_taxonomy)
     return data
 
 
@@ -60,6 +98,7 @@ def participant_row(role_data: dict, index: int = 1, agent_id: str = '') -> str:
 def role_catalog(roles_dir: Path) -> list[dict]:
     roles: list[dict] = []
     seen: dict[str, Path] = {}
+    domain_taxonomy = load_domain_taxonomy()
     for path in sorted(roles_dir.glob('*.json')):
         role = path.stem
         try:
@@ -71,7 +110,7 @@ def role_catalog(roles_dir: Path) -> list[dict]:
             die(f'duplicate role key: {key}: {seen[key]} and {path}')
         if isinstance(key, str):
             seen[key] = path
-        validate_role_data(data, role, str(path))
+        validate_role_data(data, role, str(path), domain_taxonomy)
         roles.append(data)
     if not roles:
         die(f'roles missing: {roles_dir}')

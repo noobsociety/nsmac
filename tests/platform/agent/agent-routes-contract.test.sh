@@ -13,16 +13,11 @@ grep -Fq 'global runtime root' commands/agent/install/index.md || fail "install.
 grep -Fq 'target repository root' commands/agent/install/index.md || fail "install.md does not define target repository root"
 grep -Fq 'global runtime root' commands/agent/upgrade/index.md || fail "upgrade.md does not define global runtime root"
 grep -Fq 'target repository root' commands/agent/upgrade/index.md || fail "upgrade.md does not define target repository root"
-grep -Fq 'platform/templates/GEMINI.md' commands/agent/install/index.md || fail "install.md does not require GEMINI template"
-grep -Fq '<repo-root>/GEMINI.md' commands/agent/install/index.md || fail "install.md does not copy GEMINI scaffold"
-grep -Fq 'GEMINI.md` routes to `AGENTS.md' commands/agent/install/index.md || fail "install.md does not validate GEMINI routing"
-grep -Fq 'GEMINI.md`, and `REPOSITORY.md` exist in the repo root' commands/agent/upgrade/index.md || fail "upgrade.md does not require installed GEMINI scaffold"
-grep -Fq 'writes only `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`' commands/agent/upgrade/index.md || fail "upgrade.md boundary omits GEMINI scaffold"
-grep -Fq 'Gemini: `GEMINI.md`' platform/templates/AGENTS.md || fail "AGENTS template lacks Gemini bootstrap chain"
-grep -Fq 'Repository workflow, entry points, and bootstrap chain: [AGENTS.md](AGENTS.md).' platform/templates/GEMINI.md || fail "GEMINI template lacks AGENTS routing pointer"
-if grep -Fq 'projectors/dp.json' platform/templates/GEMINI.md; then
-  fail "GEMINI template still references retired dp projector metadata"
-fi
+grep -Fq 'platform/templates/CLAUDE.md' commands/agent/install/index.md || fail "install.md does not require CLAUDE template"
+grep -Fq 'platform/templates/AGENTS.md' commands/agent/install/index.md || fail "install.md does not require AGENTS template"
+grep -Fq 'platform/templates/REPOSITORY.md' commands/agent/install/index.md || fail "install.md does not require REPOSITORY template"
+grep -Fq 'Verify `AGENTS.md`, `CLAUDE.md`, and `REPOSITORY.md` exist in the repo root' commands/agent/upgrade/index.md || fail "upgrade.md does not require installed scaffold"
+grep -Fq 'writes only `AGENTS.md`, `CLAUDE.md`, and (when overlap-free) `REPOSITORY.md`' commands/agent/upgrade/index.md || fail "upgrade.md boundary omits scaffold files"
 
 grep -Fq 'a target path of `~/.cursor` is permitted' commands/agent/install/index.md || fail "install.md lacks valid ~/.cursor target policy"
 grep -Fq 'a target path of `~/.cursor` is permitted' commands/agent/upgrade/index.md || fail "upgrade.md lacks valid ~/.cursor target policy"

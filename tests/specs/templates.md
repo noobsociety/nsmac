@@ -10,7 +10,6 @@ Deterministic QA for scaffold template sources projected to `~/.cursor/platform/
 4. Validate `CLAUDE.md` is routing-only and points to `AGENTS.md`.
 5. Validate `AGENTS.md` references `~/.cursor/commands/commands.md` and `REPOSITORY.md`.
 6. Validate `AGENTS.md` contains `<!-- TODO(install): ... -->` placeholders for install-time scaffold authoring and `REPOSITORY.md` contains `<!-- TODO(patch): ... -->` placeholders for repo-specific authoring.
-7. Validate `GEMINI.md` is routing-only and points to `AGENTS.md`.
 
 ## Required roster
 
@@ -18,7 +17,6 @@ Tracked scaffold template files under `platform/templates/`:
 
 - `CLAUDE.md`
 - `AGENTS.md`
-- `GEMINI.md`
 - `REPOSITORY.md`
 
 ## Output

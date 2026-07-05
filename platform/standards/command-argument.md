@@ -64,7 +64,7 @@ ineligibility-reason: Bypass would create state that other helpers assume cannot
 | `role-gate` | Guard enforces role membership or reviewer presence. | Role and reviewer contracts |
 | `schema-validation` | Guard enforces structural correctness of role JSON or configuration. | `platform/standards/role-standard.md` schema |
 | `unreadable-context` | Guard aborts on unreadable input; there is no artifact to diff. | Route-specific abort steps |
-| `destructive-delete` | Guard covers `delete`, `archive`, `kick`, `purge`, `reset`, `overwrite` verbs. | Command argument destructive verb set |
+| `destructive-delete` | Guard covers `delete`, `archive`, `remove`, `purge`, `reset`, `overwrite` verbs. | Command argument destructive verb set |
 
 ## Diff-then-write atomicity invariant
 
@@ -107,7 +107,7 @@ Gate tokens are reserved keywords recognized only when a route is in a documente
 | Proceed | `<verb> <operand>` — verb drawn from the closed set; operand uniquely identifies the artifact |
 | Abort | `cancel` |
 
-**Closed destructive verb set:** `delete`, `archive`, `kick`, `purge`, `reset`, `overwrite`
+**Closed destructive verb set:** `delete`, `archive`, `remove`, `purge`, `reset`, `overwrite`
 
 A new destructive route must map its proceed verb to one of these. If no existing verb fits, extend this list by amending this file — never invent a route-local verb.
 

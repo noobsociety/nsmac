@@ -10,9 +10,7 @@ Retract the current role's latest contribution in the active phase while preserv
 ## Steps
 
 1. Read [invariants.md](../../../commands/collab/reference/invariants.md) before executing; call the relevant helper fresh and do not trust prior reads from conversation context (Invariant #4). Resolve the target collab with the same registry targeting rule used by `(collab speak)`; when absent, use `activeCollabId`.
-<!-- abort: retract-speak-role-not-registered -->
 2. Resolve the executing role from the current joined participant. If the role is not registered, **ABORT**: role not registered; run `(collab join --role <role>)` first.
-<!-- abort: retract-speak-record-is-closed -->
 3. If the record is closed, archived, or in `Completion`, **ABORT** before any write. Completed execution records are finalized by `(collab run plan)` and are not retracted by this route.
 4. Call `commands/collab/engine/registry.py retract-speak <target> <role> [--reason <text>] --caller-role <role>`.
 5. Display the helper output. A successful helper call leaves the original contribution block in place, replaces the visible body with a tombstone, and nests the original text under `Retracted content`.
@@ -21,8 +19,7 @@ Retract the current role's latest contribution in the active phase while preserv
 ## Notes
 
 - **Parameters:** target collab slug, id, or numeric `#N` as the first token after `retract speak`; when absent, resolved per **Registry targeting** in **Notes**. `--reason <text>` is optional short human text explaining why the contribution is withdrawn.
-<!-- abort: retract-speak-registry-target-unavailable -->
-- **Registry targeting:** Resolve the target collab from the resolved registry, using `commands/collab/engine/registry.py` as the shared helper. When the first token after the route is present, treat it as a collab slug, id, or stable numeric position. Otherwise use `activeCollabId`. If the registry is unreadable or invalid, the token does not match any entry, or `activeCollabId` is empty, **ABORT**: registry target unavailable; name the registry field or token.
+- **Registry targeting:** Resolve the target collab from the first token after the route, falling back to `activeCollabId` when absent. The resolution algorithm and abort contract are owned by **Target resolution** in [`platform/standards/route-invariants.md`](../../../platform/standards/route-invariants.md); this route does not restate them.
 - **Transcript-safe semantics:** Retraction is not physical deletion. Retraction preserves the contribution anchor and details block so existing references remain stable.
 - **Full-body preservation:** Retraction tombstones the excerpt AND preserves any managed full body under "Retracted content".
 - **Rewrite reversibility:** `(collab rewrite speak)` replaces a tombstoned contribution in place. The tombstone moves into revision history and the new content becomes the active body. To re-tombstone after a rewrite, run `(collab retract speak)` again.

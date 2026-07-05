@@ -1,4 +1,4 @@
-# Agent guide — dotcursor
+# Agent guide — NSMAC
 <!-- scaffolded-at: 2026-05-02 -->
 
 Agents edit tracked source in this repository. Global command guidance lives in `~/.cursor/commands/commands.md`.
@@ -10,7 +10,6 @@ Each agent reads files in this order before acting:
 - Codex: `AGENTS.md` → `~/.cursor/commands/commands.md`
 - GPT: `AGENTS.md` → `~/.cursor/commands/commands.md`
 - Claude: `CLAUDE.md` → `AGENTS.md` → `~/.cursor/commands/commands.md`
-- Gemini: `GEMINI.md` → `AGENTS.md` → `~/.cursor/commands/commands.md`
 
 After reading this file, read `~/.cursor/commands/commands.md`.
 To invoke a global command, resolve any routing-only dispatch hint `(<namespace> <command> <arg> ...)` through `~/.cursor/commands/commands.md`, then execute the matching route playbook. Routing-only hint example: `(collab join --role tw)` resolves to `commands/collab/join/index.md`.
@@ -41,7 +40,7 @@ Halt when the required command or source-of-truth cannot be resolved. Verify com
 ## Agent profile
 
 - Supported agents: role metadata declared by the global agent runtime.
-- Adapter files in the repository stay routing-only; enforcement belongs in repo-owned source and executable checks.
+- Adapter files carry routing plus agent-behavioral discipline (reading depth, fail-fast); repository-invariant enforcement belongs in repo-owned source and executable checks, not in adapter prose.
 
 ## Required workflow
 

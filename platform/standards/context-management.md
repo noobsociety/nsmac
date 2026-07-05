@@ -63,7 +63,7 @@ Catalog sync, **Trigger**/**Steps**/**Notes** order, slash **H1** alignment, and
 
 ### Precision
 
-- Reference exact file paths, not vague descriptions: `markdown-workflow.md`, `markdown-workflow.md`, and `commands/doc/write-readme/index.md` in the command config tree, not “the rules folder” or “the readme command”
+- Reference exact file paths, not vague descriptions: `markdown-workflow.md`, `markdown-workflow.md`, and `commands/collab/join/index.md` in the command config tree, not “the rules folder” or “the join command”
 - Name the tool or binary explicitly: `run npm run lint` when the workspace defines that script, or run the repository’s documented validation script when it ships one — not “run the checker”
 - Specify the expected output: if the command produces a file, name the file and its destination path
 - If a step depends on the result of a prior step, say so explicitly

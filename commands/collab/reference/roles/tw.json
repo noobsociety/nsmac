@@ -6,5 +6,8 @@
     "conciseness",
     "accuracy",
     "developer experience"
+  ],
+  "dimensions": [
+    "narrative"
   ]
 }

@@ -43,7 +43,7 @@ HANDOFF
 
 seal_target "$TARGET"
 revision="$(assessment_revision "$TARGET")"
-output="$("$ROOT/commands/collab/engine/registry.py" seal-render "$TARGET" pa \
+output="$("$ROOT/commands/collab/engine/registry.py" record-verdict "$TARGET" pa \
   --observed-revision "$revision" \
   --outcome failed \
   --restore-target Handoff \
@@ -138,7 +138,7 @@ PY
 
 seal_target "$TARGET"
 revision="$(assessment_revision "$TARGET")"
-"$ROOT/commands/collab/engine/registry.py" seal-render "$TARGET" pa \
+"$ROOT/commands/collab/engine/registry.py" record-verdict "$TARGET" pa \
   --observed-revision "$revision" \
   --outcome success \
   --evidence '{"registryRevision":3,"transcriptIds":["handoff-pe-1"],"committedPaths":["platform/tooling/audit.sh","commands/collab/reopen/index.md"],"executionEntryIds":["pe-2026-05-17t10-30-00-02-00"]}' \

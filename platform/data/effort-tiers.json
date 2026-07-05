@@ -1,9 +1,9 @@
 {
   "low": {
-    "description": "Routing and moderation only; no synthesis or generation required."
+    "description": "Routing and moderation only; no content generation required."
   },
   "medium": {
-    "description": "Standard contribution; analysis and synthesis without deep implementation."
+    "description": "Standard contribution; analysis and judgment without deep implementation."
   },
   "high": {
     "description": "Implementation-bearing or convergence-critical; sustained reasoning required."
