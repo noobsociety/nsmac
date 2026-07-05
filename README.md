@@ -1,6 +1,7 @@
 # NoobSociety Multi Agent Collaboration
 
 [![CI](https://github.com/noobsociety/nsmac/actions/workflows/ci.yml/badge.svg)](https://github.com/noobsociety/nsmac/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 A routed command and agent-harness framework for NoobSociety multi-agent collaboration.
 
@@ -20,6 +21,7 @@ harness for that workflow.
 - [Repository layout](#repository-layout)
 - [Development](#development)
 - [Versioning and releases](#versioning-and-releases)
+- [License](#license)
 
 ## Install
 
@@ -165,7 +167,7 @@ Run focused checks only when working on a narrow surface, then finish with the r
 
 See [`REPOSITORY.md`](REPOSITORY.md) for ownership boundaries and reporting requirements.
 
-## Versioning
+## Versioning and releases
 
 NSMAC does not publish an npm package. Repository snapshots are anchored with weekly tags that use a
 year-week naming pattern.
@@ -177,3 +179,12 @@ Collab-specific tagging is explicit and dry-run first:
 ```
 
 The tag route is lifecycle-adjacent tooling. It does not run automatically from `(collab close)`.
+
+## License
+
+NSMAC is released under the [MIT License](./LICENSE). MIT was selected using the guidance at [Choose
+a License](https://choosealicense.com/licenses/mit/) because it permits broad reuse with attribution
+and warranty disclaimers.
+
+Only add third-party code, assets, or documentation when the license is compatible with MIT and the
+source is documented in the relevant change.
