@@ -32,8 +32,6 @@ The inventories below list mutating commands and the prohibited behaviors for ea
 - `archive` — do not archive as a way to bypass completion or validation.
 - `delete` — do not delete records unless the route's destructive-delete guard is satisfied.
 - `remove participant` — do not remove participants to bypass turn, reviewer, or execution obligations.
-- `write summary` — do not invent or transform moderator message substance.
-- `rewrite summary` — do not rewrite summary content beyond the requested correction.
 - `run plan` — do not execute non-collab work while acting as moderator.
 - `rewrite execution` — do not rewrite execution history to mask failed validation.
 
@@ -41,4 +39,3 @@ The inventories below list mutating commands and the prohibited behaviors for ea
 
 - `seal verification` — do not mutate seal-block fields (`executionEntries`, `validationScopes`, `touchedPaths`, `observedRevision`) once `verification.subState == assessment`; only verdict fields (`outcome`, `restoreTarget`, `restoreReason`, `evidence`, `failureCategory`, `nullResult`) may be written during assessment. Once assessment is open, retroactive alteration of the seal block is prohibited; violations are rejected by the helper.
 - `seal verification` — do not author `evidence` content beyond read-only anchors (transcript ids, registry revision, committed paths, execution entry ids); implementation steps, command output, and replacement content belong to participants after restore.
-

@@ -15,11 +15,13 @@ from copy import deepcopy
 from pathlib import Path
 
 from commands.collab.engine.errors import die
+from commands.collab.engine.contribution_store import contribution_store_path_for_entry
 from commands.collab.engine.registry_constants import (
     REGISTRY_EVENT_DIR,
     REGISTRY_EVENT_IGNORED_ROOT_KEYS,
     REGISTRY_EVENT_SCHEMA,
     RETIRED_ROOT_KEYS,
+    STALE_LOCK_SECONDS,
 )
 from commands.collab.engine.registry_state import (
     assert_registry_project_binding,
@@ -75,6 +77,130 @@ def save_registry(path: Path, data: dict) -> None:
         tmp_path.unlink(missing_ok=True)
         raise
 
+
+def _registry_write_event(registry_path: Path, data: dict, event_type: str) -> tuple[str | None, dict | None]:
+    registry_before = registry_path.read_text() if registry_path.exists() else None
+    sync_registry_project_metadata(data)
+    retire_legacy_registry_fields(data)
+    registry_event = prepare_registry_event(registry_path, registry_before, data, event_type)
+    bump_registry_revision(data)
+    if registry_event is not None:
+        bump_registry_event_index(data)
+        registry_event = finalize_registry_event(data, registry_event)
+    _validate_registry(data, registry_path)
+    return registry_before, registry_event
+
+
+def _restore_registry_path(registry_path: Path, registry_before: str | None, inconsistent: list[str]) -> None:
+    try:
+        if registry_before is None:
+            registry_path.unlink(missing_ok=True)
+        else:
+            registry_path.write_text(registry_before)
+    except OSError:
+        inconsistent.append(str(registry_path))
+
+
+def _cleanup_tmp_paths(paths: list[Path]) -> None:
+    for path in paths:
+        path.unlink(missing_ok=True)
+
+
+def commit_registry_and_transcript(
+    registry_path: Path,
+    data: dict,
+    transcript_path: Path,
+    transcript_text: str,
+    roles_dir: Path | None = None,
+) -> None:
+    """Commit registry and transcript updates with rollback on known write failures.
+
+    The registry file is replaced first, then the transcript file. If either
+    replace fails, the helper restores the pre-operation contents it could read
+    and reports which file may be inconsistent. This is a best-effort two-file
+    transaction, not a filesystem-level atomic commit.
+    """
+    registry_before, registry_event = _registry_write_event(registry_path, data, 'registry-write')
+    if roles_dir is not None:
+        _validate_registry(data, registry_path)
+    if not transcript_path.exists():
+        die(f'transcript missing: {transcript_path}')
+
+    transcript_before = transcript_path.read_text()
+    registry_after = json.dumps(data, indent=2) + '\n'
+    registry_tmp = registry_path.with_name(f'{registry_path.name}.tmp')
+    transcript_tmp = transcript_path.with_name(f'{transcript_path.name}.tmp')
+
+    try:
+        registry_tmp.write_text(registry_after)
+        transcript_tmp.write_text(transcript_text)
+        registry_tmp.replace(registry_path)
+        transcript_tmp.replace(transcript_path)
+        if registry_event is not None:
+            write_revision_event(registry_path, registry_event)
+    except OSError as exc:
+        inconsistent: list[str] = []
+        _restore_registry_path(registry_path, registry_before, inconsistent)
+        try:
+            transcript_path.write_text(transcript_before)
+        except OSError:
+            inconsistent.append(str(transcript_path))
+        _cleanup_tmp_paths([registry_tmp, transcript_tmp])
+        if inconsistent:
+            die(f'collab write failed; inconsistent state may remain: {", ".join(inconsistent)}: {exc}')
+        die(f'collab write failed; restored pre-operation state: {exc}')
+
+
+def commit_new_collab_artifacts(
+    registry_path: Path,
+    data: dict,
+    entry: dict,
+    transcript_path: Path,
+    transcript_text: str,
+    contribution_store: dict,
+) -> None:
+    registry_before, registry_event = _registry_write_event(registry_path, data, 'registry-write')
+    contribution_store_path = contribution_store_path_for_entry(registry_path, entry)
+    artifact_payloads = [
+        (transcript_path, transcript_text),
+        (contribution_store_path, json.dumps(contribution_store, indent=2, ensure_ascii=True) + '\n'),
+    ]
+    for artifact_path, _text in artifact_payloads:
+        if artifact_path.exists():
+            die(f'record already exists: {artifact_path}')
+
+    registry_after = json.dumps(data, indent=2) + '\n'
+    registry_tmp = registry_path.with_name(f'{registry_path.name}.tmp')
+    artifact_tmps = [
+        (artifact_path.with_name(f'{artifact_path.name}.tmp'), artifact_path)
+        for artifact_path, _text in artifact_payloads
+    ]
+
+    registry_path.parent.mkdir(parents=True, exist_ok=True)
+    for artifact_path, _text in artifact_payloads:
+        artifact_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        registry_tmp.write_text(registry_after)
+        for (artifact_path, text), (tmp_path, _target_path) in zip(artifact_payloads, artifact_tmps):
+            tmp_path.write_text(text)
+        registry_tmp.replace(registry_path)
+        for tmp_path, target_path in artifact_tmps:
+            tmp_path.replace(target_path)
+        if registry_event is not None:
+            write_revision_event(registry_path, registry_event)
+    except OSError as exc:
+        inconsistent: list[str] = []
+        _restore_registry_path(registry_path, registry_before, inconsistent)
+        for artifact_path, _text in artifact_payloads:
+            try:
+                artifact_path.unlink(missing_ok=True)
+            except OSError:
+                inconsistent.append(str(artifact_path))
+        _cleanup_tmp_paths([registry_tmp, *(tmp_path for tmp_path, _target_path in artifact_tmps)])
+        if inconsistent:
+            die(f'collab init failed; inconsistent state may remain: {", ".join(inconsistent)}: {exc}')
+        die(f'collab init failed; restored pre-operation state: {exc}')
+
 def bump_registry_revision(data: dict) -> int:
     revision = data.get('revision', 0)
     if not isinstance(revision, int) or revision < 0:
@@ -88,6 +214,14 @@ def registry_revision(data: dict) -> int:
     if not isinstance(revision, int) or revision < 0:
         die('registry revision must be a non-negative integer')
     return revision
+
+def next_sequence(data: dict) -> int:
+    sequences = [
+        entry.get('sequence')
+        for entry in data.get('collabs', [])
+        if isinstance(entry.get('sequence'), int)
+    ]
+    return max(sequences, default=0) + 1
 
 def retire_legacy_registry_fields(data: dict) -> None:
     for key in RETIRED_ROOT_KEYS:
@@ -218,7 +352,7 @@ def ensure_legacy_revision_baselines(registry_path: Path, before: dict | None) -
 
 def write_revision_event(registry_path: Path, event: dict) -> None:
     event_to_write = dict(event)
-    legacy_before = event_to_write.pop('_legacyBefore', None)
+    legacy_before = event_to_write.get('_legacyBefore')
     ensure_legacy_revision_baselines(registry_path, legacy_before)
     event_dir = revision_event_dir(registry_path, event_to_write['collabId'])
     event_dir.mkdir(parents=True, exist_ok=True)
@@ -297,6 +431,34 @@ def registry_lock_nonblocking(path: Path):
         finally:
             fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
 
+
+def stale_registry_lock_message(path: Path, now: float | None = None) -> str | None:
+    lock_path = path.with_name(f'{path.name}.lock')
+    if not lock_path.exists():
+        return None
+    age = (now if now is not None else dt.datetime.now().timestamp()) - lock_path.stat().st_mtime
+    if age < STALE_LOCK_SECONDS:
+        return None
+    try:
+        with lock_path.open('a+') as lock_file:
+            try:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                return (
+                    f'stale registry lock: {lock_path}; a collab command has held it for '
+                    f'at least {STALE_LOCK_SECONDS} seconds. Confirm whether a collab command '
+                    'is stuck before terminating it.'
+                )
+            os.utime(lock_path, None)
+            try:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+            except OSError:
+                pass
+    except OSError as exc:
+        return f'stale registry lock check failed: {lock_path}: {exc}'
+    return None
+
+
 def load_registry_or_bootstrap(path: Path) -> dict:
     if not path.exists():
         data = {'activeCollabId': None, 'collabs': []}
@@ -316,7 +478,7 @@ def capture_registry_project(data: dict) -> None:
 def root_project_id() -> str | None:
     identity_path = ROOT / '.collab.json'
     if not identity_path.exists():
-        return None
+        return ROOT.name
     try:
         data = json.loads(identity_path.read_text())
     except json.JSONDecodeError:

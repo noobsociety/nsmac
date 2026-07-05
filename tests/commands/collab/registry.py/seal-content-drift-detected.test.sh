@@ -22,41 +22,27 @@ read_json_field() {
 
 seed_round() {
   local slug="$1"
-  python3 - "$REGISTRY" "$slug" <<'PY'
-import base64
+  python3 - "$ROOT" "$REGISTRY" "$slug" <<'PY'
 import json
 import sys
 from pathlib import Path
 
-path = Path(sys.argv[1])
-target = sys.argv[2]
+root = sys.argv[1]
+path = Path(sys.argv[2])
+target = sys.argv[3]
+sys.path.insert(0, root)
+from commands.collab.engine import registry as R
+
 data = json.loads(path.read_text())
 entry = next(item for item in data['collabs'] if item['id'] == target)
-entries = []
-for role, state in sorted(entry.get('execution', {}).items()):
-    row = {
-        'role': role,
-        'entryId': state.get('entryId') or f"{role}-execution",
-        'status': state.get('status'),
-        'date': state.get('date'),
-        'validationResult': state.get('validationResult'),
-        'validationScope': state.get('validationScope'),
-        'touchedPaths': list(state.get('touchedPaths', [])),
-        'commits': list(state.get('commits', [])),
-    }
-    if state.get('contentDigest'):
-        row['contentDigest'] = state.get('contentDigest')
-    if isinstance(state.get('pathDigests'), dict):
-        row['pathDigests'] = state.get('pathDigests')
-    if state.get('agentId'):
-        row['agentId'] = state.get('agentId')
-    entries.append(row)
-signature = base64.urlsafe_b64encode(
-    json.dumps(entries, sort_keys=True, separators=(',', ':')).encode()
-).decode().rstrip('=')
-entry.setdefault('verification', {})['rounds'] = 1
-entry['verification']['subState'] = 'seal'
-entry['verification']['pairedExecutionSignature'] = signature
+verification = entry.setdefault('verification', {})
+verification['rounds'] = 1
+verification['subState'] = 'seal'
+verification['pairedExecutionSignature'] = R.execution_signature(entry)
+for role in R.participant_verification_roles(entry):
+    state = R.participant_verification_role_state(entry, role)
+    state['stage'] = 'completed'
+    state['executionSignature'] = R.participant_execution_signature(entry, role)
 path.write_text(json.dumps(data, indent=2) + '\n')
 PY
 }
@@ -73,7 +59,7 @@ GIT_COMMITTER_DATE="2026-05-23T17:00:00+02:00" \
   git -C "$WORK" commit -m "deliverable" >/dev/null
 
 "$ROOT/commands/collab/engine/registry.py" init --agent-id codex --reviewer pa \
-  --no-participant-verification --work-repo "$WORK" "Seal Content Drift Detected" >/dev/null
+  --work-repo "$WORK" "Seal Content Drift Detected" >/dev/null
 TARGET="$RUN_DATE-seal-content-drift-detected"
 REGISTRY="$("$ROOT/commands/collab/engine/registry.py" registry-path)"
 "$ROOT/commands/collab/engine/registry.py" join-participants "$TARGET" pa --agent-id opus >/dev/null
@@ -91,7 +77,7 @@ REGISTRY="$("$ROOT/commands/collab/engine/registry.py" registry-path)"
 seed_round "$TARGET"
 seal_state="$("$ROOT/commands/collab/engine/registry.py" seal-state "$TARGET" pa)"
 seal_revision="$(read_json_field registryRevision <<<"$seal_state")"
-"$ROOT/commands/collab/engine/registry.py" seal-render "$TARGET" pa \
+"$ROOT/commands/collab/engine/registry.py" seal-write "$TARGET" pa \
   --observed-revision "$seal_revision" --caller-role pa >/dev/null
 
 # Tamper: edit + commit the touched path after sealing
@@ -105,7 +91,7 @@ GIT_COMMITTER_DATE="2026-05-23T19:00:00+02:00" \
 verdict_state="$("$ROOT/commands/collab/engine/registry.py" seal-state "$TARGET" pa)"
 verdict_revision="$(read_json_field registryRevision <<<"$verdict_state")"
 set +e
-verdict_output="$("$ROOT/commands/collab/engine/registry.py" seal-render "$TARGET" pa \
+verdict_output="$("$ROOT/commands/collab/engine/registry.py" record-verdict "$TARGET" pa \
   --observed-revision "$verdict_revision" --caller-role pa --outcome success 2>&1)"
 verdict_status=$?
 set -e

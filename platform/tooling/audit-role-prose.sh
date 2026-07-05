@@ -58,7 +58,7 @@ INLINE_CODE_RE = re.compile(r"`([^`]*)`")
 def is_source_candidate(path: Path) -> bool:
     rel = path.as_posix()
     return (
-        rel in {".gitignore", ".collab.json", "CLAUDE.md", "AGENTS.md", "GEMINI.md", "README.md", "REPOSITORY.md"}
+        rel in {".gitignore", ".collab.json", "CLAUDE.md", "AGENTS.md", "README.md", "REPOSITORY.md"}
         or rel.startswith((".github/", "platform/standards/", "generated/", "platform/templates/", "tests/specs/", "commands/", "tests/"))
     )
 
@@ -67,7 +67,7 @@ def repo_paths() -> list[Path]:
     paths: list[str] = []
     try:
         tracked = subprocess.run(
-            ["git", "ls-files", "-z", "*.md", "*.mdc"],
+            ["git", "ls-files", "-z", "*.md"],
             cwd=root,
             check=True,
             stdout=subprocess.PIPE,
@@ -75,7 +75,7 @@ def repo_paths() -> list[Path]:
         ).stdout.decode().split("\0")
         paths.extend(item for item in tracked if item)
         untracked = subprocess.run(
-            ["git", "ls-files", "--others", "--exclude-standard", "-z", "*.md", "*.mdc"],
+            ["git", "ls-files", "--others", "--exclude-standard", "-z", "*.md"],
             cwd=root,
             check=True,
             stdout=subprocess.PIPE,
@@ -87,7 +87,7 @@ def repo_paths() -> list[Path]:
         return sorted(
             path.relative_to(root)
             for path in root.rglob("*")
-            if path.is_file() and path.suffix in {".md", ".mdc"}
+            if path.is_file() and path.suffix == ".md"
         )
 
 
@@ -99,9 +99,9 @@ def expand_requested(paths: list[Path]) -> list[Path]:
             expanded.extend(
                 item.relative_to(root)
                 for item in path.rglob("*")
-                if item.is_file() and item.suffix in {".md", ".mdc"}
+                if item.is_file() and item.suffix == ".md"
             )
-        elif path.is_file() and path.suffix in {".md", ".mdc"}:
+        elif path.is_file() and path.suffix == ".md":
             expanded.append(path.relative_to(root))
     return sorted(set(expanded))
 
@@ -124,7 +124,7 @@ def strip_allowed_inline_code(line: str) -> str:
         value = match.group(1)
         if "/" in value or "--" in value or "<" in value or ">" in value:
             return ""
-        if value.endswith((".md", ".mdc", ".json", ".sh", ".py")):
+        if value.endswith((".md", ".json", ".sh", ".py")):
             return ""
         if value.startswith("commands/collab/reference/roles/"):
             return ""

@@ -21,8 +21,6 @@ from commands.collab.engine.registry_constants import (  # noqa: E402
     DEFAULT_OPEN_ROSTER_EFFORT,
     DEFAULT_REVIEWER_MODE,
     DEFAULT_REVIEWER_OPTIONAL_PHASES,
-    DEFAULT_TERMINAL,
-    DEFAULT_VERIFICATION_CAP,
     MOD_EXCLUDED_PHASES,
     ONE_SPEAK_PHASES,
     PHASES,
@@ -106,18 +104,6 @@ def glossary_rows() -> list[str]:
             'reviewerOptionalPhases',
             'Stamped phases where the reviewer may speak without blocking the ordinary expected speaker; '
             f'default is {", ".join(f"`{phase}`" for phase in DEFAULT_REVIEWER_OPTIONAL_PHASES)}.',
-        ),
-        (
-            'terminal',
-            f'Stamped workflow terminal for records with `createdAt`; default is `{DEFAULT_TERMINAL}`.',
-        ),
-        (
-            'verification.cap',
-            f'Stamped participant/reviewer verification attempt cap; default is `{DEFAULT_VERIFICATION_CAP}`.',
-        ),
-        (
-            'verification.participantVerification',
-            'Stamped boolean that enables participant verification; readers must use the stored value.',
         ),
         (
             'open-roster effort',

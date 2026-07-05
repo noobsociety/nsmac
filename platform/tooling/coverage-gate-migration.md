@@ -1,22 +1,26 @@
 # Coverage Gate ABORT-Coverage Record
 
 This file records the burn-down of historical ABORT-clause debt in
-`platform/tooling/coverage-gate.sh`. All historical public collab route ABORT
-clauses have been migrated from prose to anchored, test-backed (or
-`agent-honor-system`-marked) clauses across six batches completed 2026-06-24.
-The gate proves full abort-test coverage, not P9-required-only.
+`platform/tooling/coverage-gate.sh` and the resulting present-state posture.
+All historical public collab route ABORT clauses were migrated from prose to
+anchored, test-backed (or `agent-honor-system`-marked) clauses across six
+batches completed 2026-06-24; that burn-down is the foundation the current
+opt-in posture builds on. The current mandatory/opt-in coverage-gate contract
+itself is specified in `REPOSITORY.md`, not restated here.
 
-## Final State
+## Present State
 
 - allowlisted unanchored clauses: 0
 - discovery-debt unanchored clauses: 0
 - unknown unanchored clauses outside those buckets: 0
 
-The burn-down target of zero allowlisted and zero discovery-debt clauses is
-reached. `coverage-gate.sh` now proves that every historical public-route ABORT
-is anchored and either test-backed or marked `(agent-honor-system)` with a reason
-in its clause; it is no longer a P9-required-only gate. The allowlist file and the
-`DISCOVERY_DEBT_ROUTE_FILES` symbol have both been removed from the codebase.
+The burn-down target of zero allowlisted and zero discovery-debt clauses was
+reached, and the allowlist file and the `DISCOVERY_DEBT_ROUTE_FILES` symbol
+have both been removed from the codebase. On top of that zero-debt baseline,
+`coverage-gate.sh` now proves the mandatory behavior-smoke floor for every
+route and reports opt-in per-clause anchor/test coverage for the
+reviewer-selected keep-list; it is no longer a full-exhaustive,
+P9-required-for-every-clause gate.
 
 ## Classification
 
@@ -32,11 +36,15 @@ Each batch classified ABORT clauses into one of three buckets before anchoring:
   unavailable to repo-owned tests. These cite the reason and use the
   `agent-honor-system` marker.
 
-### Tier analysis — starting classification (34 allowlisted clauses)
+### Tier analysis — starting classification (87 allowlisted clauses)
 
 Enumerated during the structural-architecture-completion-audit (pe). No untestable
-clauses were in the allowlist — all 34 were deferred fixture work, retired across
-Batches 1–6.
+clauses were in the allowlist — all 87 were deferred fixture work, retired across
+Batches 1–6. This is the same 87-clause count the Burn-Down Record below
+reconciles against the six batch totals; the Tier breakdown immediately below
+(~35 + ~20 + ~15 + ~17 ≈ 87) accounts for it by fixture complexity, and the
+26 discovery-debt clauses retired in Batch 6 are a separate bucket, not part
+of this count.
 
 **Tier 1 — Shared structural guards (~35 clauses, lowest fixture complexity):**
 `record-unreadable`, `registry-target-unavailable`, and `record-is-closed` appear
@@ -53,7 +61,7 @@ the same failure mode — assign the same anchor name and one test covers both.
 `moderator/reviewer-removal-block`, `field-not-settable/unsettable`.
 
 **Tier 4 — Data/logic guards (~17 clauses, highest fixture complexity):**
-`no-prior-summary`, `no-prior-execution`, `requires-chain aborts`, `seal-render
+`no-prior-summary`, `no-prior-execution`, `requires-chain aborts`, `seal-write
 write failure`, `turn-order validation`. Require multi-step pre-built state.
 
 **Reclassification resolved:** The two "Recovery path" Notes ABORTs in `advance`
@@ -83,9 +91,12 @@ Established by Batches 1–3; governed Batches 4–6.
 
 ## Burn-Down Record
 
-Each batch updated `coverage-gate-allowlist.txt`, this file's counts, and the
-route/test evidence in the same commit. The allowlist is closed: new routes must
-ship with anchored, test-backed abort clauses and nothing may be added to it.
+Each batch updated the (since-removed) `coverage-gate-allowlist.txt`, this file's
+counts, and the route/test evidence in the same commit. The allowlist was retired
+at the end of the burn-down. The live rule is now the opt-in posture specified in
+`REPOSITORY.md`: the real-record behavior-smoke floor is mandatory, while
+per-clause anchors are kept only for reviewer-selected direct P9 obligations.
+No allowlist file exists to add to.
 
 The six batches account for the full starting debt exactly: 13 + 12 + 28 + 19 +
 14 + 27 = 113 retired clauses, matching 87 original allowlisted clauses plus 26
@@ -105,7 +116,7 @@ the two helper mirror-defect recovery checks as `(agent-honor-system)`.
 
 **Batch 3 — Role and field routes (28 clauses, Tier 1–3; completed 2026-06-24):**
 Routes: `join`, `remove-participant`, `retract-speak`, `set`, `unset`,
-`rewrite-summary`, `write-summary`.
+`summarize`.
 Retired by anchoring helper-enforced structural, role-state, role-permission,
 and field-validation guards with P9 tests under
 `tests/commands/collab/registry.py/`. Established the shared-harness fixture
@@ -147,22 +158,21 @@ registry-target clause was anchored before this batch and is covered by the
 `route-doc-contracts` central checker, so it was never allowlist debt.
 
 **Batch 6 — Seal and discovery-debt routes (27 clauses; completed 2026-06-24):**
-Routes: `seal-verification` (1 remaining allowlisted clause: seal-render write
-path) plus the six discovery-debt routes from `DISCOVERY_DEBT_ROUTE_FILES`
-(`export-issues`, `log`, `participant-verify`, `reopen`, `show-verdict`, `status`).
+Routes: `seal-verification` (1 remaining allowlisted clause: seal-write
+path) plus the discovery-debt routes from `DISCOVERY_DEBT_ROUTE_FILES`
+(`log`, `participant-verify`, `reopen`, `show-verdict`, `status`).
 Retired by anchoring all 27 clauses; 24 are backed by new P9 tests under
 `tests/commands/collab/registry.py/` (delegated through `admin-guard-case.sh`
-with new `init_issue_target`, `init_participant_verify_target`, and
-`seed_failed_verdict` fixtures), and 3 are reclassified `(agent-honor-system)`
+with new `init_participant_verify_target` and `seed_failed_verdict` fixtures),
+and 3 are reclassified `(agent-honor-system)`
 with a reason in the clause: `seal-verification-write-failed` and
 `participant-verify-render-failed` (generic non-zero-exit wrappers around
-`seal-render`/`participant-verify-render` whose distinct failure modes are
-anchored and tested separately) and `export-issues-record-unreadable` (the
-`export-issues` helper performs no up-front transcript read before its lifecycle
-guards, so no mirrored helper guard raises a transcript-unreadable abort at that
-step). The `reopen` step-3 invalid-phase guard is enforced by argparse `choices`,
-so its test asserts the argparse `invalid choice` rejection. Result: the allowlist
-file and the `DISCOVERY_DEBT_ROUTE_FILES` symbol were subsequently removed. Closes queue row #31
+`seal-write`/`participant-verify-render` whose distinct failure modes are
+anchored and tested separately) plus one retired-route clause removed with its
+route. The `reopen` step-3 invalid-phase guard is enforced by argparse
+`choices`, so its test asserts the argparse `invalid choice` rejection. Result:
+the allowlist file and the `DISCOVERY_DEBT_ROUTE_FILES` symbol were subsequently
+removed. Closes queue row #31
 (`backlog/31-collab-audit-coverage-abort-burn-down.md`). Batches 1–5 (allowlist
 leg) carry no separate queue row; they trace to row #16 (Tooling contracts,
 sealed) plus the weekly-check H4 allowlist target.

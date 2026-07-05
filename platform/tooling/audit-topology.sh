@@ -18,10 +18,20 @@ root = Path(sys.argv[1]).resolve()
 catalog = Path(sys.argv[2])
 commands_dir = root / "commands"
 failures: list[str] = []
+retired_namespaces = {"doc", "git", "quality"}
 
 if not catalog.exists():
     print(f"ERROR: missing commands catalog: {catalog}", file=sys.stderr)
     sys.exit(1)
+
+if commands_dir.exists():
+    for path in sorted(commands_dir.rglob("*")):
+        if path.is_dir() and not any(path.iterdir()):
+            failures.append(f"empty command directory remains: {path.relative_to(root).as_posix()}")
+    for namespace in sorted(retired_namespaces):
+        path = commands_dir / namespace
+        if path.exists():
+            failures.append(f"retired command namespace directory remains: {path.relative_to(root).as_posix()}")
 
 text = catalog.read_text(encoding="utf-8")
 link_re = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")

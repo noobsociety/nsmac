@@ -1,72 +1,35 @@
-# Workflow models
+# Workflow Model
 
-How collab records close, and what `--terminal` means at init time. Close behavior in `registry.py` and related helpers follows this spec.
+How collab records close.
 
 ## Trigger
 
-**Slash:** (reference only — not an invocable route)
-**Prose dispatch:** (reference only — not an invocable route)
-**Search phrases:** workflow model, committed workflow model, seal terminal, issue terminal, seal-free close, replacement close-gate, issue lifecycle
+**Slash:** (reference only - not an invocable route)
+**Prose dispatch:** (reference only - not an invocable route)
+**Search phrases:** workflow model, reviewer seal, verification seal, close gate
 
-## Committed workflow model
+## Current Model
 
-`seal` is the default. Any collab initialized without `--terminal` uses the seal model (`DEFAULT_TERMINAL = 'seal'` in `registry_constants.py`).
-
-New terminal values are additions, not replacements. The `planned-routes.md` gate blocks `--terminal issue` until its prerequisites are in place — using `--terminal issue` too early breaks the collab tooling for the whole working tree.
-
-## Seal model (`--terminal seal`)
-
-The default. Closes when all three hold:
+Collabs use one close model:
 
 1. Every non-moderator assigned role has a completed `execution` entry.
-2. A current, non-stale `verificationSeal` exists (written by `(collab seal verification)`).
-3. The reviewer has emitted a `verdict` with `outcome == success`.
+2. For reviewer-backed collabs, all assigned participant-verification passes complete.
+3. A current, non-stale `verificationSeal` exists, written by `(collab seal verification)`.
+4. The reviewer records a `verdict` with `outcome == success`.
 
-The sub-state lifecycle (`Completion.verification`, `verification.participant`, `verification.seal`, `verification.assessment`) is defined in `verification.md`.
+Non-reviewer-backed collabs can close after execution completes. Reviewer-backed collabs always require the seal plus a success verdict.
 
-## Issue workflow model (`--terminal issue`)
+## Completion Lifecycle
 
-Closes when the platform engineer exports issue evidence — no reviewer seal needed.
+`Completion` has two structured substates for reviewer-backed collabs:
 
-**Status:** active and tested. `tests/commands/collab/registry.py/export-issues-flow.test.sh`
-initializes a collab with `--terminal issue`, records completed execution,
-exports issue evidence, verifies the collab closes, verifies `activeCollabId` is
-cleared, and verifies no `verificationSeal` is written. This status covers the
-end-to-end close flow. `export-issues` ABORT-clause coverage is now anchored and
-tested: each guard carries a stable `<!-- abort: export-issues-... -->` anchor,
-and the six helper-enforced guards each have a matching P9 test under
-`tests/commands/collab/registry.py/`:
+- `Completion.execution` - assigned roles run Action Plan items and record execution metadata.
+- `Completion.verification` - participant verification runs, then the reviewer writes the seal and records the verdict.
 
-```
-record-closed       role-not-pe        phase-not-completion
-terminal-not-issue  pending-execution  registry-target
-```
+Within `Completion.verification`, `verification.subState` progresses through `participant`, `seal`, and `assessment`.
 
-The step-2 record-unreadable clause is marked `(agent-honor-system)` because the
-helper performs no up-front transcript read before its lifecycle guards. Batch 6
-of the burn-down in `platform/tooling/coverage-gate-migration.md` is complete.
+## See Also
 
-### Issue lifecycle
-
-1. All phases run normally (Audit → Discussion → Conclusion → Action Plan → Handoff → Completion).
-2. In `Completion.execution`, roles implement their Action Plan items and record `execution` entries as usual.
-3. The platform engineer runs `(collab export-issues)` to write the issue evidence. This record closes the collab.
-4. When evidence is written and all assigned execution is done, the collab closes — no `Completion.verification`.
-
-### Seal-free close
-
-Issue-terminal collabs close without a `verificationSeal`; its absence is not an error. There is no reviewer seal or assessment turn. A `verificationSeal` present on an issue-terminal collab is ignored.
-
-### Replacement close-gate
-
-`(collab export-issues)` writes evidence from a file you supply. `(collab export-issues)` does not create issues from Action Plan items. Automatic issue creation is not supported; open a new collab to charter that work.
-
-## `--terminal` flag
-
-Pass `--terminal <seal|issue>` to `(collab init)`. Stored in the `terminal` field; cannot be changed after init. Valid values in `registry_constants.py:ALLOWED_TERMINALS`. See `glossary.md` for definitions.
-
-**See also:** [`REPOSITORY.md` §6](../../../REPOSITORY.md#6-collab-workflow-models); [`planned-routes.md`](planned-routes.md) for the gate that blocks early activation.
-
-## Issue-terminal activation status
-
-**Active and tested** as of 2026-06-24 (structural-architecture-completion-audit). All planned-route prerequisites are satisfied (`validate_planned_route_prerequisites` passes). `--terminal issue` is a selectable value at init time and `(collab export-issues)` closes a collab end-to-end without a `verificationSeal`. End-to-end proof: `tests/commands/collab/registry.py/issue-terminal-close-flow.test.sh` and `tests/commands/collab/registry.py/export-issues-flow.test.sh`. Beyond the close flow, `export-issues` ABORT coverage is now anchored and tested per-guard (Batch 6 complete); the only non-tested clause is the step-2 record-unreadable guard, which is marked `(agent-honor-system)` because the helper does no up-front transcript read.
+- [verification.md](verification.md)
+- [registry.md](registry.md)
+- [(collab seal verification)](../seal-verification/index.md)

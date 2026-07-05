@@ -160,6 +160,15 @@ def contribution_roles(text: str, phase: str) -> list[str]:
     return roles
 
 
+def active_phase_anchors(transcript: str, phase: str) -> list[str]:
+    anchors: list[str] = []
+    for line in phase_section(transcript, phase):
+        match = ANCHOR_RE.match(line.strip())
+        if match:
+            anchors.append(match.group('anchor'))
+    return anchors
+
+
 def action_plan_item_tag(text: str) -> str | None:
     match = ACTION_PLAN_ITEM_TAG_RE.match(text)
     if not match:
@@ -220,6 +229,51 @@ def unchecked_assigned_item_count(transcript: str, role: str) -> int:
     return unchecked_assigned_items_by_role(transcript).get(role, 0)
 
 
+def action_plan_label_summary(transcript: str) -> str:
+    counts = {
+        role: count
+        for role, count in unchecked_assigned_items_by_role(transcript).items()
+        if count
+    }
+    if not counts:
+        return 'none'
+    return ', '.join(f'{role}={counts[role]}' for role in sorted(counts))
+
+
+def tombstone_count(transcript: str) -> int:
+    total = 0
+    for phase in PHASES:
+        try:
+            lines = phase_section(transcript, phase)
+        except SystemExit:
+            continue
+        index = 0
+        while index < len(lines):
+            if not DETAILS_OPEN_RE.match(lines[index].strip()):
+                index += 1
+                continue
+            start = index
+            depth = 1
+            end: int | None = None
+            line_index = index + 1
+            while line_index < len(lines):
+                stripped = lines[line_index].strip()
+                if DETAILS_OPEN_RE.match(stripped):
+                    depth += 1
+                elif DETAILS_CLOSE_RE.match(stripped):
+                    depth -= 1
+                    if depth == 0:
+                        end = line_index + 1
+                        break
+                line_index += 1
+            if end is None:
+                die(f'transcript details block not closed in phase: {phase}')
+            if contribution_is_retracted(lines[start:end]):
+                total += 1
+            index = end
+    return total
+
+
 def is_chartered_deliverables_label(stripped: str) -> bool:
     if not stripped:
         return False
@@ -278,3 +332,34 @@ def chartered_deliverables(transcript: str) -> list[str]:
         if deliverable:
             deliverables.append(deliverable)
     return deliverables
+
+
+def contribution_block_bounds(lines: list[str], phase: str, role: str) -> tuple[int, int] | None:
+    _phase_start, phase_end = section_bounds(lines, f'## {phase}')
+    latest: tuple[int, int] | None = None
+    index = _phase_start + 1
+    while index < phase_end:
+        if DETAILS_OPEN_RE.match(lines[index].strip()):
+            start = index
+            depth = 1
+            end: int | None = None
+            line_index = index + 1
+            while line_index < phase_end:
+                stripped = lines[line_index].strip()
+                if DETAILS_OPEN_RE.match(stripped):
+                    depth += 1
+                elif DETAILS_CLOSE_RE.match(stripped):
+                    depth -= 1
+                    if depth == 0:
+                        end = line_index + 1
+                        break
+                line_index += 1
+            if end is None:
+                die(f'transcript details block not closed in phase: {phase}')
+            summary = summary_role(lines[start + 1]) if start + 1 < end else None
+            if summary == role:
+                latest = (start, end)
+            index = end
+            continue
+        index += 1
+    return latest

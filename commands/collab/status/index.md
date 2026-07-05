@@ -16,8 +16,7 @@ Show the current workflow state of a collaboration record — not the registry `
 ## Notes
 
 - **Parameters:** target collab slug, id, or numeric `#N` as the first token after `status`; when absent, resolved per **Registry targeting** in **Notes**.
-<!-- abort: status-registry-target -->
-- **Registry targeting:** Resolve the target collab from the resolved registry, using `commands/collab/engine/registry.py` as the shared helper. When the first token after the route is present, treat it as a collab slug, id, or stable numeric position. Otherwise use `activeCollabId`. If the registry is unreadable or invalid, the token does not match any entry, or `activeCollabId` is empty, **ABORT**: registry target unavailable; name the registry field or token.
+- **Registry targeting:** Resolve the target collab from the first token after the route, falling back to `activeCollabId` when absent. The resolution algorithm and abort contract are owned by **Target resolution** in [`platform/standards/route-invariants.md`](../../../platform/standards/route-invariants.md); this route does not restate them.
 - **Naming disambiguation:** This route's name (`status`) reuses the same word as the registry field `status` (`open` / `closed` / `archived`). The route shows workflow state; the field records lifecycle state. To filter by lifecycle state, use `(collab list --status <open|closed|archived>)`.
 - **Output shape:** Structured key-value display. Includes: `id`, `slug`, `title`, `status` (lifecycle), `activePhase`, `completionSubState` (when in Completion), `turnOrder`, `reviewerRole`, `reviewerMode`, `revision` (write-guard counter), `uncheckedAssignedItemsByRole` (when in Completion), and participant rows. Example:
 

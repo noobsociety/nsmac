@@ -10,7 +10,6 @@ Permanently remove a collab record from the registry and disk. The operation is 
 ## Steps
 
 1. Read [invariants.md](../../../commands/collab/reference/invariants.md) before executing; call the relevant helper fresh and do not trust prior reads from conversation context (Invariant #4). Resolve the target collab with **Registry targeting** in **Notes**.
-<!-- abort: delete-record-unreadable -->
 2. Read the resolved registry and the resolved transcript path. If either is unreadable, **ABORT**: record unreadable; name the path.
 3. Require explicit confirmation before proceeding: display the collab slug, id, and transcript path. Gate the deletion per `platform/standards/command-argument.md`:
 
@@ -32,9 +31,7 @@ Permanently remove a collab record from the registry and disk. The operation is 
 ## Notes
 
 - **Parameters:** target collab slug, id, or numeric `#N` as the first token after `delete`; when absent, resolved per **Registry targeting** in **Notes**.
-- **Registry targeting:** Resolve the target collab from the resolved registry, using `commands/collab/engine/registry.py` as the shared helper. When the first token after the route is present, treat it as a collab slug, id, or stable numeric position. Otherwise use `activeCollabId`.
-<!-- abort: delete-registry-target-unavailable -->
-  If the registry is unreadable or invalid, the token does not match any entry, or `activeCollabId` is empty, **ABORT**: registry target unavailable; name the registry field or token.
+- **Registry targeting:** Resolve the target collab from the first token after the route, falling back to `activeCollabId` when absent. The resolution algorithm and abort contract are owned by **Target resolution** in [`platform/standards/route-invariants.md`](../../../platform/standards/route-invariants.md); this route does not restate them.
 - **Destructive by default:** `delete` is always a hard delete — it removes both the registry entry and the transcript file. For non-destructive deactivation, use `(collab archive)` instead.
 - **Confirmation required:** Always show the target details before presenting the gate. Never skip the gate prompt. Gate contract: `platform/standards/command-argument.md`.
 

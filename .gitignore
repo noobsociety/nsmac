@@ -1,38 +1,20 @@
-# Managed-allowlist policy.
-#
-# The leading `*` ignores everything in this local local command config directory.
-# Source is opted in below. Runtime and IDE-produced state stays ignored by
-# omission, including:
-#   projects/       — local project state; not source
-#   extensions/     — local extension cache/state; not source
-#   ide_state.json  — local IDE state; not source
-#   /  — generated skill payload; not source
-#   plugins/        — local plugin cache; not source
-#   skills/         — personal skill payload; not source
-#   plans/          — local planning scratch; not source
-#   subagents/      — local subagent state/transcripts; not source
-*
+# Local command config/runtime payloads
+.cursor/
 
-# local command config source — tracked
-!.gitignore
-!CLAUDE.md
-!AGENTS.md
-!GEMINI.md
-!REPOSITORY.md
-!README.md
-!.collab.json
-!.github/
-!.github/**
-!platform/data/**
-!generated/
-!generated/**
-!platform/
-!platform/**
-!platform/templates/
-!platform/templates/**
-!tests/specs/
-!tests/specs/**
-!commands/
-!commands/**
-!tests/
-!tests/**
+# Local collab binding/runtime state
+.collab.json
+
+# Host-generated metadata
+.DS_Store
+
+# Agent/runtime payloads
+agents/
+ai-tracking/
+argv.json
+projects/
+extensions/
+ide_state.json
+plugins/
+skills/
+plans/
+subagents/

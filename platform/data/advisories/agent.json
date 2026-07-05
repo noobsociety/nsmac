@@ -5,18 +5,27 @@
       "route": "install",
       "capabilityTier": "execution",
       "effortTier": "high",
+      "concerns": [
+        "hygiene"
+      ],
       "rationale": "Writes the multi-agent scaffold into a fresh repo; wrong-tier execution risks silent template drift."
     },
     {
       "route": "patch",
       "capabilityTier": "execution",
       "effortTier": "high",
+      "concerns": [
+        "hygiene"
+      ],
       "rationale": "Wrong-tier patches risk silent template drift."
     },
     {
       "route": "upgrade",
       "capabilityTier": "execution",
       "effortTier": "high",
+      "concerns": [
+        "hygiene"
+      ],
       "rationale": "Overwrites installed scaffold files against the current templates; misjudged diffs corrupt the consumer repo."
     }
   ]

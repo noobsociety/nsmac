@@ -6,5 +6,8 @@
     "efficiency",
     "completeness",
     "optimization"
+  ],
+  "dimensions": [
+    "product"
   ]
 }

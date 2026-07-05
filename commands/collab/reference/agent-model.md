@@ -35,6 +35,18 @@ The table below captures recommended defaults. Identifiers name a model family o
 
 **Reviewer fallback.** Use the lower-tier join model when the reviewer cap is exhausted or the collab is lightweight with no convergent-gate weight. The reviewer join model is cap-fragile under sustained use; Claude Max sustains roughly 2–3 reviewer-role collabs per rolling cap window.
 
+## Dimension rationale
+
+`dimensions` values (see `platform/standards/role-standard.md`'s "Dimensions semantics") were assigned per role on each model's demonstrated strength, argued in the `2026-07-02-concerns-taxonomy` collab:
+
+| Role | Dimensions | Rationale |
+|------|-----------|-----------|
+| tw | `narrative` | `sonnet`'s prose fluency maps directly to docs/transcript legibility. |
+| pa | `structure`, `architecture` | `opus`'s multi-hop reasoning fits file/slice layout and control-flow/state-model review. |
+| pe | `product` | `gpt`'s fast, concrete delivery fits capability-fit review. `pe`'s practical remit also covers hygiene work (dead code, drift, residue), but `hygiene` is deliberately absent here: it is cross-cutting by design, not owned by any role's `dimensions[]` — see role-standard.md's "Dimensions semantics" for why `pe` does not carry it despite the overlap. |
+
+This table records rationale only and is not machine-read; `dimensions[]` in each role file under `commands/collab/reference/roles/` is the enforced value.
+
 ## Per-speak-turn effort
 
 > **generated; do not edit** — this table is a projection of `agent-effort.json`; edit the JSON source instead.
@@ -57,9 +69,9 @@ Values must match the phase-role matrix in `agent-effort.json`. When the two div
 At `Completion.verification`, the reviewer operates in two ordered modes:
 
 1. **seal** — Issues `(collab seal verification)`; mechanical execution-truth check. Existing seal contract unchanged.
-2. **assessment** — Evaluates whether discussion goals were met; emits a `verdict: { outcome, restoreTarget?, restoreReason?, evidence?, failureCategory? }`. Opens after a successful seal or when the seal becomes stale or a cap-exit is recorded.
+2. **assessment** — Evaluates whether discussion goals were met; emits a `verdict: { outcome, restoreTarget?, restoreReason?, evidence?, failureCategory? }`. Opens after a successful seal and re-enters when the seal becomes stale.
 
-Both modes are part of the reviewer's `Completion.verification` turn (`xhigh`, mandatory-declaration). Assessment is budget-exempt when opened by a cap-exit trigger. The reviewer writes verdict fields only (evaluation); all correction work at the restored phase belongs to participants.
+Both modes are part of the reviewer's `Completion.verification` turn (`xhigh`, mandatory-declaration). The reviewer writes verdict fields only (evaluation); all correction work at the restored phase belongs to participants.
 
 ## Caveats
 

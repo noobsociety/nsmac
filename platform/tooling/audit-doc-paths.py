@@ -16,7 +16,6 @@ REPO_PREFIXES = (
     "tests/",
     "AGENTS.md",
     "CLAUDE.md",
-    "GEMINI.md",
     "README.md",
     "REPOSITORY.md",
 )
@@ -42,13 +41,7 @@ EXTERNAL_PREFIXES = (
 # doc deliberately names a file that must NOT exist (a documented prohibition or
 # reserved-but-forbidden name); transient "not yet created / since removed"
 # citations must be corrected in the doc, not parked here.
-ALLOWLISTED_MISSING_PATHS = {
-    # command-convention.md:82 names this file precisely to forbid creating it.
-    (
-        "platform/standards/command-convention.md",
-        "platform/standards/command-grammar.md",
-    ),
-}
+ALLOWLISTED_MISSING_PATHS: set[tuple[str, str]] = set()
 
 
 def tracked_markdown(root: Path) -> list[Path]:

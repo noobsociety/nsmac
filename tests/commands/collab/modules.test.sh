@@ -6,11 +6,13 @@ ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 python3 - "$ROOT" <<'PY'
 from __future__ import annotations
 
+import ast
 import contextlib
 import datetime as dt
 import importlib.util
 import io
 import json
+import os
 import re
 import subprocess
 import sys
@@ -32,6 +34,16 @@ def aborts(fn, contains: str) -> None:
         assert contains in str(exc), str(exc)
     else:
         raise AssertionError(f'expected abort containing {contains!r}')
+
+
+def test_engine_import_boundaries() -> None:
+    for path in sorted((Path(root) / 'commands/collab/engine').glob('*.py')):
+        tree = ast.parse(path.read_text())
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom):
+                assert not any(alias.name == '*' for alias in node.names), (
+                    f'wildcard import leaks module boundary: {path}:{node.lineno}'
+                )
 
 
 def test_digests() -> None:
@@ -97,6 +109,56 @@ def test_digests() -> None:
         committed = d.content_digest_for_touched_paths(repo, 'HEAD', ['tracked.txt'])
         assert worktree == committed
         assert worktree['pathDigests']['tracked.txt']['mode'] == '100644'
+
+        (repo / 'src').mkdir()
+        (repo / 'src/a.txt').write_text('alpha v1\n')
+        (repo / 'src/b.txt').write_text('beta v1\n')
+        run(['git', 'add', 'src/a.txt', 'src/b.txt'], repo)
+        run(['git', '-c', 'commit.gpgsign=false', 'commit', '-qm', 'deliverables'], repo)
+
+        carried_digest = d.content_digest_for_touched_paths(
+            repo,
+            'HEAD',
+            ['src/a.txt', 'src/b.txt'],
+        )
+        carried = {
+            'role': 'pe',
+            'entryId': 'pe-old',
+            'status': 'completed',
+            'date': '2026-06-04',
+            'validationResult': 'passed',
+            'validationScope': 'full',
+            'touchedPaths': ['src/a.txt', 'src/b.txt'],
+            'pathDigests': carried_digest['pathDigests'],
+            'contentDigest': carried_digest['contentDigest'],
+        }
+        carry_entry = {
+            'workRepo': str(repo),
+            'reopenCoverage': {'executionEntries': [carried]},
+        }
+        valid = d.valid_carried_execution_entries(carry_entry)
+        assert valid[0]['touchedPaths'] == ['src/a.txt', 'src/b.txt']
+        assert valid[0]['carriedFromReopen'] is True
+
+        transitive_entry = {
+            'workRepo': str(repo),
+            'reopenCoverage': {'executionEntries': valid},
+        }
+        assert d.valid_carried_execution_entries(transitive_entry)[0]['touchedPaths'] == [
+            'src/a.txt',
+            'src/b.txt',
+        ]
+
+        (repo / 'src/a.txt').write_text('alpha v2\n')
+        run(['git', 'add', 'src/a.txt'], repo)
+        run(['git', '-c', 'commit.gpgsign=false', 'commit', '-qm', 'drift a'], repo)
+        drifted = d.valid_carried_execution_entries(carry_entry)
+        assert drifted[0]['touchedPaths'] == ['src/b.txt']
+
+        (repo / 'src/b.txt').unlink()
+        run(['git', 'add', 'src/b.txt'], repo)
+        run(['git', '-c', 'commit.gpgsign=false', 'commit', '-qm', 'remove b'], repo)
+        assert d.valid_carried_execution_entries(carry_entry) == []
 
 
 def test_git_repo() -> None:
@@ -394,8 +456,6 @@ def test_registry_constants() -> None:
 
     assert c.MODERATOR_ONLY_ACTIONS >= {'advance', 'archive', 'close', 'delete', 'reopen', 'restore', 'set', 'unset'}
     assert c.ALLOWED_STATUSES == {'open', 'closed', 'archived'}
-    assert c.ALLOWED_TERMINALS == {'seal', 'issue'}
-    assert c.TERMINAL_CHOICES_MESSAGE == 'seal, issue'
     assert c.ALLOWED_COMPLETION_SUBSTATES == {'execution', 'verification'}
     assert c.ALLOWED_VERIFICATION_SUBSTATES == {'participant', 'seal', 'assessment'}
     assert c.ALLOWED_VERDICT_RESTORE_TARGETS == {'Action Plan', 'Handoff'}
@@ -473,8 +533,259 @@ def test_registry_io() -> None:
         aborts(lambda: r.load_registry(invalid), 'registry invalid JSON')
 
 
+def write_test_roles(roles: Path, *role_keys: str) -> None:
+    roles.mkdir()
+    for key in role_keys:
+        data = {
+            'key': key,
+            'displayName': key.upper(),
+            'concerns': ['test'],
+        }
+        if key != 'mod':
+            data['dimensions'] = ['structure']
+        roles.joinpath(f'{key}.json').write_text(json.dumps(data) + '\n')
+
+
+@contextlib.contextmanager
+def pushd(path: Path):
+    original = Path.cwd()
+    os.chdir(path)
+    try:
+        yield
+    finally:
+        os.chdir(original)
+
+
+def base_collab_entry(collab_id: str, transcript: str) -> dict:
+    return {
+        'id': collab_id,
+        'slug': collab_id.split('-', 3)[-1],
+        'title': 'Module Isolation',
+        'description': 'Module isolation',
+        'createdAt': '2026-06-30T00:00:00+00:00',
+        'terminal': 'seal',
+        'status': 'open',
+        'activePhase': 'Audit',
+        'moderatorRole': 'mod',
+        'reviewerMode': 'last-in-convergent-phases',
+        'reviewerOptionalPhases': ['Discussion'],
+        'participants': [{'role': 'mod', 'agentId': 'codex'}],
+        'turnOrder': ['mod'],
+        'transcriptPath': transcript,
+        'sequence': 1,
+        'archived': False,
+        'execution': {},
+    }
+
+
+def write_registry_fixture(registry: Path, entry: dict) -> None:
+    registry.write_text(json.dumps({
+        'revision': 1,
+        'eventIndex': 1,
+        'activeCollabId': entry['id'],
+        'collabs': [entry],
+    }, indent=2) + '\n')
+
+
+def test_onboarding_commands_join_handler_isolated() -> None:
+    from commands.collab.engine import onboarding_commands as o
+    from commands.collab.engine.transcript_render import render_initial_transcript
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root_dir = Path(tmp)
+        roles = root_dir / 'roles'
+        write_test_roles(roles, 'mod', 'zz')
+        records = root_dir / 'records'
+        records.mkdir()
+        collab_id = '2026-06-30-onboarding-isolation'
+        entry = base_collab_entry(collab_id, f'records/{collab_id}.md')
+        transcript = render_initial_transcript(entry['title'], entry, roles, '2026-06-30 00:00 +00:00')
+        records.joinpath(f'{collab_id}.md').write_text(transcript)
+        registry = root_dir / 'registry.json'
+        write_registry_fixture(registry, entry)
+
+        commits: list[tuple[dict, str, Path | None]] = []
+
+        def commit(
+            _path: Path,
+            data: dict,
+            transcript_path: Path,
+            rendered: str,
+            roles_dir: Path | None = None,
+        ) -> None:
+            commits.append((json.loads(json.dumps(data)), rendered, roles_dir))
+            _path.write_text(json.dumps(data, indent=2) + '\n')
+            transcript_path.write_text(rendered)
+
+        old_commit_new = o.commit_new_collab_artifacts
+        old_commit = o.commit_registry_and_transcript
+        o.commit_new_collab_artifacts = lambda *args, **kwargs: None
+        o.commit_registry_and_transcript = commit
+        try:
+            with pushd(root_dir), contextlib.redirect_stdout(io.StringIO()):
+                assert o.join_participants(registry, collab_id, 'zz', 'codex', roles) == 0
+        finally:
+            o.commit_new_collab_artifacts = old_commit_new
+            o.commit_registry_and_transcript = old_commit
+
+        assert commits, 'join handler did not call registry_io commit owner'
+        joined = commits[-1][0]['collabs'][0]
+        assert {'role': 'zz', 'agentId': 'codex'} in joined['participants']
+        assert joined['turnOrder'] == ['mod', 'zz']
+        assert commits[-1][2] == roles
+
+
+def test_field_commands_unset_handler_uses_supplied_roles_dir() -> None:
+    from commands.collab.engine import field_commands as f
+    from commands.collab.engine.transcript_render import render_initial_transcript
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root_dir = Path(tmp)
+        roles = root_dir / 'roles'
+        write_test_roles(roles, 'mod', 'zz')
+        records = root_dir / 'records'
+        records.mkdir()
+        collab_id = '2026-06-30-field-isolation'
+        entry = base_collab_entry(collab_id, f'records/{collab_id}.md')
+        entry.update({
+            'reviewerRole': 'zz',
+            'reviewerMode': 'last-in-convergent-phases',
+            'reviewerOptionalPhases': ['Discussion'],
+        })
+        entry['participants'].append({'role': 'zz', 'agentId': 'codex'})
+        records.joinpath(f'{collab_id}.md').write_text(
+            render_initial_transcript(entry['title'], entry, roles, '2026-06-30 00:00 +00:00')
+        )
+        registry = root_dir / 'registry.json'
+        write_registry_fixture(registry, entry)
+        commits: list[tuple[dict, Path | None]] = []
+
+        def commit(
+            _path: Path,
+            data: dict,
+            transcript_path: Path,
+            rendered: str,
+            roles_dir: Path | None = None,
+        ) -> None:
+            commits.append((json.loads(json.dumps(data)), roles_dir))
+            _path.write_text(json.dumps(data, indent=2) + '\n')
+            transcript_path.write_text(rendered)
+
+        old_commit = f.commit_registry_and_transcript
+        f.commit_registry_and_transcript = commit
+        try:
+            with pushd(root_dir), contextlib.redirect_stdout(io.StringIO()):
+                assert f.unset_field(registry, collab_id, 'reviewer', roles) == 0
+        finally:
+            f.commit_registry_and_transcript = old_commit
+
+        assert commits, 'unset handler did not call registry_io commit owner'
+        updated = commits[-1][0]['collabs'][0]
+        assert 'reviewerRole' not in updated
+        assert {'role': 'zz', 'agentId': 'codex'} in updated['participants']
+        assert commits[-1][1] == roles
+
+
+def test_reactivation_commands_reopen_handler_isolated() -> None:
+    from commands.collab.engine import reactivation_commands as r
+    from commands.collab.engine.transcript_render import render_initial_transcript
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root_dir = Path(tmp)
+        roles = root_dir / 'roles'
+        write_test_roles(roles, 'mod', 'pe')
+        records = root_dir / 'records'
+        records.mkdir()
+        collab_id = '2026-06-30-reactivation-isolation'
+        entry = base_collab_entry(collab_id, f'records/{collab_id}.md')
+        entry.update({
+            'activePhase': 'Completion',
+            'participants': [
+                {'role': 'mod', 'agentId': 'codex'},
+                {'role': 'pe', 'agentId': 'codex'},
+            ],
+            'turnOrder': ['pe'],
+            'verdict': {
+                'outcome': 'failed',
+                'restoreTarget': 'Handoff',
+                'restoreReason': 'fixture',
+            },
+        })
+        records.joinpath(f'{collab_id}.md').write_text(
+            render_initial_transcript(entry['title'], entry, roles, '2026-06-30 00:00 +00:00')
+        )
+        registry = root_dir / 'registry.json'
+        write_registry_fixture(registry, entry)
+        invalidations: list[str] = []
+        commits: list[dict] = []
+
+        def commit(_path: Path, data: dict, transcript_path: Path, rendered: str) -> None:
+            commits.append(json.loads(json.dumps(data)))
+            _path.write_text(json.dumps(data, indent=2) + '\n')
+            transcript_path.write_text(rendered)
+
+        old_invalidate = r.invalidate_verification_seal
+        old_commit = r.commit_registry_and_transcript
+        r.invalidate_verification_seal = lambda item, reason: invalidations.append(reason)
+        r.commit_registry_and_transcript = commit
+        try:
+            with pushd(root_dir), contextlib.redirect_stdout(io.StringIO()):
+                assert r.reopen_collab(registry, collab_id, 'handoff') == 0
+        finally:
+            r.invalidate_verification_seal = old_invalidate
+            r.commit_registry_and_transcript = old_commit
+
+        reopened = commits[-1]['collabs'][0]
+        assert reopened['activePhase'] == 'Handoff'
+        assert reopened['status'] == 'open'
+        assert 'verdict' not in reopened
+        assert invalidations == ['reopened Handoff']
+
+
+def test_speak_commands_lifecycle_handler_isolated() -> None:
+    from commands.collab.engine import speak_commands as s
+    from commands.collab.engine.transcript_render import render_initial_transcript
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root_dir = Path(tmp)
+        roles = root_dir / 'roles'
+        write_test_roles(roles, 'mod', 'pe')
+        records = root_dir / 'records'
+        records.mkdir()
+        collab_id = '2026-06-30-speak-isolation'
+        entry = base_collab_entry(collab_id, f'records/{collab_id}.md')
+        entry['participants'].append({'role': 'pe', 'agentId': 'codex'})
+        entry['turnOrder'] = ['mod', 'pe']
+        records.joinpath(f'{collab_id}.md').write_text(
+            render_initial_transcript(entry['title'], entry, roles, '2026-06-30 00:00 +00:00')
+        )
+        registry = root_dir / 'registry.json'
+        write_registry_fixture(registry, entry)
+        commits: list[dict] = []
+
+        def commit(_path: Path, data: dict, transcript_path: Path, rendered: str) -> None:
+            commits.append(json.loads(json.dumps(data)))
+            _path.write_text(json.dumps(data, indent=2) + '\n')
+            transcript_path.write_text(rendered)
+
+        old_commit = s.commit_registry_and_transcript
+        s.commit_registry_and_transcript = commit
+        try:
+            with pushd(root_dir), contextlib.redirect_stdout(io.StringIO()):
+                assert s.speak_lifecycle(registry, collab_id, ['mod', 'pe']) == 0
+        finally:
+            s.commit_registry_and_transcript = old_commit
+
+        assert commits[-1]['collabs'][0]['activePhase'] == 'Discussion'
+
+
 def test_seal_verdict_companion() -> None:
     from commands.collab.engine import seal_verification as sv
+
+    assert 'build_seal_verdict_companion' in sv.__all__
+    assert 'seal_write' in sv.__all__
+    assert 'Path' not in sv.__all__
+    assert 'Callable' not in sv.__all__
 
     entry = {
         'id': '2026-06-10-verdict-test',
@@ -525,11 +836,14 @@ def test_registry_validation_module() -> None:
         roles = tmp_path / 'roles'
         roles.mkdir()
         for role in ('mod', 'pe'):
-            (roles / f'{role}.json').write_text(json.dumps({
+            data = {
                 'key': role,
                 'displayName': role.upper(),
                 'concerns': ['test'],
-            }) + '\n')
+            }
+            if role != 'mod':
+                data['dimensions'] = ['structure']
+            (roles / f'{role}.json').write_text(json.dumps(data) + '\n')
 
         valid = {
             'revision': 1,
@@ -664,6 +978,10 @@ for test in (
     test_phase_lifecycle,
     test_registry_constants,
     test_registry_io,
+    test_onboarding_commands_join_handler_isolated,
+    test_field_commands_unset_handler_uses_supplied_roles_dir,
+    test_reactivation_commands_reopen_handler_isolated,
+    test_speak_commands_lifecycle_handler_isolated,
     test_seal_verdict_companion,
     test_registry_validation_module,
     test_effort_module,

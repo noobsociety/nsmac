@@ -5,7 +5,8 @@ Owns: header scaffolding, Table of Contents management (including
       construction via rendered_collapsible_block (single <details> owner;
       registry.py routes its participant-verify, reviewer-findings,
       revision-history, and retracted-content blocks here), contribution-block
-      rendering (excerpt and full body handling), and effort-override banners.
+      rendering (excerpt and full body handling), the managed Phase Summary
+      block (sentinel-bounded insert/replace), and effort-override banners.
 
 Does not own: registry state, phase lifecycle decisions, participant roster
               management, write-path dispatch, or CLI entry-point logic.
@@ -47,6 +48,7 @@ from commands.collab.engine.errors import die  # noqa: E402
 from commands.collab.engine.handoff_shape import render_content_for_transcript, validate_handoff_state  # noqa: E402
 from commands.collab.engine.normalizers import format_banner_timestamp, phase_slug  # noqa: E402
 from commands.collab.engine.participants import (  # noqa: E402
+    active_reviewer_role,
     effective_turn_order,
     reviewer_backed,
     reviewer_mode,
@@ -61,10 +63,14 @@ from commands.collab.engine.registry_constants import (  # noqa: E402
     FULL_BODY_SUMMARY,
     HEADER_MANAGED_BEGIN,
     HEADER_MANAGED_END,
+    PHASE_SUMMARY_BEGIN,
+    PHASE_SUMMARY_END,
     PHASES,
 )
 from commands.collab.engine.transcript_readers import (  # noqa: E402
     ANCHOR_RE,
+    contribution_block_bounds,
+    contribution_roles,
     DETAILS_CLOSE_RE,
     DETAILS_OPEN_RE,
     STANCE_DECLARATION_RE,
@@ -77,6 +83,7 @@ PROHIBITION_SEPARATOR = ' \u00b7 '
 AUTHOR_DECLARED_STANCES = {'converges', 'dissents', 'qualifies'}
 MISSING_STANCE = 'missing-stance'
 DEFAULT_ROLES_DIR = ROOT / 'commands/collab/reference/roles'
+TIMESTAMP_RE = re.compile(r'^<p><em>(?P<timestamp>.+)</em></p>$')
 TIMESTAMP_WRAPPER_RE = re.compile(r'^\s*<p><em>.*</em></p>\s*$')
 CONTENT_ONLY_GUARD_RE = re.compile(r'^\s*<!--\s*collab:content-only;\s*do-not-execute\s*-->\s*$')
 EFFORT_OVERRIDE_LINE_RE = re.compile(r'^\s*EFFORT OVERRIDE:\s*.+$', re.IGNORECASE)
@@ -153,6 +160,29 @@ def excerpt_source(value: str) -> str:
     while index < len(lines) and is_hidden_metadata_line(lines[index]):
         index += 1
     return '\n'.join(lines[index:]).strip()
+
+
+def contribution_store_record(
+    phase: str,
+    role: str,
+    anchor: str,
+    content: str,
+    timestamp: str,
+    full_body: str | None = None,
+) -> dict:
+    compact = re.sub(r'\s+', ' ', excerpt_source(content)).strip()
+    record = {
+        'phase': phase,
+        'role': role,
+        'anchor': anchor,
+        'stance': stance_for_content(content),
+        'excerpt': compact,
+        'content': content,
+        'timestamp': timestamp,
+    }
+    if full_body is not None:
+        record['fullBody'] = full_body
+    return record
 
 
 def load_participant_metadata(roles_dir: Path, role: str) -> dict:
@@ -322,6 +352,18 @@ def render_handoff_mirror_lines(body_lines: list[str], entry: dict) -> list[str]
     return rendered
 
 
+def next_anchor_counter(lines: list[str], phase: str, role: str) -> int:
+    prefix = f'{phase_slug(phase)}-{role}-'
+    highest = 0
+    for line in lines:
+        match = ANCHOR_RE.match(line.strip())
+        if match and match.group('anchor').startswith(prefix):
+            suffix = match.group('anchor')[len(prefix):]
+            if suffix.isdigit():
+                highest = max(highest, int(suffix))
+    return max(highest, contribution_roles('\n'.join(lines), phase).count(role)) + 1
+
+
 def render_contribution_block(
     phase: str,
     role: str,
@@ -378,6 +420,94 @@ def prepend_revision_history(existing: list[str] | None, original_timestamp: str
     if len(existing) > 1 and existing[1] == '':
         insert_at = 2
     return existing[:insert_at] + revision + existing[insert_at:]
+
+
+def latest_contribution_anchor(transcript: str, phase: str, role: str) -> str:
+    lines = transcript.splitlines()
+    bounds = contribution_block_bounds(lines, phase, role)
+    if bounds is None:
+        die(f'no prior contribution to rewrite; use {collab_dispatch("speak")} to create the first contribution')
+    start, _end = bounds
+    if start > 0:
+        match = ANCHOR_RE.match(lines[start - 1].strip())
+        if match:
+            return match.group('anchor')
+    die('contribution anchor missing')
+
+
+def replace_latest_contribution(
+    transcript: str,
+    phase: str,
+    role: str,
+    content: str,
+    timestamp: str,
+    full_body: str | None = None,
+) -> str:
+    lines = transcript.splitlines()
+    bounds = contribution_block_bounds(lines, phase, role)
+    if bounds is None:
+        die(f'no prior contribution to rewrite; use {collab_dispatch("speak")} to create the first contribution')
+    start, end = bounds
+    block = lines[start:end]
+
+    timestamp_index: int | None = None
+    marker_index: int | None = None
+    for index, line in enumerate(block):
+        if timestamp_index is None and TIMESTAMP_RE.match(line.strip()):
+            timestamp_index = index
+        if line.strip() == '<!-- collab:content-only; do-not-execute -->':
+            marker_index = index
+            break
+    if timestamp_index is None:
+        die('contribution timestamp missing')
+    if marker_index is None:
+        die('contribution content marker missing')
+
+    original_timestamp = TIMESTAMP_RE.match(block[timestamp_index].strip()).group('timestamp')  # type: ignore[union-attr]
+    rev_start = revision_history_start(block, marker_index + 1)
+    content_end = rev_start if rev_start is not None else len(block) - 1
+    existing_history = block[rev_start:len(block) - 1] if rev_start is not None else None
+    prior_content = block[marker_index + 1:content_end]
+
+    block[timestamp_index] = f'<p><em>{timestamp}</em></p>'
+    history = prepend_revision_history(existing_history, original_timestamp, prior_content)
+    replacement = (
+        block[:marker_index + 1]
+        + ['']
+        + render_contribution_body(content, full_body)
+        + ['']
+        + history
+        + [block[-1]]
+    )
+    return '\n'.join(lines[:start] + replacement + lines[end:]) + '\n'
+
+
+def latest_contribution_timestamp(transcript: str, phase: str, role: str) -> str | None:
+    lines = transcript.splitlines()
+    bounds = contribution_block_bounds(lines, phase, role)
+    if bounds is None:
+        return None
+    start, end = bounds
+    for line in lines[start:end]:
+        match = TIMESTAMP_RE.match(line.strip())
+        if match:
+            return match.group('timestamp')
+    return None
+
+
+def reviewer_notice_for_rewrite(entry: dict, transcript: str, role: str) -> str | None:
+    reviewer = active_reviewer_role(entry)
+    if not reviewer or role == reviewer:
+        return None
+    phase = entry['activePhase']
+    target_timestamp = latest_contribution_timestamp(transcript, phase, role)
+    reviewer_timestamp = latest_contribution_timestamp(transcript, phase, reviewer)
+    if target_timestamp and reviewer_timestamp and target_timestamp < reviewer_timestamp:
+        return (
+            f'REVIEWER-NOTICE: {role} rewrite in {phase} predates the latest '
+            f'{reviewer} reviewer contribution; reviewer gate re-triggered.'
+        )
+    return None
 
 
 def rendered_retracted_content_block(existing_body: str) -> list[str]:
@@ -698,3 +828,81 @@ def render_initial_transcript_legacy(title: str, entry: dict, roles_dir: Path, t
         '**Execution history**',
     ])
     return '\n'.join(lines) + '\n'
+
+
+def phase_summary_bounds(lines: list[str]) -> tuple[int, int] | None:
+    start = None
+    for index, line in enumerate(lines):
+        if line.strip() == PHASE_SUMMARY_BEGIN:
+            start = index
+            break
+    if start is None:
+        return None
+    for index in range(start + 1, len(lines)):
+        if lines[index].strip() == PHASE_SUMMARY_END:
+            return start, index + 1
+    die('phase summary sentinel mismatch')
+
+
+def phase_summary_insert_index(lines: list[str]) -> int:
+    for index, line in enumerate(lines):
+        if line.strip() == HEADER_MANAGED_END:
+            return index + 1
+    if lines and lines[0].startswith('# '):
+        return 1
+    die('transcript title missing')
+
+
+def phase_summary_line(transcript: str, entry: dict, phase: str) -> str:
+    try:
+        roles = contribution_roles(transcript, phase)
+    except SystemExit as exc:
+        if str(exc) == f'transcript phase missing: {phase}':
+            return f'- **{phase}:** missing section'
+        raise
+    if not roles:
+        summary = 'no contributions'
+    else:
+        unique_roles = ', '.join(dict.fromkeys(roles))
+        summary = f'{len(roles)} contribution(s) from {unique_roles}'
+    if phase == 'Completion':
+        completed = [
+            role
+            for role, state in sorted(entry.get('execution', {}).items())
+            if state.get('status') == 'completed'
+        ]
+        if completed:
+            summary = f'{summary}; completed execution for {", ".join(completed)}'
+        if entry.get('status') == 'closed':
+            summary = f'{summary}; closed'
+    return f'- **{phase}:** {summary}'
+
+
+def rendered_phase_summary(transcript: str, entry: dict, date: str) -> list[str]:
+    return [
+        PHASE_SUMMARY_BEGIN,
+        CONTENT_ONLY_GUARD,
+        '',
+        '## Phase Summary',
+        '',
+        f'_Last refreshed: {date}_',
+        '',
+        *[phase_summary_line(transcript, entry, phase) for phase in PHASES],
+        '',
+        PHASE_SUMMARY_END,
+    ]
+
+
+def replace_phase_summary(transcript: str, entry: dict, date: str) -> str:
+    lines = transcript.splitlines()
+    block = rendered_phase_summary(transcript, entry, date)
+    bounds = phase_summary_bounds(lines)
+    if bounds is not None:
+        start, end = bounds
+        replacement = block
+        if end < len(lines) and lines[end].strip():
+            replacement = [*replacement, '']
+        return '\n'.join(lines[:start] + replacement + lines[end:]) + '\n'
+    insert_at = phase_summary_insert_index(lines)
+    replacement = ['', *block, '']
+    return '\n'.join(lines[:insert_at] + replacement + lines[insert_at:]) + '\n'

@@ -50,16 +50,21 @@ Tests for case 2 must cover all three depths in the same commit; partial coverag
 
 The registry uses two distinct counters with non-overlapping roles:
 
-**`revision`** — write-guard counter. Stored as the top-level `revision` field in `registry.json`. Incremented by `bump_registry_revision()` on every registry write. The stale-write guard (`speak-render`, `execute`) reads this field to detect concurrent writes. This field must not be renamed unless the rename is atomic across: the stored field name, every read site in `commands/collab/engine/registry.py`, and all helper-output labels that reference it.
+**`revision`** — write-guard counter. Stored as the top-level `revision` field in `registry.json`. Incremented by `bump_registry_revision()` on every registry write. The stale-write guard (`speak-render`, `execution`) reads this field to detect concurrent writes. This field must not be renamed unless the rename is atomic across: the stored field name, every read site in `commands/collab/engine/registry.py`, and all helper-output labels that reference it.
 
-**`registryRevision`** — helper-output presentation label. This name appears in `speak-state` and similar helper JSON output as a human-readable label sourced from the `revision` field (`registry.py:229`). The label is not an independently stored counter. The label may be retired or renamed in a future collab without touching the stored `revision` field.
+**`registryRevision`** — helper-output presentation label. This name appears in `speak-state` and similar helper JSON output as a human-readable label sourced from the `revision` field (`speak_commands.py:216`, `:224`). The label is not an independently stored counter; renaming or removing it does not require changing the stored `revision` field.
 
-**`eventIndex`** — log sequence counter. A new counter to be introduced with the append-only revision writer (`<state-root>/revisions/`). Increments only on explicit registry log events. Header rewrites, transcript rendering, and state repair must not increment `eventIndex` unless they deliberately emit a registry log event.
+**`eventIndex`** — log sequence counter, backed by the append-only revision writer (`<state-root>/revisions/`). Increments only on explicit registry log events. Header rewrites, transcript rendering, and state repair must not increment `eventIndex` unless they deliberately emit a registry log event.
 
-### Field-retirement records
+### Non-schema top-level fields
 
-| Field | Last known value | Retired in | Retirement reason |
-|---|---|---|---|
-| `registryRevision` (top-level in `registry.json`) | `1552` | collab #52 `collab-state-observability` | Vestigial. The `revision` field became the canonical write-guard counter; `registryRevision` was never updated after the rename and no read path consulted it. |
+`registryRevision` is not a declared field in `registry.schema.json`. A registry that carries a top-level `registryRevision` key hits the unknown-field path: `retire_legacy_registry_fields()` (`registry_io.py:101`, invoked from `load_registry()` and `save_registry()`) strips a top-level `registryRevision` key on every load-save cycle, so this key does not persist. `revision` is the sole write-guard counter (Counter lifecycle, above).
 
-**Seal-evidence sub-key `registryRevision`:** The seal-evidence object uses `registryRevision` as a sub-key (`registry.py:1238`, `:5560`) to record the registry revision at seal time. The sub-key is sourced from the `revision` field (not from the retired top-level `registryRevision`). The sub-key is retained as a named evidence anchor; its source must remain `revision`.
+**Seal-evidence sub-key `registryRevision`:** `validate_verdict_evidence()` (`seal_verification_logic.py:476-490`) accepts a verdict-evidence object with either a `revision` key or a `registryRevision` key, and rejects an object carrying both. `evidence_revision` in `seal_verification_render.py:511` reads `revision` first and falls back to `registryRevision` when only that key is present. This lets a verdict-evidence object recorded with either key render correctly; new writes use `revision` (`seal_verification_logic.py:783`, `:876`).
+
+### Compatibility readers
+
+Two reader-side paths accept an older shape alongside the current one:
+
+- `LEGACY_EXPANDED_RE` and `LEGACY_HEADING_RE` (`transcript_readers.py:13-14`) match the bold-expanded (`**role —`) and heading (`### role —`) contribution-heading formats as a fallback in `contribution_roles()` (`transcript_readers.py:125`), alongside the current `<details><summary>role</summary>` shape. Both shapes appear in transcripts under `~/.collabs/nsmac/records/`.
+- `ensure_legacy_revision_baselines()` (`registry_io.py:204-217`) writes a `legacy-baseline.json` sentinel into a collab's revision-event directory when that directory has no revision event yet; `restore --to` (`reactivation_commands.py:117`) rejects any event with `eventType == "legacy-baseline"` as non-restorable. Revision roots under `~/.collabs/nsmac/revisions/` carry `legacy-baseline.json` files.

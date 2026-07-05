@@ -29,21 +29,20 @@ git -C "$tmp" init -q
 repo_root="$(git -C "$tmp" rev-parse --show-toplevel)"
 repo_name="$(basename "$repo_root")"
 
-for scaffold in CLAUDE.md AGENTS.md GEMINI.md REPOSITORY.md; do
+for scaffold in CLAUDE.md AGENTS.md REPOSITORY.md; do
   cp "platform/templates/$scaffold" "$repo_root/$scaffold"
 done
 resolve_install_markers "$repo_name" "$repo_root/AGENTS.md"
 
-for scaffold in CLAUDE.md AGENTS.md GEMINI.md REPOSITORY.md; do
+for scaffold in CLAUDE.md AGENTS.md REPOSITORY.md; do
   [[ -f "$repo_root/$scaffold" ]] || fail "missing installed scaffold $scaffold"
 done
 
 grep -Fq '[AGENTS.md](AGENTS.md)' "$repo_root/CLAUDE.md" || fail "CLAUDE.md does not route to AGENTS.md"
-grep -Fq '[AGENTS.md](AGENTS.md)' "$repo_root/GEMINI.md" || fail "GEMINI.md does not route to AGENTS.md"
-grep -Fq '~/.cursor/commands/commands.md' "$repo_root/AGENTS.md" || fail "AGENTS.md does not reference command catalog"
+grep -Fq '~/nsmac/commands/commands.md' "$repo_root/AGENTS.md" || fail "AGENTS.md does not reference command catalog"
 grep -Fq 'To invoke a global command, resolve any routing-only dispatch hint' "$repo_root/AGENTS.md" || fail "AGENTS.md lacks canonical dispatch sentence"
 grep -Eq '<!-- scaffolded-at: [0-9]{4}-[0-9]{2}-[0-9]{2} -->' "$repo_root/AGENTS.md" || fail "AGENTS.md lacks scaffold marker"
-if grep -R 'TODO(install)' "$repo_root/CLAUDE.md" "$repo_root/AGENTS.md" "$repo_root/GEMINI.md" "$repo_root/REPOSITORY.md" >/dev/null; then
+if grep -R 'TODO(install)' "$repo_root/CLAUDE.md" "$repo_root/AGENTS.md" "$repo_root/REPOSITORY.md" >/dev/null; then
   fail "installed scaffold contains unresolved TODO(install)"
 fi
 grep -Fq 'TODO(patch)' "$repo_root/REPOSITORY.md" || fail "REPOSITORY.md lacks TODO(patch)"
@@ -59,12 +58,12 @@ done < <(extract_markdown_links "$repo_root/AGENTS.md")
 
 candidate_dir="$tmp/candidate"
 mkdir "$candidate_dir"
-for scaffold in CLAUDE.md AGENTS.md GEMINI.md REPOSITORY.md; do
+for scaffold in CLAUDE.md AGENTS.md REPOSITORY.md; do
   cp "platform/templates/$scaffold" "$candidate_dir/$scaffold"
 done
 resolve_install_markers "$repo_name" "$candidate_dir/AGENTS.md"
 
-for scaffold in CLAUDE.md AGENTS.md GEMINI.md REPOSITORY.md; do
+for scaffold in CLAUDE.md AGENTS.md REPOSITORY.md; do
   cmp -s "$repo_root/$scaffold" "$candidate_dir/$scaffold" || fail "fresh install differs from resolved upgrade candidate: $scaffold"
 done
 

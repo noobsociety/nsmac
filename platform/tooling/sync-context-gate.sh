@@ -29,19 +29,15 @@ fi
 python3 - "$ROOT" <<'PY'
 from __future__ import annotations
 
-import re
 import sys
 from pathlib import Path
 
 root = Path(sys.argv[1])
 canonical = root / "platform/standards/context-gate.md"
-retired_projection = root / "_mdc/auto/auto-context-gate.mdc"
 failures: list[str] = []
 
 if not canonical.exists():
     failures.append("FAIL: missing platform/standards/context-gate.md")
-if retired_projection.exists():
-    failures.append("FAIL: retired context-gate projection still exists")
 
 if failures:
     print("\n".join(failures), file=sys.stderr)
@@ -50,18 +46,7 @@ if failures:
 canonical_text = canonical.read_text()
 
 if canonical_text.startswith("---"):
-    failures.append("FAIL: platform/standards/context-gate.md must not carry retired projection frontmatter")
-
-
-def normalize(line: str) -> str:
-    line = line.strip().lower()
-    line = line.replace("’", "'")
-    line = re.sub(r"\bthis gate\b", "this policy", line)
-    line = re.sub(r"\bthis rule\b", "this policy", line)
-    line = re.sub(r"\brule\b", "policy", line)
-    line = re.sub(r"\bruleset\b", "policy set", line)
-    line = re.sub(r"\s+", " ", line)
-    return line
+    failures.append("FAIL: platform/standards/context-gate.md must not carry frontmatter")
 
 
 critical_prefixes = (
@@ -70,23 +55,23 @@ critical_prefixes = (
     "Stop immediately",
 )
 
-missing: list[str] = []
-canonical_lines = {normalize(line) for line in canonical_text.splitlines()}
-for raw in canonical_text.splitlines():
-    stripped = raw.strip()
-    if not stripped.startswith(critical_prefixes):
-        continue
-    normalized = normalize(stripped)
-    if normalized not in canonical_lines:
-        missing.append(stripped)
-
-if missing:
-    failures.append("FAIL: context-gate canonical source missing directive(s):")
-    failures.extend(f"  - {item}" for item in missing)
+# Real assertion (not a source-vs-source tautology): the canonical gate must
+# retain at least one critical directive. Stripping every `Never`/`Do not`/
+# `Stop immediately` line now fails the gate instead of passing vacuously.
+directive_lines = [
+    line.strip()
+    for line in canonical_text.splitlines()
+    if line.strip().startswith(critical_prefixes)
+]
+if not directive_lines:
+    failures.append(
+        "FAIL: context-gate canonical source carries no critical directive "
+        "(expected at least one `Never`/`Do not`/`Stop immediately` line)"
+    )
 
 if failures:
     print("\n".join(failures), file=sys.stderr)
     sys.exit(1)
 
-print("OK: context-gate canonical source is active and retired projection is absent")
+print("OK: context-gate canonical source present with critical directives")
 PY

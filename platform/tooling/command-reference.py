@@ -18,7 +18,7 @@ COMMANDS_DIR = CONFIG_ROOT / "commands"
 ARTIFACT = CONFIG_ROOT / "generated" / "command-reference.md"
 BEGIN_MARKER = "<!-- BEGIN GENERATED:COMMAND_REFERENCE -->"
 END_MARKER = "<!-- END GENERATED:COMMAND_REFERENCE -->"
-ROLE_SOURCE = "commands/collab/engine/registry.py roles"
+ROLE_SOURCE = "platform/tooling/roles.py roles"
 ROLE_DYNAMIC_DETAIL = "role keys from commands/collab/reference/roles/"
 VALID_CLASSES = {"literal", "type", "dynamic"}
 VALID_REQUIRED = {"required", "optional"}
@@ -158,7 +158,7 @@ def parse_key_values(path: Path, raw: str) -> dict[str, str]:
 
 def registry_role_keys() -> list[str]:
     proc = subprocess.run(
-        [sys.executable, str(ROOT / "commands" / "collab" / "engine" / "registry.py"), "roles"],
+        [sys.executable, str(ROOT / "platform" / "tooling" / "roles.py"), "roles"],
         cwd=ROOT,
         env={**os.environ, "COMMAND_CONFIG_ROOT": str(CONFIG_ROOT)},
         check=True,
@@ -172,7 +172,7 @@ def registry_role_keys() -> list[str]:
         if len(cells) >= 2 and cells[0].isdigit() and cells[1]:
             keys.append(cells[1])
     if not keys:
-        raise ReferenceError("commands/collab/engine/registry.py roles returned no role keys")
+        raise ReferenceError("platform/tooling/roles.py roles returned no role keys")
     return keys
 
 

@@ -8,6 +8,8 @@ PHASES = ['Audit', 'Discussion', 'Conclusion', 'Action Plan', 'Handoff', 'Comple
 CONTENT_ONLY_GUARD = '<!-- collab:content-only; do-not-execute -->'
 HEADER_MANAGED_BEGIN = '<!-- collab:header-managed -->'
 HEADER_MANAGED_END = '<!-- collab:header-end -->'
+PHASE_SUMMARY_BEGIN = '<!-- collab:phase-summary-managed -->'
+PHASE_SUMMARY_END = '<!-- collab:phase-summary-end -->'
 FULL_BODY_SUMMARY = 'Full contribution'
 FULL_BODY_SUMMARY_LINE = f'<summary>{FULL_BODY_SUMMARY}</summary>'
 SHELL_PATTERN_RE = re.compile(r'[;&|<>`$\\\r\n]')
@@ -39,18 +41,11 @@ ALLOWED_PARTICIPANT_VERIFICATION_STAGES = {'audit', 'remediation', 'final-audit'
 ACTIVE_PARTICIPANT_VERIFICATION_STAGES = {'audit', 'remediation', 'final-audit'}
 ALLOWED_VERDICT_OUTCOMES = {'success', 'incomplete', 'failed'}
 ALLOWED_VERDICT_RESTORE_TARGETS = {'Action Plan', 'Handoff'}
-ALLOWED_CAP_EXITS = {'reopen-action-plan', 'reopen-handoff', 'follow-up-collab', 'archive'}
-ALLOWED_TERMINALS = {'seal', 'issue'}
-DEFAULT_TERMINAL = 'seal'
-TERMINAL_CHOICES_MESSAGE = 'seal, issue'
-DEFAULT_VERIFICATION_CAP = 3
-CREATED_AT_REQUIRED_COLLAB_FIELDS = ['terminal']
+CREATED_AT_REQUIRED_COLLAB_FIELDS: list[str] = []
 CREATED_AT_REQUIRED_REVIEWER_FIELDS = ['reviewerMode', 'reviewerOptionalPhases']
 CREATED_AT_REQUIRED_VERIFICATION_FIELDS = [
     'rounds',
-    'cap',
     'subState',
-    'participantVerification',
     'participants',
 ]
 DISALLOWED_VERSION_FIELD = 'schema' + 'Version'
