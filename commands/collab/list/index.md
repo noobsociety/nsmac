@@ -19,7 +19,7 @@ List the registry-backed collabs so the moderator can inspect status and active 
 - **Output shape:** If project metadata is available, the first line is `Project: <label> · <projectId>`; the label is display-only and never a resolver key. Each entry spans two lines. Line 1: `[*]` (active) or `[ ]` (inactive), then `#N` (stable 1-based registry position), `-`, slug, title truncated to 20 characters followed by `…` if longer. Line 2: indented status, active phase (`—` when no phase applies), participant count, and `YYYY-MM-DD` init date. Example:
 
 ```
-Project: dotcursor · a13dba4ca8714205b217dca31da96eee
+Project: NSMAC · nsmac
 
 [*] #3 - payment-refactor    Refactor payment pipeli…
          open · Discussion · 3 participants · 2025-04-28

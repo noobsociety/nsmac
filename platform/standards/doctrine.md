@@ -32,7 +32,7 @@ Per-design rules that have been deliberated and converged through the collab pro
 
 ## MCP boundary
 
-**MCP boundary.** The MCP (Model Context Protocol) surface is explicitly out of scope for this platform. The `dotcursor` framework routes through `~/.cursor/commands/` dispatch; platform tooling does not depend on or configure MCP endpoints. MCP integrations are application-layer concerns and belong outside the portable layer declared in `platform/standards/framework-boundaries.md`.
+**MCP boundary.** The MCP (Model Context Protocol) surface is explicitly out of scope for this platform. The `nsmac` framework routes through `~/.cursor/commands/` dispatch; platform tooling does not depend on or configure MCP endpoints. MCP integrations are application-layer concerns and belong outside the portable layer declared in `platform/standards/framework-boundaries.md`.
 
 **Source:** `platform/standards/framework-boundaries.md`; collab `2026-06-18-doctrine-naming-glossary-system-reference` (convergence: 2026-06-18)
 

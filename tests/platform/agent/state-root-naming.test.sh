@@ -73,7 +73,7 @@ project = Path(sys.argv[1])
 state = Path(sys.argv[2])
 identity = json.loads((project / '.collab.json').read_text())
 assert identity['projectId'] == 'noobsociety-com'
-assert re.match(r'^[a-z0-9][a-z0-9-]{7,127}$', identity['projectId'])
+assert re.match(r'^[a-z0-9][a-z0-9-]{3,127}$', identity['projectId'])
 assert (state / identity['projectId'] / 'registry.json').exists()
 PY
 }
@@ -205,8 +205,8 @@ extra_identity = json.loads((extra / '.collab.json').read_text())
 new_id = 'multi-repo'
 assert primary_identity['projectId'] == new_id
 assert extra_identity['projectId'] == new_id
-assert primary_identity['state']['previousProjectId'] == old_id
-assert extra_identity['state']['previousProjectId'] == old_id
+assert 'previousProjectId' not in primary_identity.get('state', {})
+assert 'previousProjectId' not in extra_identity.get('state', {})
 assert not (state / old_id).exists()
 registry_path = state / new_id / 'registry.json'
 data = json.loads(registry_path.read_text())

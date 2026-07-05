@@ -1,4 +1,4 @@
-# dotcursor
+# NSMAC
 
 Configuration framework for `~/.cursor` command routes and agent harnesses.
 

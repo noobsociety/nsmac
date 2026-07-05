@@ -1,4 +1,4 @@
-# dotcursor system reference
+# NSMAC system reference
 
 The document maps the `~/.cursor` platform for readers who need to navigate the system as a whole. Consult the document when the per-route playbooks or reference docs leave system-level context unclear. Do not duplicate generated-mirror tables; follow the links to the authoritative sources.
 

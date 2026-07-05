@@ -15,12 +15,12 @@ if [[ "$step_calls" == *"commands/collab/engine/registry.py tag"* || "$step_call
   exit 1
 fi
 
-if rg -n "release_collab|tag_collab|commands\\.collab\\.engine\\.release|git push|gh release" commands/collab/engine/lifecycle_commands.py; then
+if grep -En "release_collab|tag_collab|commands\\.collab\\.engine\\.release|git push|gh release" commands/collab/engine/lifecycle_commands.py; then
   printf 'FAIL: lifecycle close implementation imports or calls release orchestration\n' >&2
   exit 1
 fi
 
-if ! rg -n "Release boundary" commands/collab/close/index.md >/dev/null; then
+if ! grep -En "Release boundary" commands/collab/close/index.md >/dev/null; then
   printf 'FAIL: close route does not document the release boundary\n' >&2
   exit 1
 fi

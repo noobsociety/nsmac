@@ -238,11 +238,6 @@ def allowed(line: str, start: int) -> bool:
     lower = line.lower()
     if start >= 3 and lower[start - 3:start + 6] == '~/.cursor':
         return True
-    accepted_system = 'dot' + needle
-    if start >= 3 and lower[start - 3:start + 6] == accepted_system:
-        before = lower[start - 4] if start >= 4 else ' '
-        after = lower[start + 6] if start + 6 < len(lower) else ' '
-        return not (before.isalnum() or before in '_-') and not (after.isalnum() or after in '_-')
     return False
 
 

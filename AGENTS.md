@@ -1,4 +1,4 @@
-# Agent guide — dotcursor
+# Agent guide — NSMAC
 <!-- scaffolded-at: 2026-05-02 -->
 
 Agents edit tracked source in this repository. Global command guidance lives in `~/.cursor/commands/commands.md`.

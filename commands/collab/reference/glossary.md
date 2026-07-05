@@ -19,7 +19,7 @@ One canonical term per concept. Use these phrases in route prose, error messages
 
 - **project identity** — The concept of binding a repository to a persistent user-scope collab state root. Use in prose that describes the binding relationship or refers to the concept in the abstract. Example: "Resolving a collab starts from the repository's project identity." Related: [project id](#project-id), [`projectId`](#projectid).
 
-- **project id** — The specific readable, collision-safe slug value recorded in `projectId`. Use when citing or referencing the runtime value itself. Example: "The project id is `dotcursor`." Related: [project identity](#project-identity), [`projectId`](#projectid).
+- **project id** — The specific readable, collision-safe slug value recorded in `projectId`. Use when citing or referencing the runtime value itself. Example: "The project id is `nsmac`." Related: [project identity](#project-identity), [`projectId`](#projectid).
 
 - **`projectId`** — The JSON field key in `.collab.json` that holds the project id value. Always use the backtick-quoted form when referring to the field name in prose or error messages. Do not use `projectId` as a synonym for "project identity" (the concept) or "project id" (the value). Related: [project identity](#project-identity), [project id](#project-id).
 
