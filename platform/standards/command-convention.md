@@ -1,6 +1,6 @@
 # Naming
 
-Dispatch naming convention for command routes: namespaces, verbs, targets, and flags. Authoritative source for the reserved-form table and migration rules.
+Dispatch naming convention for command routes: namespaces, selectors, targets, and flags. Authoritative source for route naming, reserved forms, and public-vs-filesystem mapping boundaries.
 
 ## Grammar
 
@@ -16,7 +16,7 @@ Public command documentation and runtime advisory output present dispatch forms 
 
 **Rule 2 — Verb**: Lowercase kebab-case imperative drawn from the reserved-form table. No namespace-owned allowlist. Every route verb must map to a reserved form; when a live route needs a verb absent from the table, add one operation class row and migrate every route performing that operation before use.
 
-**Rule 3 — Target**: Optional lowercase kebab-case noun. Specifies the artifact or resource the verb acts on. Routes with two apparent verb tokens restructure as verb + target: `(collab create issue)`, not `(collab issue create)`.
+**Rule 3 — Target or stage selector**: Optional lowercase kebab-case noun. Specifies the artifact, resource, or stage selector the route acts on. Current staged routes keep the namespace-owned route selector first and put the stage immediately after it, e.g. `(collab issue create "Add audit guard")`.
 
 **Rule 4 — Flags**: `--kebab-case-name [value]`. Flags modify behavior only. State mutation always routes through an explicit verb. No flag may replicate a reserved-form verb's function.
 
@@ -56,7 +56,7 @@ Public command documentation and runtime advisory output present dispatch forms 
 | Compact artifact | `compact <target>` |
 | Compare artifacts | `compare <target>` |
 
-**`init` vs `create <target>`**: Use `init` when the namespace is its own artifact and there is no named sub-resource (e.g., `(collab init)` creates a collab; the collab *is* the namespace target). Use `create <target>` when the artifact is a sub-resource of a domain (e.g., `(collab create issue)`). "Chosen per domain" is not a valid choice; one of these two forms must be selected at route definition time.
+**`init` vs `create` stage:** Use `init` when the namespace is its own artifact and there is no named sub-resource (e.g., `(collab init)` creates a collab; the collab *is* the namespace target). Use a route-local `create` stage when the route already owns a bounded workflow with multiple modes, as `(collab issue <create | implement> <goal>)` does. The route playbook owns the stage signatures.
 
 ## Named exceptions
 
@@ -76,6 +76,6 @@ Public command documentation and runtime advisory output present dispatch forms 
 
 A naming validator under `platform/tooling/` enforces this table. The validator runs in CI on every PR that touches `commands/` or `commands/collab/engine/registry.py`, and blocks merge on unknown verbs, invalid namespace tokens, and `re-`-prefixed routes. The validator is authoritative at PR time; runtime rejection is too late. Any route that fails the validator must be fixed or must add an operation class row to this table before the PR lands; local exceptions are not permitted.
 
-## Paren-form grammar extension
+## Public and filesystem grammar
 
-The `(namespace route arg...)` dispatch form is the canonical public command grammar. Any future grammar expansion extends this file — do not create `platform/standards/command-grammar.md`. That file is explicitly prohibited; it would duplicate this standard. Slash-generated projections are not part of the public command contract.
+The `(namespace route arg...)` dispatch form is the canonical public command grammar. Public multi-word route selectors use spaces, while filesystem route directories and helper subcommands use hyphenated names. The mapping rule lives in [`command-grammar.md`](command-grammar.md); this file owns naming policy and reserved forms.

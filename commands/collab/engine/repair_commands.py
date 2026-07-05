@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-"""Integrity repair command handlers: mark a transcript repair that may have touched execution evidence (`repair-transcript`), record an out-of-scope patch outside a role's declared writeScope (`patch-out-of-scope`), and repair a completed execution's provenance — work repo, commit ids, content digests, and paired signature (`repair-execution-provenance`). Each invalidates the verification seal when integrity-affecting state changes and persists the registry. The one dependency these write paths cannot import without a cycle — the core's `invalidate_verification_seal` wrapper, which threads `participants`-derived predicates into `seal_verification` before delegating — is injected via `configure_repair_commands`. Does not own the seal-invalidation wrapper, the git provenance helpers, or the digest computation."""
+"""Integrity repair command handlers.
+
+Owns `transcript-repair`, `out-of-scope-patch`, and
+`repair-execution-provenance` command bodies. Seal invalidation stays owned by
+`seal_verification_logic`; registry persistence stays owned by `registry_io`.
+"""
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Callable
 
 from commands.collab.engine.digests import execution_signature
 from commands.collab.engine.errors import die
@@ -28,24 +32,10 @@ from commands.collab.engine.registry_io import (
     resolve_collab,
     save_registry,
 )
-from commands.collab.engine.seal_verification_logic import content_digest_for_execution
-
-_invalidate_verification_seal: Callable[[dict, str], None] | None = None
-
-
-def configure_repair_commands(
-    *,
-    invalidate_verification_seal: Callable[[dict, str], None],
-) -> None:
-    """Inject the cycle-blocked dependency of the repair write paths: the core's seal-invalidation wrapper."""
-    global _invalidate_verification_seal
-    _invalidate_verification_seal = invalidate_verification_seal
-
-
-def _require_invalidate() -> Callable[[dict, str], None]:
-    if _invalidate_verification_seal is None:
-        die('repair commands engine is not configured: seal-invalidation callback missing')
-    return _invalidate_verification_seal
+from commands.collab.engine.seal_verification_logic import (
+    content_digest_for_execution,
+    invalidate_verification_seal,
+)
 
 
 def transcript_repair(
@@ -59,7 +49,7 @@ def transcript_repair(
         entry = resolve_collab(data, target)
         assert_caller_role(entry, caller_role, 'set')
         if touch_execution_evidence:
-            _require_invalidate()(entry, 'transcript repair touched execution evidence')
+            invalidate_verification_seal(entry, 'transcript repair touched execution evidence')
         save_registry(path, data)
     print('ok')
     return 0
@@ -84,7 +74,7 @@ def out_of_scope_patch(
             die(f'handoff writeScope missing for role: {role}')
         if any(scope_matches_declared(normalized_path, declared) for declared in handoff_state['writeScope']):
             die(f'out-of-scope patch path is inside declared writeScope: {normalized_path}')
-        _require_invalidate()(entry, f'out-of-scope patch outside declared writeScope: {normalized_path}')
+        invalidate_verification_seal(entry, f'out-of-scope patch outside declared writeScope: {normalized_path}')
         save_registry(path, data)
     print('ok')
     return 0
@@ -140,7 +130,7 @@ def repair_execution_provenance(
         verification = entry.get('verification')
         if isinstance(verification, dict) and verification.get('pairedExecutionSignature') is not None:
             verification['pairedExecutionSignature'] = execution_signature(entry)
-        _require_invalidate()(entry, f'execution provenance repaired for {role}')
+        invalidate_verification_seal(entry, f'execution provenance repaired for {role}')
         save_registry(path, data)
     print(next_line_after_execution(entry, effective_turn_order(entry)))
     print(entry['status'])

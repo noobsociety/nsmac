@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
-"""Field and participant mutation command handlers: set or force a single registry field (`set`, including the reviewer assignment and the force-only `active-phase` jump), clear the reviewer assignment (`unset reviewer`), and drop a participant from the roster and turn order (`remove-participant`). Each validates, re-renders the managed header, and persists registry + transcript together. The one dependency these write-path commands cannot import without a cycle — the core-owned `commit_registry_and_transcript` two-file write — is injected via `configure_field_commands`. Does not own the two-file commit implementation, header rendering, or registry validation."""
+"""Field and participant mutation command handlers.
+
+Owns `set`, `unset reviewer`, and `remove-participant` command bodies.
+Registry/transcript commits stay owned by `registry_io`; registry validation
+stays owned by `registry_validation`.
+"""
 from __future__ import annotations
 
 from copy import deepcopy
 from pathlib import Path
-from typing import Callable
 
 from roles import load_role
 
@@ -27,6 +31,7 @@ from commands.collab.engine.registry_constants import (
     PHASES,
 )
 from commands.collab.engine.registry_io import (
+    commit_registry_and_transcript,
     load_registry,
     registry_lock,
     resolve_collab,
@@ -38,23 +43,6 @@ from commands.collab.engine.transcript_render import (
     print_header_overwrite,
     render_managed_header_text,
 )
-
-_commit_registry_and_transcript: Callable[..., None] | None = None
-
-
-def configure_field_commands(
-    *,
-    commit_registry_and_transcript: Callable[..., None],
-) -> None:
-    """Inject the cycle-blocked dependency of the set/unset/remove-participant write paths: the core-owned two-file commit."""
-    global _commit_registry_and_transcript
-    _commit_registry_and_transcript = commit_registry_and_transcript
-
-
-def _require_commit() -> Callable[..., None]:
-    if _commit_registry_and_transcript is None:
-        die('field commands engine is not configured: commit callback missing')
-    return _commit_registry_and_transcript
 
 
 def set_field(
@@ -141,7 +129,7 @@ def set_field(
         if forced_active_phase:
             force_advisory = forced_active_phase_advisory(entry, rendered)
         print_header_overwrite(header_changed)
-        _require_commit()(path, data, transcript_path, rendered, roles_dir)
+        commit_registry_and_transcript(path, data, transcript_path, rendered, roles_dir)
     print(entry['id'])
     if force_advisory:
         print(force_advisory)
@@ -184,7 +172,7 @@ def unset_field(
             die(f'transcript missing: {transcript_path}')
         rendered, header_changed = render_managed_header_text(transcript_path.read_text(), next_entry, roles_dir)
         print_header_overwrite(header_changed)
-        _require_commit()(path, nextdata, transcript_path, rendered, roles_dir)
+        commit_registry_and_transcript(path, nextdata, transcript_path, rendered, roles_dir)
     print(next_entry['id'])
     return 0
 
@@ -229,6 +217,6 @@ def remove_participant(
             die(f'transcript missing: {transcript_path}')
         rendered, header_changed = render_managed_header_text(transcript_path.read_text(), next_entry, roles_dir)
         print_header_overwrite(header_changed)
-        _require_commit()(path, nextdata, transcript_path, rendered, roles_dir)
+        commit_registry_and_transcript(path, nextdata, transcript_path, rendered, roles_dir)
     print(next_entry['id'])
     return 0

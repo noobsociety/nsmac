@@ -480,12 +480,7 @@ def delegates_to_seal_verification_render(
 registry_core_participant_verify_render = require_function(
     registry_core_functions,
     'participant_verify_render',
-    'registry_core.py must define participant_verify_render as part of the permanent seal facade pair',
-)
-registry_core_render_seal = require_function(
-    registry_core_functions,
-    'render_seal',
-    'registry_core.py must define render_seal as the legacy seal dispatch shim',
+    'registry_core.py must define participant_verify_render as the participant verification facade',
 )
 seal_participant_verify_render = require_function(
     seal_functions,
@@ -502,21 +497,12 @@ record_verdict = require_function(
     'record_verdict',
     'seal_verification_render.py must define the record_verdict implementation',
 )
-legacy_render_seal = require_function(
-    seal_functions,
-    'render_seal',
-    'seal_verification_render.py must define the legacy render_seal dispatch shim',
-)
-
 assert delegates_to_seal_verification_render(
     registry_core_participant_verify_render,
     'participant_verify_render',
 ), (
     'registry_core.py participant_verify_render facade must delegate to '
     '_seal_verification_render.participant_verify_render'
-)
-assert delegates_to_seal_verification_render(registry_core_render_seal, 'render_seal'), (
-    'registry_core.py render_seal shim must delegate to _seal_verification_render.render_seal'
 )
 assert calls_name(seal_participant_verify_render, 'record_verification_round_for_execution'), (
     'participant_verify_render must record the paired verification round'
@@ -525,26 +511,14 @@ assert not calls_name(registry_core_participant_verify_render, 'record_verificat
     'registry_core.py participant_verify_render facade must not call '
     'record_verification_round_for_execution; seal_verification.py owns the recorder call'
 )
-assert not calls_name(registry_core_render_seal, 'record_verification_round_for_execution'), (
-    'protected seal-render recorder boundary: registry_core.py render_seal must not call '
-    'record_verification_round_for_execution'
-)
 for function_name, function in [
     ('seal_write', seal_write),
     ('record_verdict', record_verdict),
-    ('render_seal', legacy_render_seal),
 ]:
     assert not calls_name(function, 'record_verification_round_for_execution'), (
         'protected seal recorder boundary: seal_verification_render.py '
         f'{function_name} must not call record_verification_round_for_execution'
     )
-
-assert calls_name(legacy_render_seal, 'seal_write'), (
-    'legacy render_seal shim must dispatch bare seals to seal_write'
-)
-assert calls_name(legacy_render_seal, 'record_verdict'), (
-    'legacy render_seal shim must dispatch verdict writes to record_verdict'
-)
 PY
   ((status == 0)) || failures=$((failures + 1))
   ((status == 0)) && ok "verification round recorder call sites stay owned by participant verification" || true

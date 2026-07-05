@@ -5,7 +5,7 @@ Rewrite the calling role's last execution record in-place within the Completion 
 ## Trigger
 
 **Dispatch:** `(collab rewrite execution)` — routing-only command form; not a shell command.
-**Search phrases:** collab rewrite execution, retry collaboration execution, redo last execute
+**Search phrases:** collab rewrite execution, retry collaboration execution, redo last execution
 
 ## Steps
 
@@ -39,4 +39,4 @@ Rewrite the calling role's last execution record in-place within the Completion 
 - **Execution boundary:** The route implements only action-plan items assigned to the current role. Its only lifecycle side effect beyond implementation is the auto-close trigger when all assigned execution is complete.
 - **Touched-path enforcement:** When structured Handoff state exists for the executing role, the execution recorder rejects any touched path outside `handoff.roles.<role>.writeScope` with `"execution touched path outside declared writeScope: <path>"`. Recovery: reopen Handoff and revise scope, or remove/revert the out-of-scope change before rewriting execution.
 - **`record_execution` wholesale-replace contract:** Each call to the `execution` helper for a role replaces that role's full execution state; any `touchedPaths` not re-declared in the new call are silently dropped from the coverage aggregate the seal reads. When rewriting execution, re-declare the complete set of touched paths for the current round — not only the paths that changed since the prior attempt. After a reopen, coverage for prior rounds is carried by the reopen snapshot, not by re-submitting prior paths here.
-- **Known manual surface:** Unlike `speak-render`, `rewrite-speak-render`, and `rewrite-summary`, execution-history rewrite rendering is not yet centralized in `commands/collab/engine/registry.py`; keep the manual revision-history edits constrained to the Completion execution-history lines described above until that helper surface lands.
+- **Known manual surface:** Unlike `speak-render`, `rewrite-speak-render`, and `summarize`, execution-history rewrite rendering is not yet centralized in `commands/collab/engine/registry.py`; keep the manual revision-history edits constrained to the Completion execution-history lines described above until that helper surface lands.

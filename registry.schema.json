@@ -5,9 +5,9 @@
   "type": "object",
   "additionalProperties": true,
   "x-dc-validatorParity": {
-    "createdAtRequiredCollabFields": ["terminal"],
+    "createdAtRequiredCollabFields": [],
     "createdAtRequiredReviewerFields": ["reviewerMode", "reviewerOptionalPhases"],
-    "createdAtRequiredVerificationFields": ["rounds", "cap", "subState", "participantVerification", "participants"],
+    "createdAtRequiredVerificationFields": ["rounds", "subState", "participants"],
     "schemaRole": "reference/projection only; load-time validation is enforced by commands/collab/engine/registry.py validate_registry"
   },
   "required": ["activeCollabId", "collabs"],
@@ -33,10 +33,6 @@
         "required": ["id", "slug", "title", "description", "status", "activePhase", "moderatorRole", "participants", "turnOrder", "transcriptPath", "archived"],
         "allOf": [
           {
-            "if": {"required": ["createdAt"]},
-            "then": {"required": ["terminal"]}
-          },
-          {
             "if": {"required": ["createdAt", "reviewerRole"]},
             "then": {"required": ["reviewerMode", "reviewerOptionalPhases"]}
           },
@@ -45,7 +41,7 @@
             "then": {
               "properties": {
                 "verification": {
-                  "required": ["rounds", "cap", "subState", "participantVerification", "participants"]
+                  "required": ["rounds", "subState", "participants"]
                 }
               }
             }
@@ -57,7 +53,6 @@
           "title": {"type": "string"},
           "description": {"type": "string"},
           "createdAt": {"type": "string"},
-          "terminal": {"enum": ["seal", "issue"]},
           "status": {"enum": ["open", "closed", "archived"]},
           "activePhase": {"enum": ["Audit", "Discussion", "Conclusion", "Action Plan", "Handoff", "Completion"]},
           "moderatorRole": {"type": "string"},
@@ -137,9 +132,7 @@
             "additionalProperties": true,
             "properties": {
               "rounds": {"type": "integer", "minimum": 0},
-              "cap": {"type": "integer", "minimum": 1},
               "subState": {"enum": ["participant", "seal", "assessment"]},
-              "participantVerification": {"type": "boolean"},
               "participants": {
                 "type": "object",
                 "additionalProperties": true

@@ -69,9 +69,9 @@ Values must match the phase-role matrix in `agent-effort.json`. When the two div
 At `Completion.verification`, the reviewer operates in two ordered modes:
 
 1. **seal** — Issues `(collab seal verification)`; mechanical execution-truth check. Existing seal contract unchanged.
-2. **assessment** — Evaluates whether discussion goals were met; emits a `verdict: { outcome, restoreTarget?, restoreReason?, evidence?, failureCategory? }`. Opens after a successful seal or when the seal becomes stale or a cap-exit is recorded.
+2. **assessment** — Evaluates whether discussion goals were met; emits a `verdict: { outcome, restoreTarget?, restoreReason?, evidence?, failureCategory? }`. Opens after a successful seal and re-enters when the seal becomes stale.
 
-Both modes are part of the reviewer's `Completion.verification` turn (`xhigh`, mandatory-declaration). Assessment is budget-exempt when opened by a cap-exit trigger. The reviewer writes verdict fields only (evaluation); all correction work at the restored phase belongs to participants.
+Both modes are part of the reviewer's `Completion.verification` turn (`xhigh`, mandatory-declaration). The reviewer writes verdict fields only (evaluation); all correction work at the restored phase belongs to participants.
 
 ## Caveats
 

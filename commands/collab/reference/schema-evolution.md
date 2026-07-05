@@ -50,7 +50,7 @@ Tests for case 2 must cover all three depths in the same commit; partial coverag
 
 The registry uses two distinct counters with non-overlapping roles:
 
-**`revision`** — write-guard counter. Stored as the top-level `revision` field in `registry.json`. Incremented by `bump_registry_revision()` on every registry write. The stale-write guard (`speak-render`, `execute`) reads this field to detect concurrent writes. This field must not be renamed unless the rename is atomic across: the stored field name, every read site in `commands/collab/engine/registry.py`, and all helper-output labels that reference it.
+**`revision`** — write-guard counter. Stored as the top-level `revision` field in `registry.json`. Incremented by `bump_registry_revision()` on every registry write. The stale-write guard (`speak-render`, `execution`) reads this field to detect concurrent writes. This field must not be renamed unless the rename is atomic across: the stored field name, every read site in `commands/collab/engine/registry.py`, and all helper-output labels that reference it.
 
 **`registryRevision`** — helper-output presentation label. This name appears in `speak-state` and similar helper JSON output as a human-readable label sourced from the `revision` field (`speak_commands.py:216`, `:224`). The label is not an independently stored counter; renaming or removing it does not require changing the stored `revision` field.
 

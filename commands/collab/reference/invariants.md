@@ -99,11 +99,8 @@ No-assignment-lines: `ABORT: Action Plan body contains no assignment lines after
 
 Each line states a standing rule: an observable event, and the review action it triggers. No behavior changes until the named event occurs.
 
-- **Item 7 (round-counting / budget-exempt assessment path after cap-exit):** a seal-attempt transcript exceeding 18 turns, or two consecutive participant verifications failing with full-body blocks present, opens a follow-up audit of the round-counting and budget-exempt assessment path.
+- **Item 7 (round-counting path):** a seal-attempt transcript exceeding 18 turns, or two consecutive participant verifications failing with full-body blocks present, opens a follow-up audit of the round-counting path.
 - **Item 9 (`(collab rewrite execution)` redesign):** a seal-attempt transcript exceeding 12 turns opens a follow-up DX audit on `rewrite-execution` and turn-budget management across `/compact`.
-- A reviewer-backed collab that closes via `--cap-exit archive` on a clean first seal (no findings during participant verification) opens a verification-cap audit.
-  - `--cap-exit archive` on a clean seal is currently a protocol violation (`verification.md` §"Cap and cap-exit options"; `seal-verification/index.md` §"Cap exits"); this trigger applies only if that prohibition is relaxed.
-
 **Source:** the 2026-05-18 missed-and-deferred-goals audit.
 
 **11. Observation backlog**
@@ -145,9 +142,9 @@ When all four conditions hold, the direct commit is accepted without a retroacti
 
 Codified from the reviewer's path-(a) decision in collab #36 (`2c14a36`). The rule applies at each commit's own time: a direct commit is accepted only when conditions (a)–(d) hold for that commit; it does not certify any direct commit that was not evaluated against them.
 
-**14. cap-exit follow-up-collab scope**
+**14. follow-up-collab scope**
 
-cap-exit follow-up-collab is reserved for newly discovered scope; original-collab incomplete/failed verdicts must use `restoreTarget` `action-plan` or `handoff`.
+Follow-up collabs are reserved for newly discovered scope; original-collab incomplete/failed verdicts must use `restoreTarget` `action-plan` or `handoff`.
 
 **15. rewrite-speak turn-order enforcement**
 
@@ -199,4 +196,4 @@ When `(collab reopen)` is called, `reopen_collab` saves the current covered path
 
 **`reopenCoverage` lifecycle:** Written when there are entries to save (`{ createdAt: ISO-8601, executionEntries: object[] }`). Each reopen re-saves active entries plus surviving carry from prior rounds, so coverage accumulates across reopens — re-checked against `HEAD` each time. If no entries exist at reopen time, `reopenCoverage` is not written; a stale value may persist but is overwritten on the next reopen that has entries. Not cleared after close. `reopenCoverage` is consulted at every seal by `valid_carried_execution_entries`. A stale snapshot cannot inflate coverage: each carried path must (a) still resolve at `HEAD` with a matching content-digest and (b) not already be an active execution path. A path whose blob is absent or drifted at `HEAD` is dropped — so a stale snapshot can only 'cover' a deliverable that genuinely still exists at `HEAD`.
 
-**Maintainer check:** `tests/commands/collab/registry.py/reopen-incremental-coverage.test.sh` covers four cases: (1) **preserved** — broad execution → narrow reopen → prior path still at `HEAD` → seal passes; (2) **drifted** — broad execution → narrow reopen → prior path content changed in the reopen round → seal fails; (3) **transitive** — two successive narrow reopens → first round's still-present path survives both carry hops → seal passes; (4) **removed** — broad execution → narrow reopen → prior path deleted from repo → seal fails (`CHARTERED-DELIVERABLE-MISSING`). Any change to `valid_carried_execution_entries` or the `reopen_collab` snapshot logic must preserve all four behaviors.
+**Maintainer check:** Retained coverage lives in `tests/commands/collab/modules.test.sh` for the carry-forward content filter and `tests/commands/collab/registry.py/verification-reopen-rerun-flow.test.sh` for the flow-level reopen/re-execute/re-seal path. Any change to `valid_carried_execution_entries` or the `reopen_collab` snapshot logic must preserve four behaviors: (1) **preserved** — prior path still at `HEAD` remains carried; (2) **drifted** — prior path content changed after the snapshot is dropped; (3) **transitive** — a surviving carried entry remains valid across a later reopen snapshot; (4) **removed** — prior path deleted from `HEAD` is dropped.

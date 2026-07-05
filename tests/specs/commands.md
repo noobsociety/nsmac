@@ -40,7 +40,6 @@ Route playbooks under `~/.cursor/commands/`:
 - `collab/commit/index.md`
 - `collab/delete/index.md`
 - `collab/diff/index.md`
-- `collab/export-issues/index.md`
 - `collab/init/index.md`
 - `collab/issue/index.md`
 - `collab/join/index.md`
@@ -48,14 +47,12 @@ Route playbooks under `~/.cursor/commands/`:
 - `collab/log/index.md`
 - `collab/open/index.md`
 - `collab/participant-verify/index.md`
-- `collab/release/index.md`
 - `collab/remove-participant/index.md`
 - `collab/reopen/index.md`
 - `collab/restore/index.md`
 - `collab/retract-speak/index.md`
 - `collab/rewrite-execution/index.md`
 - `collab/rewrite-speak/index.md`
-- `collab/rewrite-summary/index.md`
 - `collab/run-plan/index.md`
 - `collab/seal-verification/index.md`
 - `collab/set/index.md`
@@ -67,7 +64,6 @@ Route playbooks under `~/.cursor/commands/`:
 - `collab/summarize/index.md`
 - `collab/tag/index.md`
 - `collab/unset/index.md`
-- `collab/write-summary/index.md`
 
 ## Output
 

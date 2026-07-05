@@ -115,6 +115,37 @@ expected_deliverables = [
 assert transcript_readers.chartered_deliverables(transcript) == expected_deliverables
 assert registry.chartered_deliverables(transcript) == expected_deliverables
 
+for label in (
+    '**charteredDeliverables:**',
+    'charteredDeliverables :',
+    'CharteredDeliverables:',
+    'Chartered Deliverables:',
+    '`charteredDeliverables`',
+    'charteredDeliverables:',
+):
+    variant = f"""# Sample
+
+## Audit
+
+{label}
+
+- commands/agent/index.md: move agent router
+
+## Discussion
+"""
+    assert transcript_readers.chartered_deliverables(variant) == [
+        'commands/agent/index.md: move agent router'
+    ], label
+
+assert transcript_readers.chartered_deliverables("""# Sample
+
+## Audit
+
+This audit discusses chartered deliverables without declaring the field.
+
+## Discussion
+""") == []
+
 assert transcript_readers.action_plan_checklist_items('## Audit\n') == []
 
 try:

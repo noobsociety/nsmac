@@ -23,28 +23,28 @@ cd "$TMPDIR"
 
 DIRTY_WORK="$TMPDIR/dirty-work"
 make_repo "$DIRTY_WORK"
-DIRTY_TARGET="$RUN_DATE-release-guard-dirty"
-"$ROOT/commands/collab/engine/registry.py" init --agent-id codex --work-repo "$DIRTY_WORK" "Release Guard Dirty" >/dev/null
+DIRTY_TARGET="$RUN_DATE-tag-guard-dirty"
+"$ROOT/commands/collab/engine/registry.py" init --agent-id codex --work-repo "$DIRTY_WORK" "Tag Guard Dirty" >/dev/null
 printf 'dirty\n' >>"$DIRTY_WORK/file.txt"
 set +e
-dirty_output="$("$ROOT/commands/collab/engine/registry.py" release "$DIRTY_TARGET" 2>&1)"
+dirty_output="$("$ROOT/commands/collab/engine/registry.py" tag "$DIRTY_TARGET" 2>&1)"
 dirty_status=$?
 set -e
-if [[ "$dirty_status" -eq 0 || "$dirty_output" != *"RELEASE-GIT-STATE: work tree must be clean before tag/release"* ]]; then
+if [[ "$dirty_status" -eq 0 || "$dirty_output" != *"TAG-GIT-STATE: work tree must be clean before tagging"* ]]; then
   printf 'FAIL: dirty work tree was not rejected\n%s\n' "$dirty_output" >&2
   exit 1
 fi
 
 EXISTS_WORK="$TMPDIR/exists-work"
 make_repo "$EXISTS_WORK"
-EXISTS_TARGET="$RUN_DATE-release-guard-existing-tag"
-"$ROOT/commands/collab/engine/registry.py" init --agent-id codex --work-repo "$EXISTS_WORK" "Release Guard Existing Tag" >/dev/null
+EXISTS_TARGET="$RUN_DATE-tag-guard-existing-tag"
+"$ROOT/commands/collab/engine/registry.py" init --agent-id codex --work-repo "$EXISTS_WORK" "Tag Guard Existing Tag" >/dev/null
 git -C "$EXISTS_WORK" tag -a collab/existing -m "existing tag"
 set +e
 exists_output="$("$ROOT/commands/collab/engine/registry.py" tag "$EXISTS_TARGET" --tag collab/existing --confirm 2>&1)"
 exists_status=$?
 set -e
-if [[ "$exists_status" -eq 0 || "$exists_output" != *"RELEASE-TAG: tag already exists: collab/existing"* ]]; then
+if [[ "$exists_status" -eq 0 || "$exists_output" != *"TAG-EXISTS: tag already exists: collab/existing"* ]]; then
   printf 'FAIL: existing tag was not rejected\n%s\n' "$exists_output" >&2
   exit 1
 fi
@@ -54,8 +54,8 @@ PUSH_REMOTE="$TMPDIR/push-remote.git"
 make_repo "$PUSH_WORK"
 git init --bare "$PUSH_REMOTE" >/dev/null
 git -C "$PUSH_WORK" remote add origin "$PUSH_REMOTE"
-PUSH_TARGET="$RUN_DATE-release-guard-push"
-"$ROOT/commands/collab/engine/registry.py" init --agent-id codex --work-repo "$PUSH_WORK" "Release Guard Push" >/dev/null
+PUSH_TARGET="$RUN_DATE-tag-guard-push"
+"$ROOT/commands/collab/engine/registry.py" init --agent-id codex --work-repo "$PUSH_WORK" "Tag Guard Push" >/dev/null
 push_output="$("$ROOT/commands/collab/engine/registry.py" tag "$PUSH_TARGET" --tag collab/pushed --confirm --push)"
 if [[ "$push_output" != *"CREATED: tag collab/pushed"* || "$push_output" != *"PUSHED: tag collab/pushed"* ]]; then
   printf 'FAIL: confirmed tag push did not report create+push\n%s\n' "$push_output" >&2
@@ -72,12 +72,12 @@ fi
 
 ROLE_WORK="$TMPDIR/role-work"
 make_repo "$ROLE_WORK"
-ROLE_TARGET="$RUN_DATE-release-guard-role-agnostic"
-"$ROOT/commands/collab/engine/registry.py" init --agent-id codex --work-repo "$ROLE_WORK" "Release Guard Role Agnostic" >/dev/null
-role_output="$("$ROOT/commands/collab/engine/registry.py" release "$ROLE_TARGET" --caller-role not-a-participant)"
+ROLE_TARGET="$RUN_DATE-tag-guard-role-agnostic"
+"$ROOT/commands/collab/engine/registry.py" init --agent-id codex --work-repo "$ROLE_WORK" "Tag Guard Role Agnostic" >/dev/null
+role_output="$("$ROOT/commands/collab/engine/registry.py" tag "$ROLE_TARGET" --caller-role not-a-participant)"
 if [[ "$role_output" != *"TARGET: $ROLE_TARGET"* || "$role_output" != *"MODE: dry-run"* ]]; then
-  printf 'FAIL: role-agnostic release rejected or misrendered caller role\n%s\n' "$role_output" >&2
+  printf 'FAIL: role-agnostic tag rejected or misrendered caller role\n%s\n' "$role_output" >&2
   exit 1
 fi
 
-printf 'OK: release guardrails reject dirty/duplicate states, push tags, and remain role-agnostic\n'
+printf 'OK: tag guardrails reject dirty/duplicate states, push tags, and remain role-agnostic\n'

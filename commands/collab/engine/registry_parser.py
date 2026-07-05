@@ -120,15 +120,13 @@ def build_parser() -> argparse.ArgumentParser:
         'init',
         usage=(
             '%(prog)s --agent-id <agentId> [--reviewer <role>] '
-            '[--terminal <seal|issue>] [--no-participant-verification] [--work-repo <path>] [--open] <name>'
+            '[--work-repo <path>] [--open] <name>'
         ),
         description='Create a registry-backed collab record.',
     )
     init_parser.add_argument('--agent-id', action='append')
     init_parser.add_argument('--reviewer', action='append')
-    init_parser.add_argument('--terminal', action='append')
     init_parser.add_argument('--work-repo', action='append')
-    init_parser.add_argument('--no-participant-verification', dest='participant_verification', action='store_false', default=True)
     init_parser.add_argument('--open', action='store_true')
     init_parser.add_argument('name', nargs='*')
 
@@ -233,14 +231,6 @@ def build_parser() -> argparse.ArgumentParser:
     execution_parser.add_argument('--json', action='store_true')
     execution_parser.add_argument('--caller-role')
 
-    export_issues_parser = subparsers.add_parser('export-issues')
-    export_issues_parser.add_argument('target')
-    export_issues_parser.add_argument('role')
-    export_issues_parser.add_argument('--evidence-file', required=True)
-    export_issues_parser.add_argument('--timestamp')
-    export_issues_parser.add_argument('--json', action='store_true')
-    export_issues_parser.add_argument('--caller-role')
-
     repair_execution_parser = subparsers.add_parser('repair-execution-provenance')
     repair_execution_parser.add_argument('target')
     repair_execution_parser.add_argument('role')
@@ -254,16 +244,6 @@ def build_parser() -> argparse.ArgumentParser:
     tag_parser.add_argument('--confirm', action='store_true')
     tag_parser.add_argument('--push', action='store_true')
     tag_parser.add_argument('--caller-role')
-
-    release_parser = subparsers.add_parser('release')
-    release_parser.add_argument('target', nargs='?')
-    release_parser.add_argument('--tag', dest='tag_name')
-    release_parser.add_argument('--confirm', action='store_true')
-    release_parser.add_argument('--push', action='store_true')
-    release_parser.add_argument('--direct-merge', action='store_true')
-    release_parser.add_argument('--github-release', action='store_true')
-    release_parser.add_argument('--auto-fire', action='store_true')
-    release_parser.add_argument('--caller-role')
 
     execute_spawn_parser = subparsers.add_parser('execute-spawn')
     execute_spawn_parser.add_argument('target')
@@ -317,28 +297,10 @@ def build_parser() -> argparse.ArgumentParser:
     seal_state_parser.add_argument('role', nargs='?')
     seal_state_parser.add_argument('--resume', action='store_true')
 
-    seal_render_parser = subparsers.add_parser('seal-render')
-    seal_render_parser.add_argument('target')
-    seal_render_parser.add_argument('role')
-    seal_render_parser.add_argument('--observed-revision', type=int, required=True)
-    seal_render_parser.add_argument('--cap-exit')
-    seal_render_parser.add_argument('--outcome')
-    seal_render_parser.add_argument('--restore-target')
-    seal_render_parser.add_argument('--restore-reason')
-    seal_render_parser.add_argument('--evidence')
-    seal_render_parser.add_argument('--failure-category')
-    seal_render_parser.add_argument('--null-result', action='store_true')
-    seal_render_parser.add_argument('--json', action='store_true')
-    seal_render_parser.add_argument('--caller-role')
-
     seal_write_parser = subparsers.add_parser('seal-write')
     seal_write_parser.add_argument('target')
     seal_write_parser.add_argument('role')
     seal_write_parser.add_argument('--observed-revision', type=int, required=True)
-    seal_write_parser.add_argument('--cap-exit')
-    seal_write_parser.add_argument('--restore-reason')
-    seal_write_parser.add_argument('--evidence')
-    seal_write_parser.add_argument('--failure-category')
     seal_write_parser.add_argument('--json', action='store_true')
     seal_write_parser.add_argument('--caller-role')
 
@@ -366,11 +328,6 @@ def build_parser() -> argparse.ArgumentParser:
 
     show_verdict_parser = subparsers.add_parser('show-verdict')
     show_verdict_parser.add_argument('target')
-
-    re_summarize_parser = subparsers.add_parser('rewrite-summary')
-    re_summarize_parser.add_argument('target')
-    re_summarize_parser.add_argument('--summary-file', required=True)
-    re_summarize_parser.add_argument('--date')
 
     close_parser = subparsers.add_parser('close')
     close_parser.add_argument('target')

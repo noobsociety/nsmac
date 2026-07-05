@@ -45,9 +45,15 @@ A flag belongs to exactly one class. When a flag's enforcement changes, the entr
 
 | Flag | Class | Notes |
 |---|---|---|
-| `reviewer --clear` | `helper-enforced` | Clears `reviewerRole`; helper validates that `reviewerRole` is set before clearing |
+| `reviewer <role>` | `helper-enforced` | Sets `reviewerRole`; helper requires the reviewer to be a registered non-moderator participant outside `turnOrder` |
 | `turn-order <keys>` | `helper-enforced` | Aliases `--turn-order` write path; same validation as speak-time |
 | `--force` | `helper-enforced` | Recovery-only; bypasses normal gate checks; helper logs use; requires explicit declaration in route |
+
+### `(collab unset reviewer)`
+
+| Flag | Class | Notes |
+|---|---|---|
+| `reviewer` | `helper-enforced` | Clears `reviewerRole`, `reviewerMode`, and `reviewerOptionalPhases`; helper rejects any other unset field |
 
 ### `(collab run plan)`
 
@@ -56,12 +62,6 @@ A flag belongs to exactly one class. When a flag's enforcement changes, the entr
 | `--scope <path>` | `helper-enforced` | Per-subagent write scope; helper rejects overlapping sibling scopes |
 | `--sibling-scope <path>...` | `helper-enforced` | Declared sibling scopes; conflict check against `--scope` |
 | `--returned-path <path>` | `advisory` | Returned subagent paths; helper logs but does not enforce scope boundaries at return time |
-
-### `(collab show)`
-
-| Flag | Class | Notes |
-|---|---|---|
-| `policy` | `advisory` | Displays gate rules and reviewer contract; no write side effects |
 
 ## Generator-derived flags
 

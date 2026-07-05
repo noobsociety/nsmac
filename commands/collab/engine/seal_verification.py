@@ -20,7 +20,10 @@ if not _exported:
         for _name in dir(_module):
             if _name.startswith('_'):
                 continue
-            globals()[_name] = getattr(_module, _name)
+            _value = getattr(_module, _name)
+            if getattr(_value, '__module__', None) != _module.__name__ and not _name.isupper():
+                continue
+            globals()[_name] = _value
             _exported.add(_name)
 
 __all__ = sorted(_exported)

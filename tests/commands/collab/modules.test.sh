@@ -6,6 +6,7 @@ ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 python3 - "$ROOT" <<'PY'
 from __future__ import annotations
 
+import ast
 import contextlib
 import datetime as dt
 import importlib.util
@@ -33,6 +34,16 @@ def aborts(fn, contains: str) -> None:
         assert contains in str(exc), str(exc)
     else:
         raise AssertionError(f'expected abort containing {contains!r}')
+
+
+def test_engine_import_boundaries() -> None:
+    for path in sorted((Path(root) / 'commands/collab/engine').glob('*.py')):
+        tree = ast.parse(path.read_text())
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom):
+                assert not any(alias.name == '*' for alias in node.names), (
+                    f'wildcard import leaks module boundary: {path}:{node.lineno}'
+                )
 
 
 def test_digests() -> None:
@@ -98,6 +109,56 @@ def test_digests() -> None:
         committed = d.content_digest_for_touched_paths(repo, 'HEAD', ['tracked.txt'])
         assert worktree == committed
         assert worktree['pathDigests']['tracked.txt']['mode'] == '100644'
+
+        (repo / 'src').mkdir()
+        (repo / 'src/a.txt').write_text('alpha v1\n')
+        (repo / 'src/b.txt').write_text('beta v1\n')
+        run(['git', 'add', 'src/a.txt', 'src/b.txt'], repo)
+        run(['git', '-c', 'commit.gpgsign=false', 'commit', '-qm', 'deliverables'], repo)
+
+        carried_digest = d.content_digest_for_touched_paths(
+            repo,
+            'HEAD',
+            ['src/a.txt', 'src/b.txt'],
+        )
+        carried = {
+            'role': 'pe',
+            'entryId': 'pe-old',
+            'status': 'completed',
+            'date': '2026-06-04',
+            'validationResult': 'passed',
+            'validationScope': 'full',
+            'touchedPaths': ['src/a.txt', 'src/b.txt'],
+            'pathDigests': carried_digest['pathDigests'],
+            'contentDigest': carried_digest['contentDigest'],
+        }
+        carry_entry = {
+            'workRepo': str(repo),
+            'reopenCoverage': {'executionEntries': [carried]},
+        }
+        valid = d.valid_carried_execution_entries(carry_entry)
+        assert valid[0]['touchedPaths'] == ['src/a.txt', 'src/b.txt']
+        assert valid[0]['carriedFromReopen'] is True
+
+        transitive_entry = {
+            'workRepo': str(repo),
+            'reopenCoverage': {'executionEntries': valid},
+        }
+        assert d.valid_carried_execution_entries(transitive_entry)[0]['touchedPaths'] == [
+            'src/a.txt',
+            'src/b.txt',
+        ]
+
+        (repo / 'src/a.txt').write_text('alpha v2\n')
+        run(['git', 'add', 'src/a.txt'], repo)
+        run(['git', '-c', 'commit.gpgsign=false', 'commit', '-qm', 'drift a'], repo)
+        drifted = d.valid_carried_execution_entries(carry_entry)
+        assert drifted[0]['touchedPaths'] == ['src/b.txt']
+
+        (repo / 'src/b.txt').unlink()
+        run(['git', 'add', 'src/b.txt'], repo)
+        run(['git', '-c', 'commit.gpgsign=false', 'commit', '-qm', 'remove b'], repo)
+        assert d.valid_carried_execution_entries(carry_entry) == []
 
 
 def test_git_repo() -> None:
@@ -395,8 +456,6 @@ def test_registry_constants() -> None:
 
     assert c.MODERATOR_ONLY_ACTIONS >= {'advance', 'archive', 'close', 'delete', 'reopen', 'restore', 'set', 'unset'}
     assert c.ALLOWED_STATUSES == {'open', 'closed', 'archived'}
-    assert c.ALLOWED_TERMINALS == {'seal', 'issue'}
-    assert c.TERMINAL_CHOICES_MESSAGE == 'seal, issue'
     assert c.ALLOWED_COMPLETION_SUBSTATES == {'execution', 'verification'}
     assert c.ALLOWED_VERIFICATION_SUBSTATES == {'participant', 'seal', 'assessment'}
     assert c.ALLOWED_VERDICT_RESTORE_TARGETS == {'Action Plan', 'Handoff'}
@@ -558,14 +617,18 @@ def test_onboarding_commands_join_handler_isolated() -> None:
             _path.write_text(json.dumps(data, indent=2) + '\n')
             transcript_path.write_text(rendered)
 
-        o.configure_onboarding_commands(
-            commit_new_collab_artifacts=lambda *args, **kwargs: None,
-            commit_registry_and_transcript=commit,
-        )
-        with pushd(root_dir), contextlib.redirect_stdout(io.StringIO()):
-            assert o.join_participants(registry, collab_id, 'zz', 'codex', roles) == 0
+        old_commit_new = o.commit_new_collab_artifacts
+        old_commit = o.commit_registry_and_transcript
+        o.commit_new_collab_artifacts = lambda *args, **kwargs: None
+        o.commit_registry_and_transcript = commit
+        try:
+            with pushd(root_dir), contextlib.redirect_stdout(io.StringIO()):
+                assert o.join_participants(registry, collab_id, 'zz', 'codex', roles) == 0
+        finally:
+            o.commit_new_collab_artifacts = old_commit_new
+            o.commit_registry_and_transcript = old_commit
 
-        assert commits, 'join handler did not call injected commit'
+        assert commits, 'join handler did not call registry_io commit owner'
         joined = commits[-1][0]['collabs'][0]
         assert {'role': 'zz', 'agentId': 'codex'} in joined['participants']
         assert joined['turnOrder'] == ['mod', 'zz']
@@ -608,11 +671,15 @@ def test_field_commands_unset_handler_uses_supplied_roles_dir() -> None:
             _path.write_text(json.dumps(data, indent=2) + '\n')
             transcript_path.write_text(rendered)
 
-        f.configure_field_commands(commit_registry_and_transcript=commit)
-        with pushd(root_dir), contextlib.redirect_stdout(io.StringIO()):
-            assert f.unset_field(registry, collab_id, 'reviewer', roles) == 0
+        old_commit = f.commit_registry_and_transcript
+        f.commit_registry_and_transcript = commit
+        try:
+            with pushd(root_dir), contextlib.redirect_stdout(io.StringIO()):
+                assert f.unset_field(registry, collab_id, 'reviewer', roles) == 0
+        finally:
+            f.commit_registry_and_transcript = old_commit
 
-        assert commits, 'unset handler did not call injected commit'
+        assert commits, 'unset handler did not call registry_io commit owner'
         updated = commits[-1][0]['collabs'][0]
         assert 'reviewerRole' not in updated
         assert {'role': 'zz', 'agentId': 'codex'} in updated['participants']
@@ -657,12 +724,16 @@ def test_reactivation_commands_reopen_handler_isolated() -> None:
             _path.write_text(json.dumps(data, indent=2) + '\n')
             transcript_path.write_text(rendered)
 
-        r.configure_reactivation_commands(
-            invalidate_verification_seal=lambda item, reason: invalidations.append(reason),
-            commit_registry_and_transcript=commit,
-        )
-        with pushd(root_dir), contextlib.redirect_stdout(io.StringIO()):
-            assert r.reopen_collab(registry, collab_id, 'handoff') == 0
+        old_invalidate = r.invalidate_verification_seal
+        old_commit = r.commit_registry_and_transcript
+        r.invalidate_verification_seal = lambda item, reason: invalidations.append(reason)
+        r.commit_registry_and_transcript = commit
+        try:
+            with pushd(root_dir), contextlib.redirect_stdout(io.StringIO()):
+                assert r.reopen_collab(registry, collab_id, 'handoff') == 0
+        finally:
+            r.invalidate_verification_seal = old_invalidate
+            r.commit_registry_and_transcript = old_commit
 
         reopened = commits[-1]['collabs'][0]
         assert reopened['activePhase'] == 'Handoff'
@@ -697,15 +768,24 @@ def test_speak_commands_lifecycle_handler_isolated() -> None:
             _path.write_text(json.dumps(data, indent=2) + '\n')
             transcript_path.write_text(rendered)
 
-        s.configure_speak_commands(commit_registry_and_transcript=commit)
-        with pushd(root_dir), contextlib.redirect_stdout(io.StringIO()):
-            assert s.speak_lifecycle(registry, collab_id, ['mod', 'pe']) == 0
+        old_commit = s.commit_registry_and_transcript
+        s.commit_registry_and_transcript = commit
+        try:
+            with pushd(root_dir), contextlib.redirect_stdout(io.StringIO()):
+                assert s.speak_lifecycle(registry, collab_id, ['mod', 'pe']) == 0
+        finally:
+            s.commit_registry_and_transcript = old_commit
 
         assert commits[-1]['collabs'][0]['activePhase'] == 'Discussion'
 
 
 def test_seal_verdict_companion() -> None:
     from commands.collab.engine import seal_verification as sv
+
+    assert 'build_seal_verdict_companion' in sv.__all__
+    assert 'seal_write' in sv.__all__
+    assert 'Path' not in sv.__all__
+    assert 'Callable' not in sv.__all__
 
     entry = {
         'id': '2026-06-10-verdict-test',

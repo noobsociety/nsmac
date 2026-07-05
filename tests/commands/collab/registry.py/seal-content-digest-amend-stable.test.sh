@@ -17,41 +17,27 @@ read_json_field() {
 
 seed_round() {
   local slug="$1"
-  python3 - "$REGISTRY" "$slug" <<'PY'
-import base64
+  python3 - "$ROOT" "$REGISTRY" "$slug" <<'PY'
 import json
 import sys
 from pathlib import Path
 
-path = Path(sys.argv[1])
-target = sys.argv[2]
+root = sys.argv[1]
+path = Path(sys.argv[2])
+target = sys.argv[3]
+sys.path.insert(0, root)
+from commands.collab.engine import registry as R
+
 data = json.loads(path.read_text())
 entry = next(item for item in data['collabs'] if item['id'] == target)
-entries = []
-for role, state in sorted(entry.get('execution', {}).items()):
-    row = {
-        'role': role,
-        'entryId': state.get('entryId') or f"{role}-execution",
-        'status': state.get('status'),
-        'date': state.get('date'),
-        'validationResult': state.get('validationResult'),
-        'validationScope': state.get('validationScope'),
-        'touchedPaths': list(state.get('touchedPaths', [])),
-        'commits': list(state.get('commits', [])),
-    }
-    if state.get('contentDigest'):
-        row['contentDigest'] = state.get('contentDigest')
-    if isinstance(state.get('pathDigests'), dict):
-        row['pathDigests'] = state.get('pathDigests')
-    if state.get('agentId'):
-        row['agentId'] = state.get('agentId')
-    entries.append(row)
-signature = base64.urlsafe_b64encode(
-    json.dumps(entries, sort_keys=True, separators=(',', ':')).encode()
-).decode().rstrip('=')
-entry.setdefault('verification', {})['rounds'] = 1
-entry['verification']['subState'] = 'seal'
-entry['verification']['pairedExecutionSignature'] = signature
+verification = entry.setdefault('verification', {})
+verification['rounds'] = 1
+verification['subState'] = 'seal'
+verification['pairedExecutionSignature'] = R.execution_signature(entry)
+for role in R.participant_verification_roles(entry):
+    state = R.participant_verification_role_state(entry, role)
+    state['stage'] = 'completed'
+    state['executionSignature'] = R.participant_execution_signature(entry, role)
 path.write_text(json.dumps(data, indent=2) + '\n')
 PY
 }
@@ -62,7 +48,7 @@ init_target() {
   local title="$1"
   local slug="$2"
   local work_repo="$3"
-  "$ROOT/commands/collab/engine/registry.py" init --agent-id codex --reviewer pa --no-participant-verification --work-repo "$work_repo" "$title" >/dev/null
+  "$ROOT/commands/collab/engine/registry.py" init --agent-id codex --reviewer pa --work-repo "$work_repo" "$title" >/dev/null
   "$ROOT/commands/collab/engine/registry.py" join-participants "$RUN_DATE-$slug" pa --agent-id opus >/dev/null
   "$ROOT/commands/collab/engine/registry.py" join-participants "$RUN_DATE-$slug" pe --agent-id codex >/dev/null
   "$ROOT/commands/collab/engine/registry.py" set "$RUN_DATE-$slug" turn-order pe --caller-role mod >/dev/null
@@ -95,7 +81,7 @@ TARGET="$RUN_DATE-seal-content-digest-empty-paths"
 seed_round "$TARGET"
 state="$("$ROOT/commands/collab/engine/registry.py" seal-state "$TARGET" pa)"
 revision="$(read_json_field registryRevision <<<"$state")"
-"$ROOT/commands/collab/engine/registry.py" seal-render "$TARGET" pa --observed-revision "$revision" --caller-role pa >/dev/null
+"$ROOT/commands/collab/engine/registry.py" seal-write "$TARGET" pa --observed-revision "$revision" --caller-role pa >/dev/null
 
 python3 - "$REGISTRY" "$TARGET" <<'PY'
 import json
@@ -133,7 +119,7 @@ AMEND_TARGET="$RUN_DATE-seal-content-digest-amend-stable"
 seed_round "$AMEND_TARGET"
 amend_state="$("$ROOT/commands/collab/engine/registry.py" seal-state "$AMEND_TARGET" pa)"
 amend_revision="$(read_json_field registryRevision <<<"$amend_state")"
-"$ROOT/commands/collab/engine/registry.py" seal-render "$AMEND_TARGET" pa --observed-revision "$amend_revision" --caller-role pa >/dev/null
+"$ROOT/commands/collab/engine/registry.py" seal-write "$AMEND_TARGET" pa --observed-revision "$amend_revision" --caller-role pa >/dev/null
 GIT_AUTHOR_DATE="2026-05-23T17:30:00+02:00" \
 GIT_COMMITTER_DATE="2026-05-23T17:30:00+02:00" \
   git -C "$AMEND_WORK" commit --amend --no-edit --date "2026-05-23T17:30:00+02:00" >/dev/null
@@ -144,7 +130,7 @@ if [[ "$old_head" == "$new_head" ]]; then
 fi
 assessment_state="$("$ROOT/commands/collab/engine/registry.py" seal-state "$AMEND_TARGET" pa)"
 assessment_revision="$(read_json_field registryRevision <<<"$assessment_state")"
-"$ROOT/commands/collab/engine/registry.py" seal-render "$AMEND_TARGET" pa --observed-revision "$assessment_revision" --caller-role pa --outcome success >/dev/null
+"$ROOT/commands/collab/engine/registry.py" record-verdict "$AMEND_TARGET" pa --observed-revision "$assessment_revision" --caller-role pa --outcome success >/dev/null
 
 DELETE_WORK="$TMPDIR/delete-work"
 make_repo "$DELETE_WORK"
@@ -171,7 +157,7 @@ DELETE_TARGET="$RUN_DATE-seal-content-digest-committed-deletion"
 seed_round "$DELETE_TARGET"
 delete_state="$("$ROOT/commands/collab/engine/registry.py" seal-state "$DELETE_TARGET" pa)"
 delete_revision="$(read_json_field registryRevision <<<"$delete_state")"
-"$ROOT/commands/collab/engine/registry.py" seal-render "$DELETE_TARGET" pa --observed-revision "$delete_revision" --caller-role pa >/dev/null
+"$ROOT/commands/collab/engine/registry.py" seal-write "$DELETE_TARGET" pa --observed-revision "$delete_revision" --caller-role pa >/dev/null
 
 python3 - "$REGISTRY" "$DELETE_TARGET" <<'PY'
 import json

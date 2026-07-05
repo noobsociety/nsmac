@@ -22,7 +22,7 @@ Harness files under `~/.cursor/tests/specs/`:
 - `templates.md`
 - `tests.md`
 
-**Note — intentionally internal harness specs:** `generated.md`, `templates.md`, and `tests.md` are not exposed as `(test <target>)` routing targets. They are internal harness specifications swept by `./tests/run.sh`'s Markdown harness sweep, not dispatched through the `(test)` command.
+**Note — intentionally internal harness specs:** `generated.md`, `templates.md`, and `tests.md` are not exposed as `(test <target>)` routing targets. They are internal harness specifications covered by the full suite, not dispatched through the `(test)` command.
 
 ## Principle
 
@@ -31,6 +31,7 @@ Add a test only when a source behavior requires executable proof; prefer shell-l
 ## Suite size
 
 `tests/run.sh` reports the live test count and elapsed seconds at execution time. Keep source behavior coverage intact; do not encode old run snapshots or quota plans in this spec.
+The retained manifest is described in [`tests/suites/README.md`](../suites/README.md).
 
 ## Layer ownership
 
@@ -38,11 +39,13 @@ Add a test only when a source behavior requires executable proof; prefer shell-l
 
 `platform/tooling/audit.sh` is the shell-layer owning gate for adapter routing, `commands/commands.md` discovery, and runtime ignore rules; no Markdown harness is required for these behaviors.
 
-`tests/run.sh` is the single entry point for the full test suite and is owned by three runtimes:
+`tests/run.sh` is the single entry point for the retained test suite.
 
-- **GitHub Actions** — external runnable owner; the workflow calls `tests/run.sh` on push and pull request to `main`.
-- **Local pre-commit and pre-push hooks** — installed by `platform/tooling/install-git-hooks.sh`; both hooks invoke `./tests/run.sh`.
-- **Local manual invocation** — direct shell call; no harness or installer required.
+- **GitHub Actions** — external runnable owner; the workflow calls `./tests/run.sh` on push and pull request to `main`.
+- **Local pre-commit and pre-push hooks** — installed by
+  `platform/tooling/install-git-hooks.sh`; both hooks invoke `./tests/run.sh`.
+- **Local manual invocation** — direct shell call; no harness or installer
+  required.
 
 `platform/tooling/audit.sh` admits `.github/**` as tracked source. This boundary covers workflow files, CODEOWNERS, dependabot config, issue templates, and PR templates — not workflow files alone.
 

@@ -41,7 +41,7 @@ from commands.collab.engine.transcript_readers import (
     unchecked_assigned_item_count,
     unchecked_assigned_items_by_role,
 )
-from commands.collab.engine.planned_routes import validate_issue_bridge_block, validate_planned_route_prerequisites
+from commands.collab.engine.planned_routes import validate_planned_route_prerequisites
 from commands.collab.engine.registry_validation import validate_registry as validate_registry_data
 from commands.collab.engine.effort import (
     audit_effort_matrix,
@@ -77,14 +77,12 @@ from commands.collab.engine.contribution_store import (
 )
 from commands.collab.engine.registry_constants import (
     ACTIVE_PARTICIPANT_VERIFICATION_STAGES,
-    ALLOWED_CAP_EXITS,
     ALLOWED_COMPLETION_SUBSTATES,
     ALLOWED_EXECUTION_STATUSES,
     ALLOWED_PARTICIPANT_VERIFICATION_STAGES,
     ALLOWED_REVIEWER_MODES,
     ALLOWED_SET_FIELDS,
     ALLOWED_STATUSES,
-    ALLOWED_TERMINALS,
     ALLOWED_VALIDATION_SCOPES,
     ALLOWED_VERDICT_OUTCOMES,
     ALLOWED_VERDICT_RESTORE_TARGETS,
@@ -99,8 +97,6 @@ from commands.collab.engine.registry_constants import (
     DEFAULT_OPEN_ROSTER_EFFORT,
     DEFAULT_REVIEWER_MODE,
     DEFAULT_REVIEWER_OPTIONAL_PHASES,
-    DEFAULT_TERMINAL,
-    DEFAULT_VERIFICATION_CAP,
     DELETED_PATH_BLOB,
     DELETED_PATH_MODE,
     DISALLOWED_VERSION_FIELD,
@@ -124,7 +120,6 @@ from commands.collab.engine.registry_constants import (
     REGISTRY_EVENT_SCHEMA,
     RETIRED_ROOT_KEYS,
     SHELL_PATTERN_RE,
-    TERMINAL_CHOICES_MESSAGE,
 )
 from commands.collab.engine.registry_state import (
     assert_registry_project_binding,
@@ -167,10 +162,8 @@ from commands.collab.engine.execution import (
     completed_execution_unchecked_items,
     execute_spawn,
     execution_scope_advisory,
-    issue_terminal,
     record_execution_state,
     seal_terminal,
-    terminal_value,
 )
 from commands.collab.engine.git_repo import (
     assert_touched_paths_recordable_in_work_repo,
@@ -328,7 +321,6 @@ from commands.collab.engine.transcript_render import (
 )
 from commands.collab.engine import seal_verification_render as _seal_verification_render
 from commands.collab.engine.seal_verification_logic import (
-    apply_cap_exit,
     build_verdict,
     chartered_deliverable_path,
     chartered_deliverables,
@@ -373,7 +365,6 @@ from commands.collab.engine.seal_verification_render import (
     assessment_next_line,
     assessment_notice,
     completion_summary_bounds,
-    configure_registry_facade as configure_seal_verification_facade,
     default_close_summary,
     insert_reopen_pointer,
     latest_reviewer_findings_anchor,
@@ -383,7 +374,6 @@ from commands.collab.engine.seal_verification_render import (
     replace_latest_summary,
     summary_date_from_iso,
     summary_date_from_timestamp,
-    verdict_args_present,
     verdict_reopen_command,
 )
 from commands.collab.engine.speak_state import (
@@ -401,12 +391,6 @@ from commands.collab.engine.advisories import (
     forced_active_phase_advisory,
     post_action_advisory_lines,
     print_post_action_advisories,
-)
-from commands.collab.engine.issue_export import (
-    configure_issue_export,
-    export_issues,
-    exported_issue_handoff_present,
-    normalize_issue_export_evidence,
 )
 from commands.collab.engine.content_files import (
     read_content_file,
@@ -462,16 +446,13 @@ from commands.collab.engine.source_contracts import (
 from commands.collab.engine.help_command import route_help_command
 from commands.collab.engine.browser import open_browser_uri
 from commands.collab.engine.render_commands import (
-    configure_render_commands,
     render_participants,
     render_status,
-    re_summarize_collab,
     summarize_collab,
     transcript_view,
 )
 from commands.collab.engine.field_commands import (
     clear_reviewer,
-    configure_field_commands,
     remove_participant,
     set_field,
     unset_field,
@@ -479,24 +460,20 @@ from commands.collab.engine.field_commands import (
 from commands.collab.engine.lifecycle_commands import (
     archive_collab,
     close_collab,
-    configure_lifecycle_commands,
     delete_collab,
     open_collab,
 )
 from commands.collab.engine.repair_commands import (
-    configure_repair_commands,
     out_of_scope_patch,
     repair_execution_provenance,
     transcript_repair,
 )
 from commands.collab.engine.reactivation_commands import (
-    configure_reactivation_commands,
     reopen_collab,
     restore_collab_content,
     save_registry_with_event_type,
 )
 from commands.collab.engine.onboarding_commands import (
-    configure_onboarding_commands,
     ensure_init_project_metadata,
     init_collab,
     join_participants,
@@ -505,7 +482,6 @@ from commands.collab.engine.speak_commands import (
     activate_collab,
     apply_speak_lifecycle_to_entry,
     apply_speak_lifecycle_with_notice,
-    configure_speak_commands,
     die_with_resume,
     render_re_speak,
     render_speak,
@@ -534,7 +510,7 @@ def participant_verify_render(
     caller_role: str | None = None,
 ) -> int:
     # Permanent facade-pair: registry.py owns CLI dispatch for both wrappers by design.
-    # This wrapper delegates; seal_verification.py records the round and render_seal must not.
+    # This wrapper delegates; the render implementation owns round recording.
     return _seal_verification_render.participant_verify_render(
         path,
         target,
@@ -549,40 +525,6 @@ def participant_verify_render(
         audit_agent_id,
         remediation_agent_id,
         timestamp,
-        caller_role,
-    )
-
-
-def render_seal(
-    path: Path,
-    target: str,
-    role: str,
-    observed_revision: int,
-    cap_exit: str | None = None,
-    outcome: str | None = None,
-    restore_target: str | None = None,
-    restore_reason: str | None = None,
-    evidence: str | None = None,
-    failure_category: str | None = None,
-    null_result: bool = False,
-    emit_json: bool = False,
-    caller_role: str | None = None,
-) -> int:
-    # Permanent facade-pair: registry.py owns CLI dispatch; seal_verification.py owns implementation.
-    # This wrapper delegates and must not call record_verification_round_for_execution.
-    return _seal_verification_render.render_seal(
-        path,
-        target,
-        role,
-        observed_revision,
-        cap_exit,
-        outcome,
-        restore_target,
-        restore_reason,
-        evidence,
-        failure_category,
-        null_result,
-        emit_json,
         caller_role,
     )
 
@@ -671,39 +613,9 @@ def record_execution(
     )
 
 
-configure_seal_verification_facade(
-    commit_registry_and_transcript=commit_registry_and_transcript,
+_seal_verification_render.configure_registry_facade(
     next_line_for_state=next_line_for_state,
     print_post_action_advisories=print_post_action_advisories,
-)
-configure_issue_export(
-    commit_registry_and_transcript=commit_registry_and_transcript,
-    close_eligible_after_execution=close_eligible_after_execution,
-)
-configure_render_commands(
-    commit_registry_and_transcript=commit_registry_and_transcript,
-)
-configure_field_commands(
-    commit_registry_and_transcript=commit_registry_and_transcript,
-)
-configure_lifecycle_commands(
-    commit_registry_and_transcript=commit_registry_and_transcript,
-)
-configure_repair_commands(
-    invalidate_verification_seal=invalidate_verification_seal,
-)
-configure_reactivation_commands(
-    invalidate_verification_seal=invalidate_verification_seal,
-    commit_registry_and_transcript=commit_registry_and_transcript,
-)
-
-
-configure_onboarding_commands(
-    commit_new_collab_artifacts=commit_new_collab_artifacts,
-    commit_registry_and_transcript=commit_registry_and_transcript,
-)
-configure_speak_commands(
-    commit_registry_and_transcript=commit_registry_and_transcript,
 )
 
 

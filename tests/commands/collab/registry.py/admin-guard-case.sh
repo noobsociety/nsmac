@@ -194,25 +194,6 @@ transcript.write_text('\n'.join(out) + '\n')
 PY
 }
 
-# Issue-terminal Completion fixture for export-issues guards. Joins pe (the
-# required exporter) and pins Completion phase. Prints the resolved target id.
-init_issue_target() {
-  local title="$1"
-  local slug="$2"
-  local target="$RUN_DATE-$slug"
-  "$REGISTRY_PY" --registry "$REGISTRY" init --agent-id codex --terminal issue "$title" >/dev/null
-  "$REGISTRY_PY" --registry "$REGISTRY" join-participants "$target" pe --agent-id codex >/dev/null
-  "$REGISTRY_PY" --registry "$REGISTRY" set "$target" active-phase Completion --force --caller-role mod >/dev/null
-  printf '%s\n' "$target"
-}
-
-# A local JSON issue-export evidence file with one minimal issue object.
-issue_evidence_file() {
-  local path="$TMPDIR/issues.json"
-  printf '{"issues":[{"title":"Export one issue"}]}\n' >"$path"
-  printf '%s\n' "$path"
-}
-
 # Reviewer-backed Completion fixture with execution recorded complete for each
 # listed executor role, which advances the verification sub-state to
 # `participant`. The reviewer is `pa`. Pass executor roles after the slug.
@@ -387,30 +368,14 @@ case "$CASE_NAME" in
     assert_fails_containing "$CASE_NAME" "registry target not found: missing" \
       "$REGISTRY_PY" --registry "$REGISTRY" unset missing reviewer --caller-role mod
     ;;
-  rewrite-summary-record-unreadable)
-    target="$(init_target "Rewrite Summary Record Unreadable" "rewrite-summary-record-unreadable")"
-    remove_transcript "$target"
-    assert_fails_containing "$CASE_NAME" "transcript missing:" \
-      "$REGISTRY_PY" --registry "$REGISTRY" rewrite-summary "$target" --summary-file "$(summary_file)"
-    ;;
-  rewrite-summary-no-prior-summary)
-    target="$(init_target "Rewrite Summary No Prior Summary" "rewrite-summary-no-prior-summary")"
-    assert_fails_containing "$CASE_NAME" "nothing yet summarized" \
-      "$REGISTRY_PY" --registry "$REGISTRY" rewrite-summary "$target" --summary-file "$(summary_file)"
-    ;;
-  rewrite-summary-registry-target-unavailable)
-    init_target "Rewrite Summary Target Unavailable" "rewrite-summary-target-unavailable" >/dev/null
-    assert_fails_containing "$CASE_NAME" "registry target not found: missing" \
-      "$REGISTRY_PY" --registry "$REGISTRY" rewrite-summary missing --summary-file "$(summary_file)"
-    ;;
-  write-summary-record-unreadable)
-    target="$(init_target "Write Summary Record Unreadable" "write-summary-record-unreadable")"
+  summarize-record-unreadable)
+    target="$(init_target "Summarize Record Unreadable" "summarize-record-unreadable")"
     remove_transcript "$target"
     assert_fails_containing "$CASE_NAME" "transcript missing:" \
       "$REGISTRY_PY" --registry "$REGISTRY" summarize "$target"
     ;;
-  write-summary-registry-target-unavailable)
-    init_target "Write Summary Target Unavailable" "write-summary-target-unavailable" >/dev/null
+  summarize-registry-target-unavailable)
+    init_target "Summarize Target Unavailable" "summarize-target-unavailable" >/dev/null
     assert_fails_containing "$CASE_NAME" "registry target not found: missing" \
       "$REGISTRY_PY" --registry "$REGISTRY" summarize missing
     ;;
@@ -717,44 +682,6 @@ case "$CASE_NAME" in
     assert_fails_containing "$CASE_NAME" "caller role must already be a participant: pe" \
       "$REGISTRY_PY" --registry "$REGISTRY" execution "$target" pe in_progress "2026-06-24T12:00:00+02:00" --caller-role pe
     ;;
-  export-issues-record-closed)
-    target="$(init_issue_target "Export Issues Record Closed" "export-issues-record-closed")"
-    "$REGISTRY_PY" --registry "$REGISTRY" archive "$target" --caller-role mod >/dev/null
-    assert_fails_containing "$CASE_NAME" "record is closed" \
-      "$REGISTRY_PY" --registry "$REGISTRY" export-issues "$target" pe --evidence-file "$(issue_evidence_file)" --caller-role pe
-    ;;
-  export-issues-role-not-pe)
-    target="$(init_issue_target "Export Issues Role Not Pe" "export-issues-role-not-pe")"
-    assert_fails_containing "$CASE_NAME" "issue export must be authored by platform engineer role pe" \
-      "$REGISTRY_PY" --registry "$REGISTRY" export-issues "$target" mod --evidence-file "$(issue_evidence_file)" --caller-role mod
-    ;;
-  export-issues-phase-not-completion)
-    target="$RUN_DATE-export-issues-phase-not-completion"
-    "$REGISTRY_PY" --registry "$REGISTRY" init --agent-id codex --terminal issue "Export Issues Phase Not Completion" >/dev/null
-    "$REGISTRY_PY" --registry "$REGISTRY" join-participants "$target" pe --agent-id codex >/dev/null
-    assert_fails_containing "$CASE_NAME" "(collab export-issues) is valid only in Completion" \
-      "$REGISTRY_PY" --registry "$REGISTRY" export-issues "$target" pe --evidence-file "$(issue_evidence_file)" --caller-role pe
-    ;;
-  export-issues-terminal-not-issue)
-    target="$RUN_DATE-export-issues-terminal-not-issue"
-    "$REGISTRY_PY" --registry "$REGISTRY" init --agent-id codex "Export Issues Terminal Not Issue" >/dev/null
-    "$REGISTRY_PY" --registry "$REGISTRY" join-participants "$target" pe --agent-id codex >/dev/null
-    "$REGISTRY_PY" --registry "$REGISTRY" set "$target" active-phase Completion --force --caller-role mod >/dev/null
-    assert_fails_containing "$CASE_NAME" "(collab export-issues) requires terminal issue" \
-      "$REGISTRY_PY" --registry "$REGISTRY" export-issues "$target" pe --evidence-file "$(issue_evidence_file)" --caller-role pe
-    ;;
-  export-issues-pending-execution)
-    target="$(init_issue_target "Export Issues Pending Execution" "export-issues-pending-execution")"
-    "$REGISTRY_PY" --registry "$REGISTRY" join-participants "$target" tw --agent-id codex >/dev/null
-    "$REGISTRY_PY" --registry "$REGISTRY" set "$target" turn-order "pe tw" --caller-role mod >/dev/null
-    assert_fails_containing "$CASE_NAME" "issue export blocked: pending execution role(s) remain" \
-      "$REGISTRY_PY" --registry "$REGISTRY" export-issues "$target" pe --evidence-file "$(issue_evidence_file)" --caller-role pe
-    ;;
-  export-issues-registry-target)
-    init_target "Export Issues Target Unavailable" "export-issues-target-unavailable" >/dev/null
-    assert_fails_containing "$CASE_NAME" "registry target not found: missing" \
-      "$REGISTRY_PY" --registry "$REGISTRY" export-issues missing pe --evidence-file "$(issue_evidence_file)" --caller-role pe
-    ;;
   log-registry-target)
     init_target "Log Target Unavailable" "log-target-unavailable" >/dev/null
     assert_fails_containing "$CASE_NAME" "registry target not found: missing" \
@@ -781,13 +708,24 @@ case "$CASE_NAME" in
     ;;
   participant-verify-substate-not-participant)
     target="$RUN_DATE-participant-verify-substate-not-participant"
-    "$REGISTRY_PY" --registry "$REGISTRY" init --agent-id codex --reviewer pa --no-participant-verification "Participant Verify Substate Not Participant" >/dev/null
+    "$REGISTRY_PY" --registry "$REGISTRY" init --agent-id codex --reviewer pa "Participant Verify Substate Not Participant" >/dev/null
     "$REGISTRY_PY" --registry "$REGISTRY" join-participants "$target" pa --agent-id codex >/dev/null
     "$REGISTRY_PY" --registry "$REGISTRY" join-participants "$target" pe --agent-id codex >/dev/null
     "$REGISTRY_PY" --registry "$REGISTRY" set "$target" turn-order "pe" --caller-role mod >/dev/null
     "$REGISTRY_PY" --registry "$REGISTRY" set "$target" active-phase Completion --force --caller-role mod >/dev/null
     "$REGISTRY_PY" --registry "$REGISTRY" execution "$target" pe completed "2026-06-24T12:00:00+02:00" --caller-role pe >/dev/null
-    assert_fails_containing "$CASE_NAME" "participant verification is not enabled" \
+    python3 - "$REGISTRY" "$target" <<'PY'
+import json
+import sys
+from pathlib import Path
+path = Path(sys.argv[1])
+target = sys.argv[2]
+data = json.loads(path.read_text())
+entry = next(item for item in data['collabs'] if item['id'] == target)
+entry['verification']['subState'] = 'seal'
+path.write_text(json.dumps(data, indent=2) + '\n')
+PY
+    assert_fails_containing "$CASE_NAME" "participant verification already complete" \
       "$REGISTRY_PY" --registry "$REGISTRY" participant-verify-state "$target" pe
     ;;
   participant-verify-role-not-registered)

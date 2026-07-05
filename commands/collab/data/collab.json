@@ -90,7 +90,7 @@
       "route": "reopen",
       "capabilityTier": "reasoning",
       "effortTier": "high",
-      "rationale": "Reopen rationale must be preserved and justified; the lifecycle decision affects downstream cap-exit actions."
+      "rationale": "Reopen rationale must be preserved and justified; the lifecycle decision affects downstream verification."
     },
     {
       "route": "close",
@@ -123,28 +123,10 @@
       "rationale": "Read-only drift comparison across registry header metadata, transcript contribution content, and sealed path digests."
     },
     {
-      "route": "write summary",
-      "capabilityTier": "composition",
-      "effortTier": "high",
-      "rationale": "Synthesizes the completion narrative from transcript state."
-    },
-    {
-      "route": "rewrite summary",
-      "capabilityTier": "composition",
-      "effortTier": "medium",
-      "rationale": "Replaces the existing summary while preserving its outline."
-    },
-    {
       "route": "run plan",
       "capabilityTier": "execution",
       "effortTier": "high",
       "rationale": "Implements role-assigned action-plan items in source; scoped validation gates the execution record."
-    },
-    {
-      "route": "export-issues",
-      "capabilityTier": "execution",
-      "effortTier": "high",
-      "rationale": "Records issue-terminal handoff evidence and may close the collab without reviewer seal state."
     },
     {
       "route": "commit",
@@ -163,12 +145,6 @@
       "capabilityTier": "execution",
       "effortTier": "medium",
       "rationale": "Creates or previews a git tag; confirmation and clean work-tree checks guard release provenance."
-    },
-    {
-      "route": "release",
-      "capabilityTier": "execution",
-      "effortTier": "high",
-      "rationale": "Plans or executes release orchestration; outward actions require explicit confirmation and opt-in flags."
     },
     {
       "route": "rewrite execution",

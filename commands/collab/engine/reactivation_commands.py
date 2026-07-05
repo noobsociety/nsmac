@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-"""Record reactivation command handlers: restore a record's prior content from a revision event's `_legacyBefore` snapshot (`restore-content`) and reopen a record back into Action Plan or Handoff after a non-success Completion verdict (`reopen`). Owns the `save_registry_with_event_type` single-file write helper used by the restore path. The reopen write path cannot import two dependencies without a cycle — the core's `invalidate_verification_seal` wrapper (which threads `participants`-derived predicates into `seal_verification`) and the core-owned `commit_registry_and_transcript` two-file write — so both are injected via `configure_reactivation_commands`. Does not own the seal-invalidation wrapper, the two-file commit, the revision-event primitives, or registry validation."""
+"""Record reactivation command handlers.
+
+Owns `restore-content`, `reopen`, and the restore path's event-typed
+single-file write helper. Registry/transcript commits stay owned by
+`registry_io`; seal invalidation stays owned by `seal_verification_logic`.
+"""
 from __future__ import annotations
 
 import datetime as dt
 import json
 from copy import deepcopy
 from pathlib import Path
-from typing import Callable
 
 from commands.collab.engine.advisories import print_post_action_advisories
 from commands.collab.engine.config_paths import DEFAULT_ROLES_DIR
@@ -18,6 +22,7 @@ from commands.collab.engine.participants import assert_caller_role, effective_tu
 from commands.collab.engine.registry_io import (
     bump_registry_event_index,
     bump_registry_revision,
+    commit_registry_and_transcript,
     finalize_registry_event,
     load_registry,
     prepare_registry_event,
@@ -37,6 +42,7 @@ from commands.collab.engine.restore_inputs import (
 from commands.collab.engine.seal_verification_logic import (
     clear_verdict,
     initialize_completion_state,
+    invalidate_verification_seal,
 )
 from commands.collab.engine.seal_verification_render import (
     insert_reopen_pointer,
@@ -48,32 +54,6 @@ from commands.collab.engine.transcript_render import (
     print_header_overwrite,
     render_managed_header_text,
 )
-
-_invalidate_verification_seal: Callable[[dict, str], None] | None = None
-_commit_registry_and_transcript: Callable[[Path, dict, Path, str], None] | None = None
-
-
-def configure_reactivation_commands(
-    *,
-    invalidate_verification_seal: Callable[[dict, str], None],
-    commit_registry_and_transcript: Callable[[Path, dict, Path, str], None],
-) -> None:
-    """Inject the cycle-blocked dependencies of the reopen write path: the core's seal-invalidation wrapper and the core-owned two-file commit."""
-    global _invalidate_verification_seal, _commit_registry_and_transcript
-    _invalidate_verification_seal = invalidate_verification_seal
-    _commit_registry_and_transcript = commit_registry_and_transcript
-
-
-def _require_invalidate() -> Callable[[dict, str], None]:
-    if _invalidate_verification_seal is None:
-        die('reactivation commands engine is not configured: seal-invalidation callback missing')
-    return _invalidate_verification_seal
-
-
-def _require_commit() -> Callable[[Path, dict, Path, str], None]:
-    if _commit_registry_and_transcript is None:
-        die('reactivation commands engine is not configured: commit callback missing')
-    return _commit_registry_and_transcript
 
 
 def save_registry_with_event_type(path: Path, data: dict, event_type: str, summary: str) -> None:
@@ -195,13 +175,13 @@ def reopen_collab(
         # (after the reopened phase revises scope and re-executes). This lets a
         # reopen that re-scopes only some roles re-verify just those roles.
         initialize_completion_state(entry, 'execution', reset_rounds=True, reset_stages=False)
-        _require_invalidate()(entry, f'reopened {phase}')
+        invalidate_verification_seal(entry, f'reopened {phase}')
         clear_verdict(entry)
         expected_role = next((item for item in effective_turn_order(entry) if item != entry['moderatorRole']), None)
         transcript = insert_reopen_pointer(transcript, phase, findings_anchor, expected_role)
         rendered, header_changed = render_managed_header_text(transcript, entry, DEFAULT_ROLES_DIR)
         print_header_overwrite(header_changed)
-        _require_commit()(path, data, transcript_path, rendered)
+        commit_registry_and_transcript(path, data, transcript_path, rendered)
     print_post_action_advisories(entry, None, None, None, next_line_for_state(entry))
     print(entry['id'])
     return 0

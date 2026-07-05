@@ -8,7 +8,7 @@ from types import ModuleType
 from typing import Callable
 
 from commands.collab.engine.errors import die
-from commands.collab.engine.release import release_collab, tag_collab
+from commands.collab.engine.release import tag_collab
 from commands.collab.engine.registry_parser import build_parser, render_registry_cli_doc
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -113,12 +113,8 @@ def _init(ctx: ModuleType, args: object, path: Path) -> int:
         tokens.extend(['--agent-id', agent_id])
     for reviewer in args.reviewer or []:
         tokens.extend(['--reviewer', reviewer])
-    for terminal in args.terminal or []:
-        tokens.extend(['--terminal', terminal])
     for work_repo in args.work_repo or []:
         tokens.extend(['--work-repo', work_repo])
-    if not args.participant_verification:
-        tokens.append('--no-participant-verification')
     if args.open:
         tokens.append('--open')
     tokens.extend(args.name)
@@ -220,18 +216,6 @@ def _execution(ctx: ModuleType, args: object, path: Path) -> int:
     )
 
 
-def _export_issues(ctx: ModuleType, args: object, path: Path) -> int:
-    return ctx.export_issues(
-        path,
-        args.target,
-        args.role,
-        Path(args.evidence_file),
-        args.timestamp,
-        args.json,
-        args.caller_role,
-    )
-
-
 def _repair_execution_provenance(ctx: ModuleType, args: object, path: Path) -> int:
     return ctx.repair_execution_provenance(
         path,
@@ -250,20 +234,6 @@ def _tag(ctx: ModuleType, args: object, path: Path) -> int:
         args.tag_name,
         args.confirm,
         args.push,
-        args.caller_role,
-    )
-
-
-def _release(ctx: ModuleType, args: object, path: Path) -> int:
-    return release_collab(
-        path,
-        args.target,
-        args.tag_name,
-        args.confirm,
-        args.push,
-        args.direct_merge,
-        args.github_release,
-        args.auto_fire,
         args.caller_role,
     )
 
@@ -315,34 +285,12 @@ def _seal_state(ctx: ModuleType, args: object, path: Path) -> int:
     return ctx.seal_state(path, args.target, args.role, args.resume)
 
 
-def _seal_render(ctx: ModuleType, args: object, path: Path) -> int:
-    return ctx.render_seal(
-        path,
-        args.target,
-        args.role,
-        args.observed_revision,
-        args.cap_exit,
-        args.outcome,
-        args.restore_target,
-        args.restore_reason,
-        args.evidence,
-        args.failure_category,
-        args.null_result,
-        args.json,
-        args.caller_role,
-    )
-
-
 def _seal_write(ctx: ModuleType, args: object, path: Path) -> int:
     return ctx._seal_verification_render.seal_write(
         path,
         args.target,
         args.role,
         args.observed_revision,
-        args.cap_exit,
-        args.restore_reason,
-        args.evidence,
-        args.failure_category,
         args.json,
         args.caller_role,
     )
@@ -375,10 +323,6 @@ def _reopen(ctx: ModuleType, args: object, path: Path) -> int:
 
 def _show_verdict(ctx: ModuleType, args: object, path: Path) -> int:
     return ctx.show_verdict(path, args.target)
-
-
-def _rewrite_summary(ctx: ModuleType, args: object, path: Path) -> int:
-    return ctx.re_summarize_collab(path, args.target, Path(args.summary_file), args.date)
 
 
 def _close(ctx: ModuleType, args: object, path: Path) -> int:
@@ -430,7 +374,6 @@ DISPATCH: dict[str, Handler] = {
     'effort-state': _effort_state,
     'execute-spawn': _execute_spawn,
     'execution': _execution,
-    'export-issues': _export_issues,
     'flag-inventory': _flag_inventory,
     'handoff-state': _handoff_state,
     'help': _help,
@@ -443,7 +386,6 @@ DISPATCH: dict[str, Handler] = {
     'participant-verify-render': _participant_verify_render,
     'participant-verify-state': _participant_verify_state,
     'record-verdict': _record_verdict,
-    'release': _release,
     'registry-cli-doc': _registry_cli_doc,
     'registry-path': _registry_path,
     'remove-participant': _remove_participant,
@@ -456,10 +398,8 @@ DISPATCH: dict[str, Handler] = {
     'retract-speak': _retract_speak,
     'reviewer-state': _reviewer_state,
     'rewrite-speak-render': _rewrite_speak_render,
-    'rewrite-summary': _rewrite_summary,
     'role-row': _role_row,
     'roles': _roles,
-    'seal-render': _seal_render,
     'seal-state': _seal_state,
     'seal-write': _seal_write,
     'set': _set,

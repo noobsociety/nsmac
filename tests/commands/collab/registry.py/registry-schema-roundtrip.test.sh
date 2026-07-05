@@ -26,9 +26,7 @@ data['unknownTopLevel'] = {'preserve': True}
 entry['unknownCollabField'] = ['preserve']
 entry['verification'] = {
     'rounds': 0,
-    'cap': 3,
     'subState': 'seal',
-    'participantVerification': False,
     'participants': {},
     'unknownNestedLifecycle': {'preserve': True},
 }

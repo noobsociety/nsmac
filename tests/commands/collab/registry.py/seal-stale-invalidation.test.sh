@@ -14,7 +14,7 @@ init_reviewer_target "Seal Stale Transcript Repair" "seal-stale-transcript-repai
 TARGET="$RUN_DATE-seal-stale-transcript-repair"
 "$ROOT/commands/collab/engine/registry.py" set "$TARGET" active-phase Completion --force --caller-role mod >/dev/null
 complete_execution "$TARGET"
-seal_target "$TARGET" --cap-exit reopen-handoff
+seal_target "$TARGET"
 "$ROOT/commands/collab/engine/registry.py" transcript-repair "$TARGET" --touch-execution-evidence --caller-role mod >/dev/null
 assert_seal_stale "seal-stale-transcript-repair" "transcript repair touched execution evidence"
 
@@ -22,7 +22,7 @@ init_reviewer_target "Seal Stale Execution Rewrite" "seal-stale-execution-rewrit
 TARGET="$RUN_DATE-seal-stale-execution-rewrite"
 "$ROOT/commands/collab/engine/registry.py" set "$TARGET" active-phase Completion --force --caller-role mod >/dev/null
 complete_execution "$TARGET"
-seal_target "$TARGET" --cap-exit reopen-handoff
+seal_target "$TARGET"
 "$ROOT/commands/collab/engine/registry.py" execution "$TARGET" pe completed "2026-05-15T22:00:00+02:00" \
   --assigned-role pe \
   --validation-result passed \
@@ -36,7 +36,7 @@ TARGET="$RUN_DATE-seal-stale-out-of-scope-patch"
 seed_handoff_scope "seal-stale-out-of-scope-patch"
 "$ROOT/commands/collab/engine/registry.py" set "$TARGET" active-phase Completion --force --caller-role mod >/dev/null
 complete_execution "$TARGET"
-seal_target "$TARGET" --cap-exit reopen-handoff
+seal_target "$TARGET"
 "$ROOT/commands/collab/engine/registry.py" out-of-scope-patch "$TARGET" pe \
   --path tests/run.sh \
   --caller-role pe >/dev/null
