@@ -15,7 +15,7 @@ from commands.collab.engine.errors import die
 PROJECT_ID_FILENAME = '.collab.json'
 STATE_HOME_ENV = 'COLLAB_STATE_HOME'
 DEFAULT_STATE_HOME = Path.home() / '.collabs'
-PROJECT_ID_RE = re.compile(r'^[a-z0-9][a-z0-9-]{7,127}$')
+PROJECT_ID_RE = re.compile(r'^[a-z0-9][a-z0-9-]{3,127}$')
 STATE_ROOT_PROOF_COMMAND = './tests/commands/collab/registry.py/state-root-resolution.test.sh'
 
 RESOLVED_PROJECT_IDENTITY: dict | None = None
@@ -59,7 +59,7 @@ def sanitize_project_id_seed(value: str | None) -> str:
         seed = 'command-project'
     if not seed[0].isalnum():
         seed = f'project-{seed}'
-    while len(seed) < 8:
+    while len(seed) < 4:
         seed = f'{seed}-project'
     return seed[:128].strip('-') or 'command-project'
 
@@ -79,7 +79,7 @@ def _fit_project_id(base: str, suffix: str | None = None, ordinal: int | None = 
     reserved = sum(len(part) for part in parts[1:]) + len(parts[1:])
     head = parts[0][: max(1, 128 - reserved)].strip('-') or 'project'
     candidate = '-'.join([head, *parts[1:]])
-    while len(candidate) < 8:
+    while len(candidate) < 4:
         candidate = f'{candidate}-project'
     return candidate[:128].strip('-')
 

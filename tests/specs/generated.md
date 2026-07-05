@@ -1,6 +1,6 @@
 # QA — command generated
 
-Deterministic QA for generated runtime artifacts projected to `~/.cursor/generated/`.
+Deterministic QA for generated runtime artifacts projected to `~/nsmac/generated/`.
 
 ## Procedure
 

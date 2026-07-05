@@ -64,17 +64,20 @@ if [[ "$init_help" != *'--open'* || "$init_help" == *'--preview'* ]]; then
 fi
 
 set +e
-none_terminal_output="$("$ROOT/commands/collab/engine/registry.py" init --agent-id codex --terminal none "None Terminal" 2>&1)"
-none_terminal_status=$?
+terminal_output="$("$ROOT/commands/collab/engine/registry.py" init --agent-id codex --terminal issue "Issue Terminal" 2>&1)"
+terminal_status=$?
 set -e
-if [[ "$none_terminal_status" -eq 0 || "$none_terminal_output" != *'--terminal requires one of: seal, issue'* ]]; then
-  printf 'FAIL: init accepted removed --terminal none value\n%s\n' "$none_terminal_output" >&2
+if [[ "$terminal_status" -eq 0 || "$terminal_output" != *'unknown flag: --terminal'* ]]; then
+  printf 'FAIL: init accepted retired --terminal flag\n%s\n' "$terminal_output" >&2
   exit 1
 fi
 
-issue_terminal_output="$("$ROOT/commands/collab/engine/registry.py" init --agent-id codex --terminal issue "Issue Terminal" 2>&1)"
-if [[ "$issue_terminal_output" != records/*issue-terminal.md || "$issue_terminal_output" == *-raw.md* ]]; then
-  printf 'FAIL: init did not report an issue-terminal moderator project transcript\n%s\n' "$issue_terminal_output" >&2
+set +e
+participant_bypass_output="$("$ROOT/commands/collab/engine/registry.py" init --agent-id codex --no-participant-verification "Bypass" 2>&1)"
+participant_bypass_status=$?
+set -e
+if [[ "$participant_bypass_status" -eq 0 || "$participant_bypass_output" != *'unknown flag: --no-participant-verification'* ]]; then
+  printf 'FAIL: init accepted retired --no-participant-verification flag\n%s\n' "$participant_bypass_output" >&2
   exit 1
 fi
 
@@ -106,58 +109,32 @@ registries = list(state_home.glob('*/registry.json'))
 assert len(registries) == 1, registries
 data = json.loads(registries[0].read_text())
 entry = next(item for item in data['collabs'] if item['slug'] == 'default-seal')
-assert entry['terminal'] == 'seal', entry
 projection = registries[0].parent / entry['transcriptPath']
 store = contribution_store_path_for_entry(registries[0], entry)
 assert projection.exists(), projection
 assert store.exists(), store
-issue = next(item for item in data['collabs'] if item['slug'] == 'issue-terminal')
-assert issue['terminal'] == 'issue', issue
-issue_projection = registries[0].parent / issue['transcriptPath']
-assert issue_projection.exists(), issue_projection
-assert contribution_store_path_for_entry(registries[0], issue).exists()
-assert 'verificationSeal' not in issue, issue
-assert 'verification' not in issue, issue
 PY
 
 python3 - "$ROOT" <<'PY'
-import importlib.util
-import re
 import sys
 from pathlib import Path
 
 root = Path(sys.argv[1])
-constants_path = root / 'commands/collab/engine/registry_constants.py'
-spec = importlib.util.spec_from_file_location('registry_constants', constants_path)
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
-
-if 'issue' not in module.ALLOWED_TERMINALS:
-    raise SystemExit(0)
-
 paths = [
     root / 'commands/collab/reference/workflow-models.md',
     root / 'commands/collab/init/index.md',
     root / 'commands/collab/reference/glossary.md',
 ]
-bad = re.compile(r'reserved|not yet implemented|hard[- ]?aborts?|hard[- ]?aborting', re.I)
-issue = re.compile(r'--terminal\s+issue|terminal\s+issue|issue\s+terminal|issue\s+workflow|`issue`', re.I)
 
 failures = []
 for path in paths:
-    lines = path.read_text().splitlines()
-    for index, line in enumerate(lines):
-        if not bad.search(line):
-            continue
-        window = '\n'.join(lines[max(0, index - 2): index + 3])
-        if issue.search(window):
-            failures.append(f'{path.relative_to(root)}:{index + 1}: {line}')
+    text = path.read_text()
+    for forbidden in ('--terminal', 'issue terminal', 'issue workflow'):
+        if forbidden in text.lower():
+            failures.append(f'{path.relative_to(root)} contains {forbidden!r}')
 
 if failures:
-    raise SystemExit(
-        'issue terminal is active but docs still describe it as reserved or hard-aborting:\n'
-        + '\n'.join(failures)
-    )
+    raise SystemExit('retired init terminal docs remain:\n' + '\n'.join(failures))
 PY
 
 python3 - "$ROOT" <<'INNER_PY'
@@ -189,12 +166,10 @@ for line in help_text.splitlines():
 expected = {
     '--agent-id',
     '--reviewer',
-    '--terminal',
-    '--no-participant-verification',
     '--work-repo',
     '--open',
 }
 assert documented_flags == expected, documented_flags
 INNER_PY
 
-printf 'OK: init argument validation rejects missing names, invalid reviewer values, retired verification flags, retired preview flag, invalid terminal selectors, and empty slugs; default terminal is seal and issue terminal initializes without seal state\n'
+printf 'OK: init argument validation rejects missing names, invalid reviewer values, retired verification flags, retired preview flag, retired terminal selectors, retired participant-verification bypasses, and empty slugs\n'

@@ -6,8 +6,8 @@ Deterministic QA for the absence of tracked user-settings sources in this reposi
 
 1. Confirm the tracked source directory `settings/` is absent.
 2. Validate no tracked file under this repository is projected as a user settings source.
-3. Validate no runtime-mode link points to `~/.cursor/settings/`.
-4. Validate no path-like values reference parent-repo authoring-only folders (`../`, `core`, `~/.cursor/core`).
+3. Validate no runtime-mode link points to `~/nsmac/settings/`.
+4. Validate no path-like values reference parent-repo authoring-only folders (`../`, `core`, `~/nsmac/core`).
 
 ## Required roster
 

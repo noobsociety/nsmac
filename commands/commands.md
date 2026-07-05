@@ -1,6 +1,6 @@
 # (commands)
 
-List public command routes under `~/.cursor/commands/` and their route playbooks; use when you need canonical dispatch syntax.
+List public command routes under `~/nsmac/commands/` and their route playbooks; use when you need canonical dispatch syntax.
 
 Contract: [platform/standards/command-standard.md](../platform/standards/command-standard.md)
 
@@ -21,14 +21,14 @@ Public command routers live at `commands/<namespace>/index.md`. Command route bo
 
 Invoke routes as `(namespace route ...)`; for example, `(collab issue create "Add audit guard")` loads `commands/collab/index.md`, resolves `issue`, then executes `commands/collab/issue/index.md` with the remaining input and attachments.
 
-`(test <target>)` may also require `~/.cursor/tests/specs/commands.md`, `~/.cursor/tests/specs/core.md`, `~/.cursor/tests/specs/settings.md`, and `REPOSITORY.md`.
+`(test <target>)` may also require `~/nsmac/tests/specs/commands.md`, `~/nsmac/tests/specs/core.md`, `~/nsmac/tests/specs/settings.md`, and `REPOSITORY.md`.
 
 **Invocation notes by command:**
 
-- **`(agent <install | patch | upgrade>)`** — install the multi-agent scaffold (`CLAUDE.md`, `AGENTS.md`, `REPOSITORY.md`) from `~/.cursor/platform/templates/` into the current repo, patch `REPOSITORY.md` with repo-specific mutation protocol and ownership rules, or upgrade installed scaffold files to the current templates; `install` aborts if any scaffold file already exists (pass `--force` to enter the diff-and-confirm path instead); `patch` aborts if `REPOSITORY.md` is absent or has no `<!-- TODO(patch): ... -->` placeholders; `upgrade` compares installed files against current templates and gates any overwrite.
-- **`(collab <init | join | speak | retract speak | rewrite speak | advance | restore | set | unset | list | activate | open | reopen | close | remove participant | archive | delete | diff | write summary | rewrite summary | run plan | summarize | export-issues | commit | issue | tag | release | rewrite execution | participant verify | show policy | show flags | show verdict | seal verification | log | status>)`** — create, join, contribute to, retract or rewrite the last contribution, move between phases, reopen from non-success verdicts, rewrite execution records, edit or clear scoped metadata, manage active collabs, reopen/close, manage participants, soft-delete (archive) or permanently delete, compare a collab record for advisory drift, write or rewrite summaries, run assigned action-plan items, write or refresh the managed all-phase summary in the transcript, record issue-terminal handoff evidence, split or squash commits, create issue handoffs or grounded issue implementation plans, create or preview release tags, plan or execute explicit release orchestration, record participant verification, read the gate policy, display the generated flag inventory or verdict metadata, view status/log output, or seal the `Completion.verification` sub-state after a reviewer pass; moderator-role contributions require human-authored text passed as `<message>` to `(collab speak "<message>")` after joining with the moderator role.
+- **`(agent <install | patch | upgrade>)`** — install the multi-agent scaffold (`CLAUDE.md`, `AGENTS.md`, `REPOSITORY.md`) from `~/nsmac/platform/templates/` into the current repo, patch `REPOSITORY.md` with repo-specific mutation protocol and ownership rules, or upgrade installed scaffold files to the current templates; `install` aborts if any scaffold file already exists (pass `--force` to enter the diff-and-confirm path instead); `patch` aborts if `REPOSITORY.md` is absent or has no `<!-- TODO(patch): ... -->` placeholders; `upgrade` compares installed files against current templates and gates any overwrite.
+- **`(collab <init | join | speak | retract speak | rewrite speak | advance | restore | set | unset | list | activate | open | reopen | close | remove participant | archive | delete | diff | run plan | summarize | commit | issue | tag | rewrite execution | participant verify | show policy | show flags | show verdict | seal verification | log | status>)`** — create, join, contribute to, retract or rewrite the last contribution, move between phases, reopen from non-success verdicts, rewrite execution records, edit or clear scoped metadata, manage active collabs, reopen/close, manage participants, soft-delete (archive) or permanently delete, compare a collab record for advisory drift, run assigned action-plan items, write or refresh the managed all-phase summary in the transcript, split or squash commits, create issue handoffs or grounded implementation plans, create or preview release tags, record participant verification, read the gate policy, display the generated flag inventory or verdict metadata, view status/log output, or seal the `Completion.verification` sub-state after a reviewer pass; moderator-role contributions require human-authored text passed as `<message>` to `(collab speak "<message>")` after joining with the moderator role.
   - **Retract.** `(collab retract speak)` tombstones the current role's latest active-phase contribution while preserving original text for audit history.
-  - **Seal.** `(collab seal verification)` records the reviewer's `verificationSeal` object and triggers close or a cap-exit action (reopen-action-plan, reopen-handoff, archive); reviewer role only; zero verification rounds is a hard ABORT.
+  - **Seal.** `(collab seal verification)` records the reviewer's `verificationSeal` object, then records the reviewer verdict; reviewer role only; zero verification rounds is a hard ABORT.
   - **Summarize.** `(collab summarize)` writes or refreshes the managed `## Phase Summary` block in the transcript, summarizing all phases in the record; mutating — writes to the transcript; does not write to the registry.
 - **`(collab commit <atomic | squash <from> <to>>)`** — split working tree or squash an inclusive range.
 - **`(collab issue <create | implement> <goal>)`** — create issue handoff or implement grounded work.
@@ -44,7 +44,7 @@ _Generated by `platform/tooling/sync-commands-catalog.sh`; do not edit this bloc
 | Dispatch | Public router | Route playbooks |
 | --- | --- | --- |
 | `(agent <install \| patch \| upgrade>)` | [agent](agent/index.md) | [install](agent/install/index.md), [patch](agent/patch/index.md), [upgrade](agent/upgrade/index.md) |
-| `(collab <init \| join \| speak \| retract speak \| rewrite speak \| advance \| restore \| set \| unset \| list \| activate \| open \| reopen \| close \| remove participant \| archive \| delete \| diff \| write summary \| rewrite summary \| run plan \| summarize \| export-issues \| commit \| issue \| tag \| release \| rewrite execution \| participant verify \| show policy \| show flags \| show verdict \| seal verification \| log \| status>)` | [collab](collab/index.md) | [activate](collab/activate/index.md), [advance](collab/advance/index.md), [archive](collab/archive/index.md), [close](collab/close/index.md), [commit](collab/commit/index.md), [delete](collab/delete/index.md), [diff](collab/diff/index.md), [export-issues](collab/export-issues/index.md), [init](collab/init/index.md), [issue](collab/issue/index.md), [join](collab/join/index.md), [list](collab/list/index.md), [log](collab/log/index.md), [open](collab/open/index.md), [participant verify](collab/participant-verify/index.md), [release](collab/release/index.md), [remove participant](collab/remove-participant/index.md), [reopen](collab/reopen/index.md), [restore](collab/restore/index.md), [retract speak](collab/retract-speak/index.md), [rewrite execution](collab/rewrite-execution/index.md), [rewrite speak](collab/rewrite-speak/index.md), [rewrite summary](collab/rewrite-summary/index.md), [run plan](collab/run-plan/index.md), [seal verification](collab/seal-verification/index.md), [set](collab/set/index.md), [show flags](collab/show-flags/index.md), [show policy](collab/show-policy/index.md), [show verdict](collab/show-verdict/index.md), [speak](collab/speak/index.md), [status](collab/status/index.md), [summarize](collab/summarize/index.md), [tag](collab/tag/index.md), [unset](collab/unset/index.md), [write summary](collab/write-summary/index.md) |
+| `(collab <init \| join \| speak \| retract speak \| rewrite speak \| advance \| restore \| set \| unset \| list \| activate \| open \| reopen \| close \| remove participant \| archive \| delete \| diff \| run plan \| summarize \| commit \| issue \| tag \| rewrite execution \| participant verify \| show policy \| show flags \| show verdict \| seal verification \| log \| status>)` | [collab](collab/index.md) | [activate](collab/activate/index.md), [advance](collab/advance/index.md), [archive](collab/archive/index.md), [close](collab/close/index.md), [commit](collab/commit/index.md), [delete](collab/delete/index.md), [diff](collab/diff/index.md), [init](collab/init/index.md), [issue](collab/issue/index.md), [join](collab/join/index.md), [list](collab/list/index.md), [log](collab/log/index.md), [open](collab/open/index.md), [participant verify](collab/participant-verify/index.md), [remove participant](collab/remove-participant/index.md), [reopen](collab/reopen/index.md), [restore](collab/restore/index.md), [retract speak](collab/retract-speak/index.md), [rewrite execution](collab/rewrite-execution/index.md), [rewrite speak](collab/rewrite-speak/index.md), [run plan](collab/run-plan/index.md), [seal verification](collab/seal-verification/index.md), [set](collab/set/index.md), [show flags](collab/show-flags/index.md), [show policy](collab/show-policy/index.md), [show verdict](collab/show-verdict/index.md), [speak](collab/speak/index.md), [status](collab/status/index.md), [summarize](collab/summarize/index.md), [tag](collab/tag/index.md), [unset](collab/unset/index.md) |
 | `(help <route>)` | [help](help/index.md) | n/a |
 | `(test <commands \| core \| roles \| settings \| repo \| all>)` | [test](test/index.md) | n/a |
 
@@ -60,24 +60,21 @@ _Generated by `platform/tooling/sync-commands-catalog.sh`; do not edit this bloc
 | `(collab commit <atomic \| squash>)` | [collab/commit/index.md](collab/commit/index.md) |
 | `(collab delete [<target>])` | [collab/delete/index.md](collab/delete/index.md) |
 | `(collab diff [<target>])` | [collab/diff/index.md](collab/diff/index.md) |
-| `(collab export-issues <evidence-file>)` | [collab/export-issues/index.md](collab/export-issues/index.md) |
-| `(collab init "<name>" [--reviewer <role>] [--terminal <seal\|issue>] [--no-participant-verification] [--work-repo <path>] [--open])` | [collab/init/index.md](collab/init/index.md) |
+| `(collab init "<name>" [--reviewer <role>] [--work-repo <path>] [--open])` | [collab/init/index.md](collab/init/index.md) |
 | `(collab issue <create \| implement> <goal>)` | [collab/issue/index.md](collab/issue/index.md) |
 | `(collab join --role <role>)` | [collab/join/index.md](collab/join/index.md) |
 | `(collab list [--status <open\|closed\|archived>])` | [collab/list/index.md](collab/list/index.md) |
 | `(collab log [<target>])` | [collab/log/index.md](collab/log/index.md) |
 | `(collab open)` | [collab/open/index.md](collab/open/index.md) |
 | `(collab participant verify [<role>])` | [collab/participant-verify/index.md](collab/participant-verify/index.md) |
-| `(collab release [<target>] [--tag <name>] [--confirm] [--push] [--direct-merge] [--github-release] [--auto-fire])` | [collab/release/index.md](collab/release/index.md) |
 | `(collab remove participant <role>)` | [collab/remove-participant/index.md](collab/remove-participant/index.md) |
 | `(collab reopen <action-plan \| handoff> [<target>])` | [collab/reopen/index.md](collab/reopen/index.md) |
 | `(collab restore [--to <eventIndex>])` | [collab/restore/index.md](collab/restore/index.md) |
 | `(collab retract speak [--reason <text>])` | [collab/retract-speak/index.md](collab/retract-speak/index.md) |
 | `(collab rewrite execution)` | [collab/rewrite-execution/index.md](collab/rewrite-execution/index.md) |
 | `(collab rewrite speak)` | [collab/rewrite-speak/index.md](collab/rewrite-speak/index.md) |
-| `(collab rewrite summary)` | [collab/rewrite-summary/index.md](collab/rewrite-summary/index.md) |
 | `(collab run plan)` | [collab/run-plan/index.md](collab/run-plan/index.md) |
-| `(collab seal verification [--cap-exit <action>] [--outcome <outcome>] [--restore-target <target>] [--restore-reason <reason>] [--evidence <json>] [--failure-category <category>])` | [collab/seal-verification/index.md](collab/seal-verification/index.md) |
+| `(collab seal verification [--outcome <outcome>] [--restore-target <target>] [--restore-reason <reason>] [--evidence <json>] [--failure-category <category>])` | [collab/seal-verification/index.md](collab/seal-verification/index.md) |
 | `(collab set <field> <value>)` | [collab/set/index.md](collab/set/index.md) |
 | `(collab show flags)` | [collab/show-flags/index.md](collab/show-flags/index.md) |
 | `(collab show policy)` | [collab/show-policy/index.md](collab/show-policy/index.md) |
@@ -87,10 +84,9 @@ _Generated by `platform/tooling/sync-commands-catalog.sh`; do not edit this bloc
 | `(collab summarize [<target>])` | [collab/summarize/index.md](collab/summarize/index.md) |
 | `(collab tag [<target>] [--tag <name>] [--confirm] [--push])` | [collab/tag/index.md](collab/tag/index.md) |
 | `(collab unset reviewer)` | [collab/unset/index.md](collab/unset/index.md) |
-| `(collab write summary)` | [collab/write-summary/index.md](collab/write-summary/index.md) |
 <!-- END GENERATED:COMMANDS_ROSTER -->
 
-Project onboarding files, such as `AGENTS.md` at an application repository root, are separate from this catalog. They describe the repo being edited, not global `~/.cursor` config.
+Project onboarding files, such as `AGENTS.md` at an application repository root, are separate from this catalog. They describe the repo being edited, not global `~/nsmac` config.
 
 ## Maintainer QA
 

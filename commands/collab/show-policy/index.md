@@ -19,16 +19,16 @@ Document the gate policy that decides when a collaboration needs a reviewer judg
 ## Notes
 
 - **Parameters:** no arguments are accepted.
-- **Documentation-only status:** The route documents policy and lists roles. The route does not mutate registry state. No machine-readable registry field exists for gate assignment in this version. The future field name is `reviewer`.
+- **Documentation-only status:** The route documents policy and lists roles. The route does not mutate registry state. `reviewerRole` is the registry field for gate assignment.
 - **Gate policy:** A gate policy separates durable trigger conditions from the role assigned to close the gate.
 - **Gate triggers:** Any one condition fires the gate: all non-reviewer, non-moderator participants complete one full exchange without convergence; those participants converge but change Audit framing; the direction creates notable cost, migration, or maintenance risk not present in Audit; the moderator explicitly requests a judgment pass.
 - **Reviewer:** Set the reviewer at collab initialization or roster setup using `(collab set reviewer <role>)`. Do not reassign mid-collab.
 - **Reviewer fallback:** When no `reviewerRole` is set, assign implementation-risk triggers to the participant with the closest implementation concerns, coherence or documentation-source triggers to the participant with the closest documentation concerns, and moderator-judgment triggers to the moderator only as a last resort before escalation.
 - **Assignment timing:** Set reviewer once at initialization or initial roster setup. Do not reassign mid-collab.
 - **Gate-blocked state:** Gate-blocked means a trigger fired but no current participant can safely own the gate. Gate-blocked is a non-error pause that prevents phase advancement until a safe reviewer joins or the moderator explicitly records an accepted-risk override.
-- **Phase presence:** When reviewer is set via `reviewerRole`, the lifecycle enforces: reviewer speaks once, last, in convergent phases (`Audit`, `Conclusion`); reviewer may speak in `Discussion` when the optional-phases list includes it; reviewer stays silent in `Action Plan`, `Handoff`, and `Completion` unless a re-Audit signal fires. In `Completion.verification`, the reviewer issues `(collab seal verification)` to record the seal object; this is the reviewer's terminal obligation for reviewer-backed collabs. Execution (`Completion.execution`) precedes sealing (`Completion.verification`); close is blocked until a current non-stale `verificationSeal` exists.
-- **Verification sub-state semantics:** See [`verification.md`](../../../commands/collab/reference/verification.md) for the full sub-state model, round definition, seal object schema, stale-seal triggers, cap-exit options, and reviewer obligation.
-- **writeScope reopen advisory:** When the reviewer discovers out-of-scope work during `Completion.verification`, the only registered exit is `(collab seal verification --cap-exit reopen-handoff)`. See [`verification.md`](../../../commands/collab/reference/verification.md) for the full advisory and cap-exit option set.
+- **Phase presence:** When reviewer is set via `reviewerRole`, the lifecycle enforces: reviewer speaks once, last, in convergent phases (`Audit`, `Conclusion`); reviewer may speak in `Discussion` when the optional-phases list includes it; reviewer stays silent in `Action Plan`, `Handoff`, and `Completion` unless a re-Audit signal fires. In `Completion.verification`, the reviewer issues `(collab seal verification)` to record the seal object, then `(collab seal verification --outcome <outcome>)` to record the assessment verdict. Execution (`Completion.execution`) precedes sealing (`Completion.verification`); close is blocked until a current non-stale `verificationSeal` exists and the reviewer records a success verdict.
+- **Verification sub-state semantics:** See [`verification.md`](../../../commands/collab/reference/verification.md) for the full sub-state model, round definition, seal object schema, stale-seal triggers, and reviewer obligation.
+- **writeScope reopen advisory:** When the reviewer discovers out-of-scope work during `Completion.verification`, record a non-success verdict with `restoreTarget: "Handoff"` and then run `(collab reopen handoff)`. Informal scope widening is not permitted.
 - **Role catalog:** `commands/collab/engine/registry.py roles` is the authoritative source for available joinable roles. No role key is hard-coded in this policy.
 
 ## Provenance
@@ -48,7 +48,7 @@ When an Action Plan item resolves a Drift deferral, the same completion path mus
 **Slow-rot risks (no single failure event):**
 
 - **Spec/helper divergence:** `speak.md` and other route specs describe helper call shapes. When the helper evolves, the spec can silently contradict it. The gap only surfaces when a new contributor relies on the spec and gets an unexpected result.
-- **Spec/helper divergence at verification boundary:** `../seal-verification/index.md` describes the `seal-render`, `seal-state`, and verification round helper shapes. If `commands/collab/engine/registry.py` evolves those subcommands without updating the route spec, contributors receive unexpected results or silent wrong-state writes at the exact point where seal integrity is most critical.
+- **Spec/helper divergence at verification boundary:** `../seal-verification/index.md` describes the `seal-state`, `seal-write`, `record-verdict`, and verification round helper shapes. If `commands/collab/engine/registry.py` evolves those subcommands without updating the route spec, contributors receive unexpected results or silent wrong-state writes at the exact point where seal integrity is most critical.
 - **Seal staleness on execution rewrites:** `verificationSeal` binds to an `observedRevision` and specific `executionEntries`. A rewrite via `(collab rewrite execution)` after sealing changes the execution evidence the seal was written against. If the helper's staleness call in the rewrite path fails silently, the seal appears valid but covers different evidence than it recorded. Each staleness trigger must have a paired shell test asserting invalidation.
 - **Reviewer-prose drift vs seal object:** A reviewer may write "looks good" in a Discussion or Conclusion contribution and later issue a seal that records different `touchedPaths` or `validationScopes` than the prose implied. No route breaks; the audit trail is internally inconsistent. The seal is the machine-readable record; reviewer prose is explanatory context only.
 - **Reviewer-prose staleness:** The reviewer block in transcript headers is hand-written. A pending reviewer that joins late, or a reviewer block that is never updated, bakes inaccurate state into the audit trail. No route breaks; the record is simply wrong.
@@ -63,7 +63,7 @@ These items were previously deferred here and later implemented or superseded. T
 |---|---|
 | Join/speak registry + transcript transaction | Resolved by `commands/collab/engine/registry.py` `commit_registry_and_transcript`, which writes registry and transcript together with rollback on known write failures. Provenance only — the helper resolution is the record; no executable test asserts the rollback path. |
 | Participant-table render helper | Resolved by `commands/collab/engine/registry.py render-participants` and `join-participants`, which rebuild participant rows from registry state. Provenance only — no executable test asserts the render-participants stale-row replacement in isolation. |
-| Tombstone-style contribution retract | Resolved by `commands/collab/engine/registry.py retract-speak`; exercised by `tests/commands/collab/registry.py/full-body-block-flow.test.sh`, which asserts the tombstone is written and the original content is retained. |
+| Tombstone-style contribution retract | Resolved by `commands/collab/engine/registry.py retract-speak`; the helper-owned shape is specified by `commands/collab/retract-speak/index.md` and `commands/collab/reference/contribution-annex.md`. Provenance only — the retained manifest no longer carries a dedicated retract/full-body flow test. |
 
 **Deferred structural items (trigger-based backlog):**
 
@@ -72,5 +72,5 @@ These items were surfaced in `collab-command-assessment-feedback` (2026-05-01) a
 | Item | Concrete-failure trigger |
 |---|---|
 | Helper CLI versioning (documented contract for subcommand input/output shape) | A subcommand rename or field removal breaks a route spec in production |
-| Action Plan → GitHub issue export (`(collab export-issues)` or equivalent) | A collab's Action Plan is large enough that manual issue creation becomes the bottleneck |
+| Action Plan → GitHub issue creation workflow | A collab's Action Plan is large enough that manual issue creation becomes the bottleneck |
 | Capability-class enforcement for mutating collab routes | A trusted actor channel exists for at least two supported harnesses, or an integration test can distinguish a joined caller from a non-joined caller for a mutating collab route |

@@ -1,10 +1,10 @@
 # QA — command core canon
 
-Deterministic QA for `~/.cursor/platform/standards/*.md` canon documents.
+Deterministic QA for `~/nsmac/platform/standards/*.md` canon documents.
 
 ## Procedure
 
-1. Load every `*.md` under `~/.cursor/platform/standards/`.
+1. Load every `*.md` under `~/nsmac/platform/standards/`.
 2. Validate the roster is exact.
 3. Validate each file has one H1 and is <= 250 lines.
 4. Validate links in `platform/standards/` stay self-contained (sibling `platform/standards/*.md` links only).

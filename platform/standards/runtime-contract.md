@@ -1,6 +1,6 @@
 # Runtime contract
 
-The document specifies the execution prerequisites for `~/.cursor` tooling. A host that does not meet these requirements may fail with an opaque error mid-run rather than a named failure at startup. `platform/tooling/audit.sh` runs a preflight against these requirements and fails early with a named message before downstream validators run.
+The document specifies the execution prerequisites for `~/nsmac` tooling. A host that does not meet these requirements may fail with an opaque error mid-run rather than a named failure at startup. `platform/tooling/audit.sh` runs a preflight against these requirements and fails early with a named message before downstream validators run.
 
 ## Python
 

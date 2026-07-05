@@ -6,7 +6,7 @@ Standalone reference for `Completion.verification` sub-state semantics. Loaded b
 
 **Slash:** (reference only — not an invocable route)
 **Prose dispatch:** (reference only — not an invocable route)
-**Search phrases:** collab verification semantics, Completion.verification, verification round, seal object, stale seal, cap exit, assessment flags, verdict outcome, restoreTarget, restoreReason, evidence, failureCategory, nullResult
+**Search phrases:** collab verification semantics, Completion.verification, verification round, seal object, stale seal, assessment flags, verdict outcome, restoreTarget, restoreReason, evidence, failureCategory, nullResult
 
 ## Sub-states
 
@@ -17,7 +17,7 @@ Verification runs in two stages. Each participant completes one full turn agains
 | Sub-state | Description |
 |-----------|-------------|
 | `Completion.execution` | `(collab run plan)` execution for all assigned roles, resulting in `execution.<role>` registry entries. |
-| `Completion.verification` | Assigned participants run `(collab participant verify)` (if configured); reviewer then issues `(collab seal verification)` and evaluates whether discussion goals were met. |
+| `Completion.verification` | Assigned participants run `(collab participant verify)`; reviewer then issues `(collab seal verification)` and evaluates whether discussion goals were met. |
 
 Execution precedes verification. Close is blocked until a current non-stale `verificationSeal` exists and the reviewer has emitted a `verdict` with `outcome == success`.
 
@@ -31,7 +31,7 @@ Within `Completion.verification`, three ordered sub-states apply for reviewer-ba
 | `verification.seal` | Reviewer issues `(collab seal verification)`; mechanical execution-truth check. Existing seal contract unchanged. |
 | `verification.assessment` | Reviewer evaluates whether discussion goals were met and emits a `verdict`. |
 
-`verification.participant` precedes `verification.seal`, which precedes `verification.assessment`. Assessment opens after a successful seal. Assessment also re-opens when the seal becomes stale or a cap-exit is recorded, which invalidates the prior seal. Assessment is budget-exempt when a cap-exit trigger opened it.
+`verification.participant` precedes `verification.seal`, which precedes `verification.assessment`. Assessment opens after a successful seal and re-opens when the seal becomes stale.
 
 On a clean first pass, `seal-write` transitions to `verification.assessment`; the reviewer records `--outcome success` through `record-verdict`, and the collab auto-closes with an auto-summary.
 
@@ -47,7 +47,7 @@ Within `verification.participant`, each assigned role's progress is tracked inde
 | `completed` | All three turns passed; this role's participant verification is done. |
 | `failed` | Final-audit found unresolved issues; the sequence ended with failures. |
 
-`verification.participants[role].stage` is absent when participant verification is not configured or the role has not yet begun its sequence. `verification.subState` remains `"participant"` across all roles during this sub-state; per-turn labels are stored per-role, not as additional global sub-state transitions.
+`verification.participants[role].stage` is absent when the role has not yet begun its sequence. `verification.subState` remains `"participant"` across all roles during this sub-state; per-turn labels are stored per-role, not as additional global sub-state transitions.
 
 ### Assessment verdict
 
@@ -107,34 +107,19 @@ Each trigger is helper-enforced with a paired shell test asserting invalidation:
 
 A stale seal blocks close. The seal must be re-issued after any stale trigger fires.
 
-## Cap and cap-exit options
-
-A round cap is set at collab initialization (default: 3). When the cap fires, the reviewer must choose one registered cap-exit action recorded on the seal; no further rounds are accepted after a cap exit is recorded.
-
-The participant-verification attempt budget is bound to the active Handoff `writeScope` hash. A reopen via `reopen-handoff` that introduces a different `writeScope` signature opens a new attempt budget for participant verification. A reopen that preserves the same `writeScope` signature consumes budget against the same counter.
-
-| Cap-exit action | Effect |
-|-----------------|--------|
-| `reopen-action-plan` | Transitions the collab to `Action Plan` phase |
-| `reopen-handoff` | Transitions the collab to `Handoff` phase |
-| `archive` | Closes with an accepted-risk summary for unresolved findings |
-| `follow-up-collab` | Ends the verification loop and opens a new linked collab for unresolved findings; `seal-write` emits structured `NEXT:` guidance with `restoreReason`, open `evidence` anchors, and `failureCategory`. |
-
-The cap-exit action is passed to `seal-write` as `--cap-exit <action>`. The reviewer may also declare a cap exit before the cap fires when they choose to end the loop early. `--cap-exit archive` requires unresolved findings; using it when participant verification passed cleanly is a protocol violation.
-
 ## writeScope reopen advisory
 
-When the reviewer discovers during `Completion.verification` that required fixes are outside the executed `writeScope`, the only registered exit is `(collab seal verification) --cap-exit reopen-handoff`. This transition reopens `Handoff` for a revised scope declaration; informal scope widening is not permitted.
+When the reviewer discovers during `Completion.verification` that required fixes are outside the executed `writeScope`, the reviewer records a non-success verdict with `restoreTarget: "Handoff"`. The moderator then runs `(collab reopen handoff)` for a revised scope declaration. Informal scope widening is not permitted.
 
 The boundary source is `handoff.roles.<role>.writeScope` in the registry.
 
 ## Reviewer obligation
 
-Only the `reviewerRole` participant may author the seal. Non-reviewer roles must not issue `(collab seal verification)`. The reviewer's terminal obligation for reviewer-backed collabs is issuing the seal; the reviewer does not run the full test suite as part of verification.
+Only the `reviewerRole` participant may author the seal or verdict. Non-reviewer roles must not issue either mode of `(collab seal verification)`. The reviewer's `Completion.verification` obligation for reviewer-backed collabs is to write the seal and then record the assessment verdict. If the reviewer is also assigned the terminal full-suite Action Plan item, that work belongs to `Completion.execution`; the reviewer does not run the full test suite as part of verification.
 
 ## Auto-close
 
-For reviewer-backed collabs, auto-close from `(collab run plan)` alone is removed. Close fires only when all assigned `execution.<role>` entries are `completed` AND a current non-stale `verificationSeal` exists. Both conditions must hold simultaneously.
+For reviewer-backed collabs, auto-close from `(collab run plan)` alone is removed. Close fires only when all assigned `execution.<role>` entries are `completed`, a current non-stale `verificationSeal` exists, and the reviewer records `verdict.outcome == "success"`. All three conditions must hold simultaneously.
 
 ## Time-of-close attestation
 
@@ -173,5 +158,5 @@ When `(collab reopen)` resets participant verification, `reset_participant_verif
 - [`registry.md`](registry.md) — `verificationSeal` field schema and `completion.subState` field ownership
 - [`show-policy.md`](../show-policy/index.md) — gate policy and phase-presence overview
 - [`agent-effort.md`](agent-effort.md) — effort matrix row for `Completion.verification`
-- [`show-verdict.md`](../show-verdict/index.md) — forthcoming route for verdict introspection over closed-collab metadata; surfaces `outcome`, `restoreTarget`, `evidence`, `failureCategory`, and `nullResult` without requiring direct registry JSON access
+- [`show-verdict.md`](../show-verdict/index.md) — invocable route for verdict introspection over collab metadata; surfaces `outcome`, `restoreTarget`, `evidence`, `failureCategory`, and `nullResult` without requiring direct registry JSON access
 - [`workRepo-remediation-index.md`](workRepo-remediation-index.md) — durable R1–R7 remediation items for `workRepo` binding and reachability failures

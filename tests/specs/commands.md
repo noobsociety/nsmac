@@ -1,10 +1,10 @@
 # QA — command commands
 
-Deterministic QA for command routers and route playbooks in `~/.cursor/commands/**/*.md`.
+Deterministic QA for command routers and route playbooks in `~/nsmac/commands/**/*.md`.
 
 ## Procedure
 
-1. Load every `*.md` under `~/.cursor/commands/`.
+1. Load every `*.md` under `~/nsmac/commands/`.
 2. Validate each file has exactly one `#` title, and exactly one `## Trigger`, `## Steps`, and `## Notes` in that order.
 3. Validate P9: every public command and private function file except `commands.md` declares exactly one `**Dispatch:**` and `**Search phrases:**` line in that order, declares no legacy `**Slash:**`, `**Signature:**`, or `**Prose dispatch:**` lines, and contains no user-facing slash command invocation prose.
 4. Validate trigger boundaries: invocable dispatch forms do not appear under `Search phrases`, search phrases do not replace dispatch entries, and legacy `**Phrases:**` blocks fail.
@@ -20,7 +20,7 @@ Deterministic QA for command routers and route playbooks in `~/.cursor/commands/
 
 ## Required roster
 
-Public command routers under `~/.cursor/commands/`:
+Public command routers under `~/nsmac/commands/`:
 
 - `agent/index.md`
 - `commands.md`
@@ -28,7 +28,7 @@ Public command routers under `~/.cursor/commands/`:
 - `help/index.md`
 - `test/index.md`
 
-Route playbooks under `~/.cursor/commands/`:
+Route playbooks under `~/nsmac/commands/`:
 
 - `agent/install/index.md`
 - `agent/patch/index.md`
@@ -40,7 +40,6 @@ Route playbooks under `~/.cursor/commands/`:
 - `collab/commit/index.md`
 - `collab/delete/index.md`
 - `collab/diff/index.md`
-- `collab/export-issues/index.md`
 - `collab/init/index.md`
 - `collab/issue/index.md`
 - `collab/join/index.md`
@@ -48,14 +47,12 @@ Route playbooks under `~/.cursor/commands/`:
 - `collab/log/index.md`
 - `collab/open/index.md`
 - `collab/participant-verify/index.md`
-- `collab/release/index.md`
 - `collab/remove-participant/index.md`
 - `collab/reopen/index.md`
 - `collab/restore/index.md`
 - `collab/retract-speak/index.md`
 - `collab/rewrite-execution/index.md`
 - `collab/rewrite-speak/index.md`
-- `collab/rewrite-summary/index.md`
 - `collab/run-plan/index.md`
 - `collab/seal-verification/index.md`
 - `collab/set/index.md`
@@ -67,7 +64,6 @@ Route playbooks under `~/.cursor/commands/`:
 - `collab/summarize/index.md`
 - `collab/tag/index.md`
 - `collab/unset/index.md`
-- `collab/write-summary/index.md`
 
 ## Output
 

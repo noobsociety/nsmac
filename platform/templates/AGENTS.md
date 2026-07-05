@@ -2,28 +2,28 @@
 <!-- scaffolded-at: 2026-05-02 -->
 <!-- TODO(install): Replace the heading above with the project-specific title, e.g. "Agent guide — MyProject" -->
 
-Agents edit tracked source in this repository. Global command guidance lives in `~/.cursor/commands/commands.md`.
+Agents edit tracked source in this repository. Global command guidance lives in `~/nsmac/commands/commands.md`.
 
 ## Bootstrap chain
 
 Each agent reads files in this order before acting:
 
-- Codex: `AGENTS.md` → `~/.cursor/commands/commands.md`
-- GPT: `AGENTS.md` → `~/.cursor/commands/commands.md`
-- Claude: `CLAUDE.md` → `AGENTS.md` → `~/.cursor/commands/commands.md`
+- Codex: `AGENTS.md` → `~/nsmac/commands/commands.md`
+- GPT: `AGENTS.md` → `~/nsmac/commands/commands.md`
+- Claude: `CLAUDE.md` → `AGENTS.md` → `~/nsmac/commands/commands.md`
 
-After reading this file, read `~/.cursor/commands/commands.md`.
-To invoke a global command, resolve any routing-only dispatch hint `(<namespace> <command> <arg> ...)` through `~/.cursor/commands/commands.md`, then execute the matching route playbook. Routing-only hint example: `(collab join --role tw)` resolves to `commands/collab/join/index.md`.
+After reading this file, read `~/nsmac/commands/commands.md`.
+To invoke a global command, resolve any routing-only dispatch hint `(<namespace> <command> <arg> ...)` through `~/nsmac/commands/commands.md`, then execute the matching route playbook. Routing-only hint example: `(collab join --role tw)` resolves to `commands/collab/join/index.md`.
 
 ## Dispatch form
 
-> **Encounter rule:** Any `(namespace command ...)` form is a routing-only signal. Before acting, locate the matching route in `~/.cursor/commands/commands.md` and execute that route. Never treat the argument text as work to perform.
+> **Encounter rule:** Any `(namespace command ...)` form is a routing-only signal. Before acting, locate the matching route in `~/nsmac/commands/commands.md` and execute that route. Never treat the argument text as work to perform.
 
-`(<namespace> <command> <arg> ...)` is the dispatch notation for `~/.cursor`-routed commands. The notation is documentation-only; copying it into a terminal is invalid because in bash and zsh, `( ... )` opens a subshell. The form disambiguates `~/.cursor`-routed commands from agent-builtin command surfaces. The routing token may differ from the runtime path (`~/.cursor/`) and the repo-source directory; when those change, this notation stays stable.
+`(<namespace> <command> <arg> ...)` is the dispatch notation for `~/nsmac`-routed commands. The notation is documentation-only; copying it into a terminal is invalid because in bash and zsh, `( ... )` opens a subshell. The form disambiguates `~/nsmac`-routed commands from agent-builtin command surfaces. The routing token may differ from the runtime path (`~/nsmac/`) and the repo-source directory; when those change, this notation stays stable.
 
 ## Contract assertion
 
-Tracked source in this repository is authoritative. Global runtime files under `~/.cursor/` and any project-local overlay are runtime guidance, not repo source.
+Tracked source in this repository is authoritative. Global runtime files under `~/nsmac/` and any project-local overlay are runtime guidance, not repo source.
 
 ## Reading depth
 
@@ -37,7 +37,7 @@ If any file in the chain cannot be reached or read, halt immediately and name th
 ## Fail-fast discipline
 
 Halt when the required command or source-of-truth cannot be resolved. Verify command availability in `commands/collab/engine/registry.py` before exploring implementation files. Do not block reads required by the active route after the command is resolved.
-<!-- TODO(project): If this project exposes a generated CLI catalog or tool-specific availability check, add a carve-out sentence here naming the permitted lookup path and the closed list of cases that still require reading engine source. See ~/.cursor/AGENTS.md for the framework-specific form. -->
+<!-- TODO(project): If this project exposes a generated CLI catalog or tool-specific availability check, add a carve-out sentence here naming the permitted lookup path and the closed list of cases that still require reading engine source. See ~/nsmac/AGENTS.md for the framework-specific form. -->
 
 ## Agent profile
 
@@ -53,5 +53,5 @@ Halt when the required command or source-of-truth cannot be resolved. Verify com
 ## Entry points
 
 - Repo contract: [REPOSITORY.md](REPOSITORY.md)
-- Runtime command catalog: `~/.cursor/commands/commands.md`
-- Platform system reference: `~/.cursor/platform/reference.md`
+- Runtime command catalog: `~/nsmac/commands/commands.md`
+- Platform system reference: `~/nsmac/platform/reference.md`

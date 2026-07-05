@@ -7,7 +7,7 @@ set -euo pipefail
 # that repoints the commit -- so a stale verification cannot be preserved across
 # a reopen and ride through to a success seal. Declared-scope equality alone is
 # insufficient; the per-role execution signature is the guard. This isolates that
-# mechanism (lazy reset and scope-aware reset) plus the inactive-guidance text.
+# mechanism (lazy reset and scope-aware reset) plus inactive-guidance text.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
 
@@ -30,8 +30,7 @@ def entry():
             'touchedPaths': ['a.txt'], 'commits': ['c1'],
         }},
         'verification': {
-            'rounds': 1, 'cap': 3, 'subState': 'seal',
-            'participantVerification': True, 'participants': {},
+            'rounds': 1, 'subState': 'seal', 'participants': {},
         },
     }
 
@@ -74,12 +73,9 @@ assert e['verification']['participants']['tw'].get('stage') != 'completed', \
 
 # Inactive participant-verify guidance names only published routes and the right
 # actor per sub-state (no restart-verification or repair-execution-provenance route).
-def msg(substate, enabled=True):
+def msg(substate):
     e = entry()
-    if not enabled:
-        e['verification'] = {'subState': substate}
-    else:
-        e['verification']['subState'] = substate
+    e['verification']['subState'] = substate
     return R.participant_verification_inactive_message(e)
 
 seal_msg = msg('seal')
@@ -89,9 +85,6 @@ assess_msg = msg('assessment')
 assert '(collab seal verification ' in assess_msg, assess_msg
 assert '(collab reopen <action-plan|handoff>' in assess_msg, assess_msg
 assert 'restart-verification' not in assess_msg and 'repair-execution-provenance' not in assess_msg, assess_msg
-
-disabled_msg = msg('seal', enabled=False)
-assert 'not enabled' in disabled_msg and '(collab seal verification ' in disabled_msg, disabled_msg
 
 print('OK: execution-content change invalidates completed verification (lazy and scope-aware); '
       'inactive guidance uses only published routes')

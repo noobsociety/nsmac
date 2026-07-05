@@ -16,6 +16,10 @@ REINTRODUCTION_ALLOWLIST = {
     "commands/collab/diff/index.md",
 }
 
+DELETED_REFERENCE_ALLOWLIST = {
+    ".collab.json",
+}
+
 
 def git_lines(root: Path, args: list[str]) -> list[str]:
     result = subprocess.run(
@@ -64,7 +68,11 @@ def main(argv: list[str]) -> int:
     args = parser.parse_args(argv)
 
     root = Path(args.root).resolve()
-    deleted = absent_deleted_paths(root)
+    deleted = [
+        path
+        for path in absent_deleted_paths(root)
+        if path not in DELETED_REFERENCE_ALLOWLIST
+    ]
     failures: list[str] = []
 
     for path in reintroduced_deleted_paths(root):

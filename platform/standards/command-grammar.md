@@ -1,6 +1,6 @@
 # Command grammar
 
-Rules for how `~/.cursor`-routed command notation maps to filesystem and helper names.
+Rules for how `~/nsmac`-routed command notation maps to filesystem and helper names.
 
 ## Dispatch surface
 

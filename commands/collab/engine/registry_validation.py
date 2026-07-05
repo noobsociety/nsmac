@@ -12,20 +12,17 @@ from commands.collab.engine.errors import die
 from commands.collab.engine.handoff_shape import validate_handoff_state
 from commands.collab.engine.participants import reviewer_mode, validate_participant_role_files
 from commands.collab.engine.registry_constants import (
-    ALLOWED_CAP_EXITS,
     ALLOWED_COMPLETION_SUBSTATES,
     ALLOWED_EXECUTION_STATUSES,
     ALLOWED_PARTICIPANT_VERIFICATION_STAGES,
     ALLOWED_REVIEWER_MODES,
     ALLOWED_STATUSES,
-    ALLOWED_TERMINALS,
     ALLOWED_VALIDATION_SCOPES,
     ALLOWED_VERIFICATION_SUBSTATES,
     CREATED_AT_REQUIRED_COLLAB_FIELDS,
     CREATED_AT_REQUIRED_REVIEWER_FIELDS,
     CREATED_AT_REQUIRED_VERIFICATION_FIELDS,
     DEFAULT_REVIEWER_OPTIONAL_PHASES,
-    DEFAULT_VERIFICATION_CAP,
     DISALLOWED_VERSION_FIELD,
     PHASES,
 )
@@ -103,7 +100,6 @@ def validate_required_collab_fields(
     collab_id: object,
     slug: object,
     created_at: object,
-    terminal: object,
     status: object,
     active_phase: object,
     moderator_role: object,
@@ -142,10 +138,6 @@ def validate_required_collab_fields(
         die(f'{source}: collab activePhase must be one of {PHASES}')
     if created_at is not None and (not isinstance(created_at, str) or not created_at.strip()):
         die(f'{source}: collab createdAt must be a non-empty string when present')
-    if terminal is not None and terminal not in ALLOWED_TERMINALS:
-        die(f'{source}: collab terminal must be one of {sorted(ALLOWED_TERMINALS)} when present')
-    if terminal is None and created_at is not None:
-        die(f'{source}: collab terminal must be one of {sorted(ALLOWED_TERMINALS)}')
     if not isinstance(entry.get('archived'), bool):
         die(f'{source}: collab archived must be a boolean')
     if sequence is not None:
@@ -299,22 +291,11 @@ def validate_verification_state(
         rounds = 0
     else:
         die(f'{source}: verification.rounds is required when createdAt is present')
-    if 'cap' in verification:
-        cap = verification['cap']
-    elif created_at is None:
-        cap = DEFAULT_VERIFICATION_CAP
-    else:
-        die(f'{source}: verification.cap is required when createdAt is present')
     verification_substate = verification.get('subState')
     if not isinstance(rounds, int) or rounds < 0:
         die(f'{source}: verification.rounds must be a non-negative integer when present')
-    if not isinstance(cap, int) or cap < 1:
-        die(f'{source}: verification.cap must be a positive integer when present')
     if verification_substate is not None and verification_substate not in ALLOWED_VERIFICATION_SUBSTATES:
         die(f'{source}: verification.subState must be one of {sorted(ALLOWED_VERIFICATION_SUBSTATES)}')
-    participant_enabled = verification.get('participantVerification')
-    if participant_enabled is not None and not isinstance(participant_enabled, bool):
-        die(f'{source}: verification.participantVerification must be a boolean when present')
     participants_state = verification.get('participants')
     if participants_state is None:
         return
@@ -383,57 +364,6 @@ def validate_verification_seal_state(
     stale = verification_seal.get('stale')
     if stale is not None and not isinstance(stale, bool):
         die(f'{source}: verificationSeal.stale must be a boolean when present')
-    cap_exit = verification_seal.get('capExit')
-    if cap_exit is not None and cap_exit not in ALLOWED_CAP_EXITS:
-        die(f'{source}: verificationSeal.capExit must be one of {sorted(ALLOWED_CAP_EXITS)}')
-    follow_up = verification_seal.get('followUp')
-    if follow_up is None:
-        return
-    if not isinstance(follow_up, dict):
-        die(f'{source}: verificationSeal.followUp must be an object when present')
-    restore_reason = follow_up.get('restoreReason')
-    evidence = follow_up.get('evidence')
-    failure_category = follow_up.get('failureCategory')
-    if not isinstance(restore_reason, str) or not restore_reason.strip():
-        die(f'{source}: verificationSeal.followUp.restoreReason must be a non-empty string')
-    if not isinstance(evidence, dict):
-        die(f'{source}: verificationSeal.followUp.evidence must be an object')
-    if not isinstance(failure_category, str) or not failure_category.strip():
-        die(f'{source}: verificationSeal.followUp.failureCategory must be a non-empty string')
-
-
-def validate_exported_issues(exported_issues: object, participant_role_keys: list[str], source: str) -> None:
-    if exported_issues is None:
-        return
-    if not isinstance(exported_issues, dict):
-        die(f'{source}: exportedIssues must be an object when present')
-    exported_at = exported_issues.get('exportedAt')
-    exported_by = exported_issues.get('exportedBy')
-    if not isinstance(exported_at, str) or not exported_at.strip():
-        die(f'{source}: exportedIssues.exportedAt must be a non-empty string')
-    if not isinstance(exported_by, str) or not exported_by.strip():
-        die(f'{source}: exportedIssues.exportedBy must be a non-empty string')
-    if exported_by not in participant_role_keys:
-        die(f'{source}: exportedIssues.exportedBy must already be a participant')
-    issues = exported_issues.get('issues')
-    if not isinstance(issues, list) or not issues:
-        die(f'{source}: exportedIssues.issues must be a non-empty list')
-    for issue in issues:
-        if not isinstance(issue, dict):
-            die(f'{source}: exportedIssues.issues entries must be objects')
-        title = issue.get('title')
-        if not isinstance(title, str) or not title.strip():
-            die(f'{source}: exportedIssues issue title must be a non-empty string')
-        for optional in ('url', 'body', 'owner', 'delivery'):
-            value = issue.get(optional)
-            if value is not None and (not isinstance(value, str) or not value.strip()):
-                die(f'{source}: exportedIssues issue {optional} must be a non-empty string when present')
-        requires = issue.get('requires')
-        if requires is not None:
-            if not isinstance(requires, list) or any(
-                not isinstance(item, str) or not item.strip() for item in requires
-            ):
-                die(f'{source}: exportedIssues issue requires must be a list of non-empty strings')
 
 
 def validate_handoff(handoff: object, source: str, collab_id: str, active_id: object, participant_role_keys: list[str]) -> None:
@@ -503,7 +433,6 @@ def validate_registry(data: dict, path: Path | None = None, roles_dir: Path | No
         collab_id = entry.get('id')
         slug = entry.get('slug')
         created_at = entry.get('createdAt')
-        terminal = entry.get('terminal')
         status = entry.get('status')
         activePhase = entry.get('activePhase')
         moderatorRole = entry.get('moderatorRole')
@@ -518,7 +447,6 @@ def validate_registry(data: dict, path: Path | None = None, roles_dir: Path | No
             collab_id,
             slug,
             created_at,
-            terminal,
             status,
             activePhase,
             moderatorRole,
@@ -533,7 +461,6 @@ def validate_registry(data: dict, path: Path | None = None, roles_dir: Path | No
         validate_completion_state(entry.get('completion'), source)
         validate_verification_state(entry.get('verification'), source, created_at, participant_role_keys)
         validate_verification_seal_state(entry.get('verificationSeal'), source, collab_id, active_id)
-        validate_exported_issues(entry.get('exportedIssues'), participant_role_keys, source)
         verdict = entry.get('verdict')
         if verdict is not None:
             validate_verdict(verdict, source, activePhase)

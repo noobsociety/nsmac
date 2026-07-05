@@ -50,7 +50,7 @@ Tests for case 2 must cover all three depths in the same commit; partial coverag
 
 The registry uses two distinct counters with non-overlapping roles:
 
-**`revision`** — write-guard counter. Stored as the top-level `revision` field in `registry.json`. Incremented by `bump_registry_revision()` on every registry write. The stale-write guard (`speak-render`, `execute`) reads this field to detect concurrent writes. This field must not be renamed unless the rename is atomic across: the stored field name, every read site in `commands/collab/engine/registry.py`, and all helper-output labels that reference it.
+**`revision`** — write-guard counter. Stored as the top-level `revision` field in `registry.json`. Incremented by `bump_registry_revision()` on every registry write. The stale-write guard (`speak-render`, `execution`) reads this field to detect concurrent writes. This field must not be renamed unless the rename is atomic across: the stored field name, every read site in `commands/collab/engine/registry.py`, and all helper-output labels that reference it.
 
 **`registryRevision`** — helper-output presentation label. This name appears in `speak-state` and similar helper JSON output as a human-readable label sourced from the `revision` field (`speak_commands.py:216`, `:224`). The label is not an independently stored counter; renaming or removing it does not require changing the stored `revision` field.
 
@@ -66,5 +66,5 @@ The registry uses two distinct counters with non-overlapping roles:
 
 Two reader-side paths accept an older shape alongside the current one:
 
-- `LEGACY_EXPANDED_RE` and `LEGACY_HEADING_RE` (`transcript_readers.py:13-14`) match the bold-expanded (`**role —`) and heading (`### role —`) contribution-heading formats as a fallback in `contribution_roles()` (`transcript_readers.py:125`), alongside the current `<details><summary>role</summary>` shape. Both shapes appear in transcripts under `~/.collabs/dotcursor/records/`.
-- `ensure_legacy_revision_baselines()` (`registry_io.py:204-217`) writes a `legacy-baseline.json` sentinel into a collab's revision-event directory when that directory has no revision event yet; `restore --to` (`reactivation_commands.py:117`) rejects any event with `eventType == "legacy-baseline"` as non-restorable. Revision roots under `~/.collabs/dotcursor/revisions/` carry `legacy-baseline.json` files.
+- `LEGACY_EXPANDED_RE` and `LEGACY_HEADING_RE` (`transcript_readers.py:13-14`) match the bold-expanded (`**role —`) and heading (`### role —`) contribution-heading formats as a fallback in `contribution_roles()` (`transcript_readers.py:125`), alongside the current `<details><summary>role</summary>` shape. Both shapes appear in transcripts under `~/.collabs/nsmac/records/`.
+- `ensure_legacy_revision_baselines()` (`registry_io.py:204-217`) writes a `legacy-baseline.json` sentinel into a collab's revision-event directory when that directory has no revision event yet; `restore --to` (`reactivation_commands.py:117`) rejects any event with `eventType == "legacy-baseline"` as non-restorable. Revision roots under `~/.collabs/nsmac/revisions/` carry `legacy-baseline.json` files.

@@ -1,13 +1,13 @@
 # Repository contract
 
-Contract between this repository (source plane) and the global agent runtime at `~/.cursor/*`.
+Contract between this repository (source plane) and the global agent runtime at `~/nsmac/*`.
 
 ## 1) System model
 
 The contract has three planes:
 
 - **Source plane:** version-controlled files in this repository.
-- **Global runtime plane:** `~/.cursor/*`.
+- **Global runtime plane:** `~/nsmac/*`.
 - **Project overlay plane:** optional project-local overlay.
 
 Only the source plane is authoritative. Runtime planes are derived execution contexts.

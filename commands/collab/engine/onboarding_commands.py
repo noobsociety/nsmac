@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Record onboarding command handlers: create a new moderated record with its transcript and contribution store (`init`) and join a role into an existing record's roster (`join`). Owns the `ensure_init_project_metadata` helper that backfills project identity at init time. The two write paths cannot import their commit primitives without a cycle — the core-owned `commit_new_collab_artifacts` (three-artifact create) for init and `commit_registry_and_transcript` (two-file write) for join — so both are injected via `configure_onboarding_commands`. Does not own the commit primitives, registry validation, transcript rendering, or the init token parser."""
+"""Record onboarding command handlers.
+
+Owns `init`, `join`, and the init-time project metadata backfill helper.
+Registry/transcript/contribution-store commits stay owned by `registry_io`;
+registry validation stays owned by `registry_validation`.
+"""
 from __future__ import annotations
 
 import datetime as dt
@@ -45,9 +50,10 @@ from commands.collab.engine.participants import (
 from commands.collab.engine.registry_constants import (
     DEFAULT_REVIEWER_MODE,
     DEFAULT_REVIEWER_OPTIONAL_PHASES,
-    DEFAULT_VERIFICATION_CAP,
 )
 from commands.collab.engine.registry_io import (
+    commit_new_collab_artifacts,
+    commit_registry_and_transcript,
     load_registry,
     load_registry_or_bootstrap,
     next_sequence,
@@ -62,32 +68,6 @@ from commands.collab.engine.transcript_render import (
     render_initial_transcript,
     render_managed_header_text,
 )
-
-_commit_new_collab_artifacts: Callable[..., None] | None = None
-_commit_registry_and_transcript: Callable[..., None] | None = None
-
-
-def configure_onboarding_commands(
-    *,
-    commit_new_collab_artifacts: Callable[..., None],
-    commit_registry_and_transcript: Callable[..., None],
-) -> None:
-    """Inject the cycle-blocked commit primitives of the init/join write paths: the core-owned three-artifact create and two-file write."""
-    global _commit_new_collab_artifacts, _commit_registry_and_transcript
-    _commit_new_collab_artifacts = commit_new_collab_artifacts
-    _commit_registry_and_transcript = commit_registry_and_transcript
-
-
-def _require_commit_new() -> Callable[..., None]:
-    if _commit_new_collab_artifacts is None:
-        die('onboarding commands engine is not configured: new-collab commit callback missing')
-    return _commit_new_collab_artifacts
-
-
-def _require_commit() -> Callable[..., None]:
-    if _commit_registry_and_transcript is None:
-        die('onboarding commands engine is not configured: commit callback missing')
-    return _commit_registry_and_transcript
 
 
 def ensure_init_project_metadata(data: dict, registry_path: Path) -> None:
@@ -111,7 +91,7 @@ def init_collab(
     roles_dir: Path,
     opener: Callable[[str], bool] = webbrowser.open_new_tab,
 ) -> int:
-    title, agent_id, reviewer, open_requested, participant_verification, terminal, work_repo_raw = parse_init_tokens(tokens)
+    title, agent_id, reviewer, open_requested, work_repo_raw = parse_init_tokens(tokens)
     with registry_lock(path):
         data = load_registry_or_bootstrap(path)
         ensure_init_project_metadata(data, path)
@@ -142,7 +122,6 @@ def init_collab(
             'title': title,
             'description': f'Moderated discussion of {title}.',
             'createdAt': dt.datetime.now().astimezone().isoformat(timespec='seconds'),
-            'terminal': terminal,
             'status': 'open',
             'activePhase': 'Audit',
             'moderatorRole': 'mod',
@@ -163,12 +142,9 @@ def init_collab(
             entry['reviewerRole'] = reviewer
             entry['reviewerMode'] = DEFAULT_REVIEWER_MODE
             entry['reviewerOptionalPhases'] = list(DEFAULT_REVIEWER_OPTIONAL_PHASES)
-        if terminal == 'seal':
             entry['verification'] = {
                 'rounds': 0,
-                'cap': DEFAULT_VERIFICATION_CAP,
-                'subState': 'participant' if participant_verification else 'seal',
-                'participantVerification': participant_verification,
+                'subState': 'participant',
                 'participants': {},
             }
 
@@ -180,7 +156,7 @@ def init_collab(
         rendered = render_initial_transcript(title, entry, roles_dir, rendered_timestamp)
         transcript_path = path_for_entry_target(path, entry, entry['transcriptPath'])
         contribution_store = empty_contribution_store(rendered_timestamp)
-        _require_commit_new()(path, nextdata, entry, transcript_path, rendered, contribution_store)
+        commit_new_collab_artifacts(path, nextdata, entry, transcript_path, rendered, contribution_store)
     print(entry['transcriptPath'])
     if open_requested:
         file_uri = path_for_entry_target(path, entry, entry['transcriptPath']).resolve().as_uri()
@@ -233,7 +209,7 @@ def join_participants(
 
         rendered, header_changed = render_managed_header_text(transcript, next_entry, roles_dir)
         print_header_overwrite(header_changed)
-        _require_commit()(path, nextdata, transcript_path, rendered, roles_dir)
+        commit_registry_and_transcript(path, nextdata, transcript_path, rendered, roles_dir)
     print_post_action_advisories(
         next_entry,
         role,

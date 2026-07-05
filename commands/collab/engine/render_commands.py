@@ -1,22 +1,26 @@
 #!/usr/bin/env python3
-"""Transcript render/view/summarize command handlers: re-render the managed header and persist it (`render-status`, `render-participants`), replace the phase or latest summary (`summarize`, `re-summarize`), and emit a single phase section read-only (`transcript-view`). The one dependency these write-path commands cannot import without a cycle — the core-owned `commit_registry_and_transcript` two-file write — is injected via `configure_render_commands`. Does not own the two-file commit implementation, header rendering, or summary replacement."""
+"""Transcript render/view/summarize command handlers.
+
+Owns the `render-status`, `render-participants`, `summarize`, and read-only
+`transcript-view` command bodies. Registry/transcript commits stay owned by
+`registry_io`.
+"""
 from __future__ import annotations
 
 import datetime as dt
 import sys
 from pathlib import Path
-from typing import Callable
 
 from commands.collab.engine.errors import die
 from commands.collab.engine.inspection_commands import print_status_view
 from commands.collab.engine.registry_constants import PHASES
 from commands.collab.engine.registry_io import (
+    commit_registry_and_transcript,
     load_registry,
     registry_lock,
     registry_revision,
     resolve_collab,
 )
-from commands.collab.engine.seal_verification_render import replace_latest_summary
 from commands.collab.engine.transcript_readers import (
     read_transcript_for_entry,
     section_bounds,
@@ -28,23 +32,6 @@ from commands.collab.engine.transcript_render import (
     replace_phase_summary,
 )
 from commands.collab.engine.config_paths import DEFAULT_ROLES_DIR
-
-_commit_registry_and_transcript: Callable[..., None] | None = None
-
-
-def configure_render_commands(
-    *,
-    commit_registry_and_transcript: Callable[..., None],
-) -> None:
-    """Inject the cycle-blocked dependency of the render/summarize write paths: the core-owned two-file commit."""
-    global _commit_registry_and_transcript
-    _commit_registry_and_transcript = commit_registry_and_transcript
-
-
-def _require_commit() -> Callable[..., None]:
-    if _commit_registry_and_transcript is None:
-        die('render commands engine is not configured: commit callback missing')
-    return _commit_registry_and_transcript
 
 
 def summarize_collab(path: Path, target: str, date: str | None = None) -> int:
@@ -60,26 +47,8 @@ def summarize_collab(path: Path, target: str, date: str | None = None) -> int:
         summary_date = date or dt.date.today().isoformat()
         rendered = replace_phase_summary(rendered, entry, summary_date)
         print_header_overwrite(header_changed)
-        _require_commit()(path, data, transcript_path, rendered)
+        commit_registry_and_transcript(path, data, transcript_path, rendered)
     print(transcript_path)
-    return 0
-
-
-def re_summarize_collab(path: Path, target: str, summary_file: Path, date: str | None = None) -> int:
-    if not summary_file.exists():
-        die(f'summary file missing: {summary_file}')
-    with registry_lock(path):
-        data = load_registry(path)
-        entry = resolve_collab(data, target)
-        if entry['status'] == 'archived':
-            die('record is archived')
-        transcript_path = transcript_path_for_entry(entry)
-        if not transcript_path.exists():
-            die(f'transcript missing: {transcript_path}')
-        summary_date = date or dt.date.today().isoformat()
-        rendered = replace_latest_summary(transcript_path.read_text(), summary_file.read_text(), summary_date)
-        _require_commit()(path, data, transcript_path, rendered)
-    print(entry['id'])
     return 0
 
 
@@ -104,7 +73,7 @@ def render_status(path: Path, target: str) -> int:
             die(f'transcript missing: {transcript_path}')
         transcript = transcript_path.read_text()
         rendered, _header_changed = render_managed_header_text(transcript, entry, DEFAULT_ROLES_DIR)
-        _require_commit()(path, data, transcript_path, rendered)
+        commit_registry_and_transcript(path, data, transcript_path, rendered)
         transcript = rendered
         revision = registry_revision(data)
 
@@ -121,6 +90,6 @@ def render_participants(path: Path, target: str, roles_dir: Path) -> int:
             die(f'transcript missing: {transcript_path}')
         rendered, header_changed = render_managed_header_text(transcript_path.read_text(), entry, roles_dir)
         print_header_overwrite(header_changed)
-        _require_commit()(path, data, transcript_path, rendered, roles_dir)
+        commit_registry_and_transcript(path, data, transcript_path, rendered, roles_dir)
     print(transcript_path)
     return 0

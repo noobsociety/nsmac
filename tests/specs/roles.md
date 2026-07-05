@@ -1,6 +1,6 @@
 # QA — command roles
 
-Deterministic QA for shared joinable-role JSON sources projected to `~/.cursor/commands/collab/reference/roles/`.
+Deterministic QA for shared joinable-role JSON sources projected to `~/nsmac/commands/collab/reference/roles/`.
 
 ## Procedure
 
@@ -9,7 +9,7 @@ Deterministic QA for shared joinable-role JSON sources projected to `~/.cursor/c
 3. Validate each source file is valid JSON and uses the role schema in `platform/standards/role-standard.md`.
 4. Validate each filename stem equals its `key`.
 5. Validate keys are globally unique.
-6. Validate runtime mode copies `commands/collab/reference/roles/` to `~/.cursor/commands/collab/reference/roles/`.
+6. Validate runtime mode copies `commands/collab/reference/roles/` to `~/nsmac/commands/collab/reference/roles/`.
 7. Validate missing role metadata makes stored participants unsupported (covered by `missing-role-metadata-unsupported.test.sh`).
 
 ## Required roster

@@ -1,6 +1,6 @@
 # Invariants
 
-Authoring constraints for all `~/.cursor` routes and bootstrap files. These rules enable mechanical completion for low-tier, low-effort agents and absorb the registry-to-transcript sync contract.
+Authoring constraints for all `~/nsmac` routes and bootstrap files. These rules enable mechanical completion for low-tier, low-effort agents and absorb the registry-to-transcript sync contract.
 
 ## Floor rules
 

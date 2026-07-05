@@ -82,11 +82,11 @@ if [[ "$seal_state" != *'"verificationReviewSubState": "participant"'* ]]; then
 fi
 
 set +e
-blocked_output="$("$ROOT/commands/collab/engine/registry.py" seal-render "$TARGET" pa --observed-revision "$(python3 -c 'import json,sys; print(json.load(sys.stdin)["registryRevision"])' <<<"$seal_state")" --caller-role pa 2>&1)"
+blocked_output="$("$ROOT/commands/collab/engine/registry.py" seal-write "$TARGET" pa --observed-revision "$(python3 -c 'import json,sys; print(json.load(sys.stdin)["registryRevision"])' <<<"$seal_state")" --caller-role pa 2>&1)"
 blocked_status=$?
 set -e
 if [[ "$blocked_status" -eq 0 || "$blocked_output" != *"participant verification is active; next role: pe"* ]]; then
-  printf 'FAIL: seal-render did not block before participant verification completed\n%s\n' "$blocked_output" >&2
+  printf 'FAIL: seal-write did not block before participant verification completed\n%s\n' "$blocked_output" >&2
   exit 1
 fi
 
@@ -137,13 +137,13 @@ fi
 
 seal_state="$("$ROOT/commands/collab/engine/registry.py" seal-state "$TARGET" pa)"
 seal_revision="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["registryRevision"])' <<<"$seal_state")"
-"$ROOT/commands/collab/engine/registry.py" seal-render "$TARGET" pa \
+"$ROOT/commands/collab/engine/registry.py" seal-write "$TARGET" pa \
   --observed-revision "$seal_revision" \
   --caller-role pa >/dev/null
 
 assessment_state="$("$ROOT/commands/collab/engine/registry.py" seal-state "$TARGET" pa)"
 assessment_revision="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["registryRevision"])' <<<"$assessment_state")"
-"$ROOT/commands/collab/engine/registry.py" seal-render "$TARGET" pa \
+"$ROOT/commands/collab/engine/registry.py" record-verdict "$TARGET" pa \
   --observed-revision "$assessment_revision" \
   --outcome success \
   --evidence '{"registryRevision":2,"committedPaths":["platform/tooling/audit.sh"],"executionEntryIds":["pe-2026-05-17t12-00-00-02-00"]}' \

@@ -1,6 +1,6 @@
 # QA — command templates
 
-Deterministic QA for scaffold template sources projected to `~/.cursor/platform/templates/`.
+Deterministic QA for scaffold template sources projected to `~/nsmac/platform/templates/`.
 
 ## Procedure
 
@@ -8,7 +8,7 @@ Deterministic QA for scaffold template sources projected to `~/.cursor/platform/
 2. Validate the source roster is exact.
 3. Validate each template file has one H1 and is <= 250 lines.
 4. Validate `CLAUDE.md` is routing-only and points to `AGENTS.md`.
-5. Validate `AGENTS.md` references `~/.cursor/commands/commands.md` and `REPOSITORY.md`.
+5. Validate `AGENTS.md` references `~/nsmac/commands/commands.md` and `REPOSITORY.md`.
 6. Validate `AGENTS.md` contains `<!-- TODO(install): ... -->` placeholders for install-time scaffold authoring and `REPOSITORY.md` contains `<!-- TODO(patch): ... -->` placeholders for repo-specific authoring.
 
 ## Required roster

@@ -115,14 +115,14 @@ def normalize_contract_reference(raw: str) -> str | None:
         return None
     if value.startswith(("http://", "https://", "mailto:", "#", "$")):
         return None
-    if value == "~/.cursor":
+    if value == "~/nsmac":
         return None
     if value.startswith("/") and not value.startswith("/Users/"):
         return None
     if "<" in value or ">" in value or "..." in value:
         return None
-    if value.startswith("~/.cursor/"):
-        value = value.removeprefix("~/.cursor/")
+    if value.startswith("~/nsmac/"):
+        value = value.removeprefix("~/nsmac/")
     if value.startswith("COMMAND_CONFIG_ROOT/"):
         value = value.removeprefix("COMMAND_CONFIG_ROOT/")
     while value.startswith("./"):

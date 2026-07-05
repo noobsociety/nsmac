@@ -178,7 +178,6 @@ def updated_identity(identity: dict, new_id: str, old_id: str, timestamp: str) -
     state = updated.get('state')
     if not isinstance(state, dict):
         state = {}
-    state['previousProjectId'] = old_id
     state['projectIdMigratedAt'] = timestamp
     updated['state'] = state
     return updated

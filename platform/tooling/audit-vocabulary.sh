@@ -61,13 +61,11 @@ def require_tokens(name: str, text: str, rel: str) -> None:
 
 
 require_tokens("PHASES", phase_text, "commands/collab/reference/phase-admissibility.md")
-require_tokens("ALLOWED_TERMINALS", glossary_text, "commands/collab/reference/glossary.md")
 require_tokens("ALLOWED_COMPLETION_SUBSTATES", verification_text, "commands/collab/reference/verification.md")
 require_tokens("ALLOWED_VERIFICATION_SUBSTATES", verification_text, "commands/collab/reference/verification.md")
 require_tokens("ALLOWED_PARTICIPANT_VERIFICATION_STAGES", verification_text, "commands/collab/reference/verification.md")
 require_tokens("ALLOWED_VERDICT_OUTCOMES", verification_text, "commands/collab/reference/verification.md")
 require_tokens("ALLOWED_VERDICT_RESTORE_TARGETS", verification_text, "commands/collab/reference/verification.md")
-require_tokens("ALLOWED_CAP_EXITS", verification_text, "commands/collab/reference/verification.md")
 
 
 def heading_anchors(text: str) -> set[str]:

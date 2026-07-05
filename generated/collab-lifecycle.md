@@ -26,11 +26,8 @@ This reference orients agents to the registry-backed collab lifecycle. The phase
 | `reviewerRole` | Optional reviewer that speaks last in convergent phases when configured. |
 | `reviewerMode` | Stamped reviewer behavior mode for records with `createdAt`; default is `last-in-convergent-phases`. |
 | `reviewerOptionalPhases` | Stamped phases where the reviewer may speak without blocking the ordinary expected speaker; default is `Discussion`. |
-| `terminal` | Stamped workflow terminal for records with `createdAt`; default is `seal`. |
-| `verification.cap` | Stamped participant/reviewer verification attempt cap; default is `3`. |
-| `verification.participantVerification` | Stamped boolean that enables participant verification; readers must use the stored value. |
 | `open-roster effort` | Fallback effort level for joined roles absent from the effort matrix; default is `medium`. |
-| `createdAt required fields` | Records with `createdAt` must declare `terminal`; reviewer-backed records must also declare `reviewerMode`, `reviewerOptionalPhases`; verification records must declare `verification.rounds`, `verification.cap`, `verification.subState`, `verification.participantVerification`, `verification.participants`. |
+| `createdAt required fields` | Records with `createdAt` must declare ; reviewer-backed records must also declare `reviewerMode`, `reviewerOptionalPhases`; verification records must declare `verification.rounds`, `verification.subState`, `verification.participants`. |
 | `execution.<role>` | Completion metadata for each executing role: status, date, validation result, and touched paths. |
 | `verification.rounds` | Registry-counted reviewer/executor paired events in `Completion.verification`. |
 | `verificationSeal` | Reviewer seal object that binds observed registry revision, execution entries, validation scopes, and touched paths. |

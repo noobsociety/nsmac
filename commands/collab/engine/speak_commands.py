@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
-"""Speak-path command handlers: the auto-advance lifecycle applied when required roles have contributed (`apply_speak_lifecycle_to_entry` / `apply_speak_lifecycle_with_notice`), set the active record (`activate`), advance phase from a contributor list (`speak`), project a role's speak-readiness state (`speak-state`), advance from the live transcript (`speak-live`), append a rendered contribution (`speak-render`), rewrite the latest contribution (`rewrite-speak-render`), and retract (tombstone) the latest active-phase contribution (`retract-speak`). The five write paths cannot import the core-owned `commit_registry_and_transcript` two-file write without a cycle, so it is injected via `configure_speak_commands`; the read/notice helpers and `activate`/`speak`'s non-commit branch persist via the importable `save_registry`. Does not own the two-file commit, the speak-state projection, transcript rendering, or contribution validation."""
+"""Speak-path command handlers.
+
+Owns speak lifecycle, speak-state projection, speak render/rewrite, and
+retraction command bodies. Registry/transcript commits stay owned by
+`registry_io`; contribution-store persistence stays owned by
+`contribution_store`.
+"""
 from __future__ import annotations
 
 import json
 from copy import deepcopy
 from pathlib import Path
-from typing import Callable
 
 from commands.collab.engine.advisories import print_post_action_advisories
 from commands.collab.engine.command_lines import resume_command
@@ -57,6 +62,7 @@ from commands.collab.engine.registry_constants import (
     ONE_SPEAK_PHASES,
 )
 from commands.collab.engine.registry_io import (
+    commit_registry_and_transcript,
     load_registry,
     registry_lock,
     registry_revision,
@@ -90,23 +96,6 @@ from commands.collab.engine.transcript_render import (
     replace_latest_contribution,
     reviewer_notice_for_rewrite,
 )
-
-_commit_registry_and_transcript: Callable[[Path, dict, Path, str], None] | None = None
-
-
-def configure_speak_commands(
-    *,
-    commit_registry_and_transcript: Callable[[Path, dict, Path, str], None],
-) -> None:
-    """Inject the cycle-blocked dependency of the speak/render write paths: the core-owned two-file commit."""
-    global _commit_registry_and_transcript
-    _commit_registry_and_transcript = commit_registry_and_transcript
-
-
-def _require_commit() -> Callable[[Path, dict, Path, str], None]:
-    if _commit_registry_and_transcript is None:
-        die('speak commands engine is not configured: commit callback missing')
-    return _commit_registry_and_transcript
 
 
 def die_with_resume(message: str, entry: dict, role: str) -> None:
@@ -192,7 +181,7 @@ def speak_lifecycle(path: Path, target: str, contributors: list[str]) -> int:
             rendered, header_changed = render_managed_header_text(transcript or '', entry, DEFAULT_ROLES_DIR)
             notice = add_completion_summary_notice(notice, rendered)
             print_header_overwrite(header_changed)
-            _require_commit()(path, data, transcript_path, rendered)
+            commit_registry_and_transcript(path, data, transcript_path, rendered)
         else:
             save_registry(path, data)
     print_phase_result(entry['activePhase'] if advanced else 'unchanged', notice)
@@ -248,7 +237,7 @@ def speak_lifecycle_live(path: Path, target: str) -> int:
         advanced, notice = apply_speak_lifecycle_with_notice(entry, state['contributors'], transcript)
         rendered, header_changed = render_managed_header_text(transcript, entry, DEFAULT_ROLES_DIR)
         print_header_overwrite(header_changed)
-        _require_commit()(path, data, transcript_path, rendered)
+        commit_registry_and_transcript(path, data, transcript_path, rendered)
     print_phase_result(entry['activePhase'] if advanced else 'unchanged', notice)
     return 0
 
@@ -353,7 +342,7 @@ def render_speak(
         label_advisory = action_plan_label_advisory(content, phase)
         if label_advisory:
             print(label_advisory)
-        _require_commit()(path, nextdata, transcript_path, rendered_text)
+        commit_registry_and_transcript(path, nextdata, transcript_path, rendered_text)
         append_contribution_store_record(path, next_entry, contribution_record)
     print_post_action_advisories(
         next_entry,
@@ -435,7 +424,7 @@ def render_re_speak(
             set_handoff_state(entry, role, handoff_state)
             rendered, header_changed = render_managed_header_text(rendered, entry, DEFAULT_ROLES_DIR)
             print_header_overwrite(header_changed)
-        _require_commit()(path, data, transcript_path, rendered)
+        commit_registry_and_transcript(path, data, transcript_path, rendered)
         replace_latest_contribution_store_record(path, entry, phase, role, replacement_record)
     if reviewer_notice:
         print(reviewer_notice)
@@ -500,7 +489,7 @@ def retract_latest_contribution(
         ]
         replacement = block[:marker_index + 1] + [''] + tombstone + [''] + [block[-1]]
         rendered = '\n'.join(lines[:start] + replacement + lines[end:]) + '\n'
-        _require_commit()(path, data, transcript_path, rendered)
+        commit_registry_and_transcript(path, data, transcript_path, rendered)
         mark_contribution_store_record_retracted(path, entry, anchor, summary, stamp)
     print(entry['id'])
     print('retracted')

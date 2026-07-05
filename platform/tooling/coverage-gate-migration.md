@@ -61,7 +61,7 @@ the same failure mode — assign the same anchor name and one test covers both.
 `moderator/reviewer-removal-block`, `field-not-settable/unsettable`.
 
 **Tier 4 — Data/logic guards (~17 clauses, highest fixture complexity):**
-`no-prior-summary`, `no-prior-execution`, `requires-chain aborts`, `seal-render
+`no-prior-summary`, `no-prior-execution`, `requires-chain aborts`, `seal-write
 write failure`, `turn-order validation`. Require multi-step pre-built state.
 
 **Reclassification resolved:** The two "Recovery path" Notes ABORTs in `advance`
@@ -116,7 +116,7 @@ the two helper mirror-defect recovery checks as `(agent-honor-system)`.
 
 **Batch 3 — Role and field routes (28 clauses, Tier 1–3; completed 2026-06-24):**
 Routes: `join`, `remove-participant`, `retract-speak`, `set`, `unset`,
-`rewrite-summary`, `write-summary`.
+`summarize`.
 Retired by anchoring helper-enforced structural, role-state, role-permission,
 and field-validation guards with P9 tests under
 `tests/commands/collab/registry.py/`. Established the shared-harness fixture
@@ -158,22 +158,21 @@ registry-target clause was anchored before this batch and is covered by the
 `route-doc-contracts` central checker, so it was never allowlist debt.
 
 **Batch 6 — Seal and discovery-debt routes (27 clauses; completed 2026-06-24):**
-Routes: `seal-verification` (1 remaining allowlisted clause: seal-render write
-path) plus the six discovery-debt routes from `DISCOVERY_DEBT_ROUTE_FILES`
-(`export-issues`, `log`, `participant-verify`, `reopen`, `show-verdict`, `status`).
+Routes: `seal-verification` (1 remaining allowlisted clause: seal-write
+path) plus the discovery-debt routes from `DISCOVERY_DEBT_ROUTE_FILES`
+(`log`, `participant-verify`, `reopen`, `show-verdict`, `status`).
 Retired by anchoring all 27 clauses; 24 are backed by new P9 tests under
 `tests/commands/collab/registry.py/` (delegated through `admin-guard-case.sh`
-with new `init_issue_target`, `init_participant_verify_target`, and
-`seed_failed_verdict` fixtures), and 3 are reclassified `(agent-honor-system)`
+with new `init_participant_verify_target` and `seed_failed_verdict` fixtures),
+and 3 are reclassified `(agent-honor-system)`
 with a reason in the clause: `seal-verification-write-failed` and
 `participant-verify-render-failed` (generic non-zero-exit wrappers around
-`seal-render`/`participant-verify-render` whose distinct failure modes are
-anchored and tested separately) and `export-issues-record-unreadable` (the
-`export-issues` helper performs no up-front transcript read before its lifecycle
-guards, so no mirrored helper guard raises a transcript-unreadable abort at that
-step). The `reopen` step-3 invalid-phase guard is enforced by argparse `choices`,
-so its test asserts the argparse `invalid choice` rejection. Result: the allowlist
-file and the `DISCOVERY_DEBT_ROUTE_FILES` symbol were subsequently removed. Closes queue row #31
+`seal-write`/`participant-verify-render` whose distinct failure modes are
+anchored and tested separately) plus one retired-route clause removed with its
+route. The `reopen` step-3 invalid-phase guard is enforced by argparse
+`choices`, so its test asserts the argparse `invalid choice` rejection. Result:
+the allowlist file and the `DISCOVERY_DEBT_ROUTE_FILES` symbol were subsequently
+removed. Closes queue row #31
 (`backlog/31-collab-audit-coverage-abort-burn-down.md`). Batches 1–5 (allowlist
 leg) carry no separate queue row; they trace to row #16 (Tooling contracts,
 sealed) plus the weekly-check H4 allowlist target.

@@ -15,7 +15,7 @@ TARGET="$RUN_DATE-seal-verdict"
 "$ROOT/commands/collab/engine/registry.py" set "$TARGET" active-phase Completion --force --caller-role mod >/dev/null
 start_assessment "$TARGET"
 revision="$(assessment_revision "$TARGET")"
-"$ROOT/commands/collab/engine/registry.py" seal-render "$TARGET" pa \
+"$ROOT/commands/collab/engine/registry.py" record-verdict "$TARGET" pa \
   --observed-revision "$revision" \
   --outcome success \
   --evidence '{"registryRevision":2,"committedPaths":["platform/tooling/audit.sh"],"executionEntryIds":["pe-2026-05-15t21-00-00-02-00"]}' \

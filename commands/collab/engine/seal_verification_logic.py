@@ -2,8 +2,8 @@
 
 Owns: seal state reads, completion-cycle state, stale-seal triggers,
       content-integrity and git-state gates, participant verification state,
-      verdict construction and validation, cap-exit dispatch,
-      chartered-deliverables coverage, and verification restart.
+      verdict construction and validation, chartered-deliverables coverage,
+      and verification restart.
 
 Does not own: participant-verify rendering, assessment rendering, seal rendering,
               verdict/seal write entry points, registry persistence, phase
@@ -33,8 +33,6 @@ import json
 import os
 
 import re
-
-from collections.abc import Callable
 
 from pathlib import Path
 
@@ -74,13 +72,11 @@ from commands.collab.engine.errors import die
 
 from commands.collab.engine.registry_constants import (
     ACTIVE_PARTICIPANT_VERIFICATION_STAGES,
-    ALLOWED_CAP_EXITS,
     ALLOWED_COMPLETION_SUBSTATES,
     ALLOWED_PARTICIPANT_VERIFICATION_STAGES,
     ALLOWED_VERDICT_OUTCOMES,
     ALLOWED_VERIFICATION_SUBSTATES,
     CONTENT_ONLY_GUARD,
-    DEFAULT_VERIFICATION_CAP,
     PHASES,
 )
 
@@ -133,12 +129,6 @@ from commands.collab.engine.transcript_render import (
     render_managed_header_text,
     rendered_collapsible_block,
 )
-
-_commit_registry_and_transcript: Callable[[Path, dict, Path, str], None] | None = None
-
-_next_line_for_state: Callable[[dict], str] | None = None
-
-_print_post_action_advisories: Callable[[dict, str | None, str | None, dict | None, str], None] | None = None
 
 def chartered_deliverables(transcript: str) -> list[str]:
     return transcript_readers.chartered_deliverables(transcript)
@@ -193,12 +183,8 @@ def set_missing_legacy_verification_field(entry: dict, verification: dict, field
         die(f'registry: verification.{field} is required when createdAt is present')
     if field == 'rounds':
         verification[field] = 0
-    elif field == 'cap':
-        verification[field] = DEFAULT_VERIFICATION_CAP
     elif field == 'subState':
-        verification[field] = 'seal'
-    elif field == 'participantVerification':
-        verification[field] = False
+        verification[field] = 'participant'
     elif field == 'participants':
         verification[field] = {}
     else:
@@ -208,22 +194,16 @@ def verification_state(entry: dict) -> dict:
     verification = entry.setdefault('verification', {})
     if not isinstance(verification, dict):
         die('registry: verification must be an object when present')
-    for field in ('rounds', 'cap', 'subState', 'participantVerification', 'participants'):
+    for field in ('rounds', 'subState', 'participants'):
         set_missing_legacy_verification_field(entry, verification, field)
     rounds = verification['rounds']
-    cap = verification['cap']
     substate = verification['subState']
     if not isinstance(rounds, int) or rounds < 0:
         die('registry: verification.rounds must be a non-negative integer when present')
-    if not isinstance(cap, int) or cap < 1:
-        die('registry: verification.cap must be a positive integer when present')
     if substate is None:
-        substate = 'seal'
+        substate = 'participant'
     if substate not in ALLOWED_VERIFICATION_SUBSTATES:
         die(f'registry: verification.subState must be one of {sorted(ALLOWED_VERIFICATION_SUBSTATES)}')
-    participant_enabled = verification['participantVerification']
-    if not isinstance(participant_enabled, bool):
-        die('registry: verification.participantVerification must be a boolean when present')
     participants = verification['participants']
     if not isinstance(participants, dict):
         die('registry: verification.participants must be an object when present')
@@ -253,12 +233,7 @@ def verification_state(entry: dict) -> dict:
     return verification
 
 def participant_verification_enabled(entry: dict) -> bool:
-    verification = entry.get('verification')
-    if not isinstance(verification, dict):
-        return False
-    if 'participantVerification' not in verification:
-        return False
-    return verification['participantVerification'] is True
+    return reviewer_backed(entry)
 
 def participant_verification_roles(entry: dict) -> list[str]:
     execution = entry.get('execution', {})
@@ -639,8 +614,6 @@ def seal_snapshot(
     observed_revision: int,
     role: str,
     transcript: str,
-    cap_exit: str | None = None,
-    follow_up: dict | None = None,
 ) -> dict:
     digest = content_digest_for_execution(entry)
     seal = {
@@ -656,10 +629,6 @@ def seal_snapshot(
         'fullBodySignature': full_body_signature_for_transcript(transcript),
         'stale': False,
     }
-    if cap_exit:
-        seal['capExit'] = cap_exit
-    if follow_up is not None:
-        seal['followUp'] = follow_up
     return seal
 
 def _digest_json(value: object) -> str:
@@ -753,8 +722,6 @@ def seal_state(path: Path, target: str, role: str | None = None, resume: bool = 
             die('record is closed')
         if entry['activePhase'] != 'Completion':
             die(f'{collab_dispatch("seal verification")} is valid only in the Completion phase')
-        if entry.get('terminal') == 'issue':
-            die(f'seal verification is not used for issue-terminal collabs; close with {collab_dispatch("export-issues")}')
         if reviewer_backed(entry):
             initialize_completion_state(entry, verification_substate(entry))
         if reviewer_backed(entry) and all_execution_completed(entry):
@@ -787,7 +754,6 @@ def seal_state(path: Path, target: str, role: str | None = None, resume: bool = 
         'completionSubState': verification_substate(entry),
         'verificationReviewSubState': verification_review_substate(entry),
         'verificationRounds': verification_state(entry)['rounds'] if reviewer_backed(entry) else 0,
-        'verificationCap': verification_state(entry)['cap'] if reviewer_backed(entry) else DEFAULT_VERIFICATION_CAP,
         'executionEntries': active_execution_entries(entry),
         'validationScopes': validation_scopes_for_execution(entry),
         'touchedPaths': touched_paths_for_execution(entry),
@@ -858,10 +824,6 @@ def participant_verify_state(path: Path, target: str, role: str, resume: bool = 
             verification = verification_state(entry)
             role_state = participant_verification_role_state(entry, role)
         else:
-            cap = verification['cap']
-            attempts = role_state.get('attempts', 0)
-            if attempts >= cap:
-                die(f'participant verification attempt cap reached for {role}: {attempts}/{cap}')
             if role_state.get('stage') not in ACTIVE_PARTICIPANT_VERIFICATION_STAGES:
                 role_state['stage'] = 'audit'
                 role_state['startedAt'] = dt.datetime.now().astimezone().isoformat(timespec='seconds')
@@ -888,45 +850,6 @@ def participant_verify_state(path: Path, target: str, role: str, resume: bool = 
         result['resume'] = f'commands/collab/engine/registry.py participant-verify-state --resume {entry["id"]} {role}'
     print(json.dumps(result, sort_keys=True))
     return 0
-
-def apply_cap_exit(entry: dict, data: dict, cap_exit: str | None) -> dict | None:
-    if cap_exit is None:
-        set_verification_review_substate(entry, 'assessment')
-        return {
-            'notice': 'assessment',
-            'transition': 'Completion.verification.seal->Completion.verification.assessment',
-            'message': 'Verification seal recorded; reviewer assessment required.',
-        }
-    if cap_exit == 'archive':
-        # Route prose reserves archive for unresolved findings. Participant
-        # verification findings are transcript prose, not structured registry
-        # fields, so clean-vs-remediated distinction remains caller-asserted.
-        entry['status'] = 'archived'
-        entry['archived'] = True
-        set_verification_review_substate(entry, 'assessment')
-        if data.get('activeCollabId') == entry['id']:
-            data['activeCollabId'] = None
-        return lifecycle_status_notice('archived')
-    if cap_exit == 'reopen-action-plan':
-        entry['activePhase'] = 'Action Plan'
-        normalize_turn_order_for_phase(entry, 'Action Plan')
-        initialize_completion_state(entry, 'execution', reset_rounds=True, reset_stages=False)
-        set_verification_review_substate(entry, 'assessment')
-        return {'notice': 'reopen', 'transition': 'Completion.verification->Action Plan', 'message': 'Verification cap exit reopened Action Plan.'}
-    if cap_exit == 'reopen-handoff':
-        entry['activePhase'] = 'Handoff'
-        normalize_turn_order_for_phase(entry, 'Handoff')
-        initialize_completion_state(entry, 'execution', reset_rounds=True, reset_stages=False)
-        set_verification_review_substate(entry, 'assessment')
-        return {'notice': 'reopen', 'transition': 'Completion.verification->Handoff', 'message': 'Verification cap exit reopened Handoff.'}
-    if cap_exit == 'follow-up-collab':
-        set_verification_review_substate(entry, 'assessment')
-        return {
-            'notice': 'follow-up-collab',
-            'transition': 'Completion.verification.seal->Completion.verification.assessment',
-            'message': 'Verification cap exit requires a follow-up collab with restoreReason, evidence, and failureCategory.',
-        }
-    die(f'invalid cap-exit value {cap_exit}; must be one of: reopen-action-plan, reopen-handoff, follow-up-collab, archive')
 
 def restart_verification(
     path: Path,
@@ -989,7 +912,6 @@ def show_verdict(path: Path, target: str) -> int:
             'sealedBy': seal.get('sealedBy'),
             'stale': seal.get('stale'),
             'staleReason': seal.get('staleReason'),
-            'capExit': seal.get('capExit'),
         }
         output['sealVerdict'] = build_seal_verdict_companion(entry)
     print(json.dumps(output, sort_keys=True))

@@ -67,7 +67,7 @@ require_dir() {
 
 is_source_path() {
   case "$1" in
-    .gitignore|.collab.json|CLAUDE.md|AGENTS.md|README.md|REPOSITORY.md|registry.schema.json) return 0 ;;
+    .gitignore|CLAUDE.md|AGENTS.md|README.md|REPOSITORY.md|LICENSE|registry.schema.json) return 0 ;;
     .github/*) return 0 ;;
     platform/reference.md) return 0 ;;
     platform/standards/*|platform/data/*|platform/tooling/*|generated/*|platform/templates/*|tests/specs/*|commands/*|tests/*) return 0 ;;
@@ -79,7 +79,6 @@ check_required_surface() {
   require_file CLAUDE.md
   require_file AGENTS.md
   require_file README.md
-  require_file .collab.json
   require_file commands/commands.md
   require_dir platform/standards
   require_dir generated
@@ -96,15 +95,16 @@ check_adapters() {
 }
 
 check_runtime_boundary() {
-  local path skill_payload
+  local path skill_payload command_config_payload
   skill_payload="skills-cur""sor"
-  for path in .claude projects extensions ide_state.json "$skill_payload" plugins skills plans subagents; do
+  command_config_payload=".cur""sor"
+  for path in .claude .collab.json "$command_config_payload" .DS_Store projects extensions ide_state.json "$skill_payload" plugins skills plans subagents; do
     if [[ -e "$path" ]]; then
       git check-ignore -q "$path" || fail "runtime path is not ignored: $path"
     fi
   done
 
-  if grep -Eq '^!(\.claude|projects|extensions|ide_state\.json|skills-cur''sor|plugins|skills|plans|subagents)(/|$)' .gitignore; then
+  if grep -Eq '^!(\.claude|\.collab\.json|\.cur''sor|\.DS_Store|projects|extensions|ide_state\.json|skills-cur''sor|plugins|skills|plans|subagents)(/|$)' .gitignore; then
     fail ".gitignore un-ignores a runtime-only path"
   else
     ok "runtime-only paths remain ignored by policy"
@@ -234,15 +234,9 @@ pattern = re.compile(needle, re.IGNORECASE)
 failures: list[str] = []
 
 
-def allowed(line: str, start: int) -> bool:
-    lower = line.lower()
-    if start >= 3 and lower[start - 3:start + 6] == '~/.cursor':
+def allowed(rel: str, line: str, start: int) -> bool:
+    if rel == '.gitignore' and line.strip() == '.cur' + 'sor/':
         return True
-    accepted_system = 'dot' + needle
-    if start >= 3 and lower[start - 3:start + 6] == accepted_system:
-        before = lower[start - 4] if start >= 4 else ' '
-        after = lower[start + 6] if start + 6 < len(lower) else ' '
-        return not (before.isalnum() or before in '_-') and not (after.isalnum() or after in '_-')
     return False
 
 
@@ -256,7 +250,7 @@ for rel in paths:
         continue
     for number, line in enumerate(lines, start=1):
         for match in pattern.finditer(line):
-            if not allowed(line, match.start()):
+            if not allowed(rel, line, match.start()):
                 failures.append(f'FAIL: retired-name vocabulary outside allowlist: {rel}:{number}: {line}')
                 break
 
@@ -391,8 +385,8 @@ for rel in tracked:
         if not target:
             continue
         target = unquote(target)
-        if target.startswith("~/.cursor/"):
-            candidate = root / target.removeprefix("~/.cursor/")
+        if target.startswith("~/nsmac/"):
+            candidate = root / target.removeprefix("~/nsmac/")
         elif target.startswith("/"):
             continue
         else:
@@ -485,12 +479,7 @@ def delegates_to_seal_verification_render(
 registry_core_participant_verify_render = require_function(
     registry_core_functions,
     'participant_verify_render',
-    'registry_core.py must define participant_verify_render as part of the permanent seal facade pair',
-)
-registry_core_render_seal = require_function(
-    registry_core_functions,
-    'render_seal',
-    'registry_core.py must define render_seal as the legacy seal dispatch shim',
+    'registry_core.py must define participant_verify_render as the participant verification facade',
 )
 seal_participant_verify_render = require_function(
     seal_functions,
@@ -507,21 +496,12 @@ record_verdict = require_function(
     'record_verdict',
     'seal_verification_render.py must define the record_verdict implementation',
 )
-legacy_render_seal = require_function(
-    seal_functions,
-    'render_seal',
-    'seal_verification_render.py must define the legacy render_seal dispatch shim',
-)
-
 assert delegates_to_seal_verification_render(
     registry_core_participant_verify_render,
     'participant_verify_render',
 ), (
     'registry_core.py participant_verify_render facade must delegate to '
     '_seal_verification_render.participant_verify_render'
-)
-assert delegates_to_seal_verification_render(registry_core_render_seal, 'render_seal'), (
-    'registry_core.py render_seal shim must delegate to _seal_verification_render.render_seal'
 )
 assert calls_name(seal_participant_verify_render, 'record_verification_round_for_execution'), (
     'participant_verify_render must record the paired verification round'
@@ -530,26 +510,14 @@ assert not calls_name(registry_core_participant_verify_render, 'record_verificat
     'registry_core.py participant_verify_render facade must not call '
     'record_verification_round_for_execution; seal_verification.py owns the recorder call'
 )
-assert not calls_name(registry_core_render_seal, 'record_verification_round_for_execution'), (
-    'protected seal-render recorder boundary: registry_core.py render_seal must not call '
-    'record_verification_round_for_execution'
-)
 for function_name, function in [
     ('seal_write', seal_write),
     ('record_verdict', record_verdict),
-    ('render_seal', legacy_render_seal),
 ]:
     assert not calls_name(function, 'record_verification_round_for_execution'), (
         'protected seal recorder boundary: seal_verification_render.py '
         f'{function_name} must not call record_verification_round_for_execution'
     )
-
-assert calls_name(legacy_render_seal, 'seal_write'), (
-    'legacy render_seal shim must dispatch bare seals to seal_write'
-)
-assert calls_name(legacy_render_seal, 'record_verdict'), (
-    'legacy render_seal shim must dispatch verdict writes to record_verdict'
-)
 PY
   ((status == 0)) || failures=$((failures + 1))
   ((status == 0)) && ok "verification round recorder call sites stay owned by participant verification" || true
@@ -699,8 +667,8 @@ failures.extend(assert_equal(
     "commands.md public router",
     extract_bullets(
         commands_spec,
-        "Public command routers under `~/.cursor/commands/`:",
-        ("Route playbooks under `~/.cursor/commands/`:",),
+        "Public command routers under `~/nsmac/commands/`:",
+        ("Route playbooks under `~/nsmac/commands/`:",),
     ),
     expected_command_routers,
 ))
@@ -708,7 +676,7 @@ failures.extend(assert_equal(
     "commands.md route playbook",
     extract_bullets(
         commands_spec,
-        "Route playbooks under `~/.cursor/commands/`:",
+        "Route playbooks under `~/nsmac/commands/`:",
         ("## Output",),
     ),
     expected_command_routes,

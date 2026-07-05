@@ -25,7 +25,7 @@ Write or refresh the managed per-phase summary inside the canonical collab trans
 <!-- abort: summarize-registry-target-unavailable -->
 - **Registry targeting:** Resolve the target collab from the first token after the route, falling back to `activeCollabId` when absent. The resolution algorithm and abort contract are owned by **Target resolution** in [`platform/standards/route-invariants.md`](../../../platform/standards/route-invariants.md); this route does not restate them.
 - **Mutation:** The route mutates the canonical transcript only; it writes no other files.
-- **Scope:** Summarizes all phases in the record into one managed top-of-file section. For the closing Completion summary, use `(collab write summary)`.
+- **Scope:** Summarizes all phases in the record into one managed top-of-file section. The close helper owns the structural Completion summary emitted at close time.
 - **Post-state resume signal:** rerun `commands/collab/engine/registry.py transcript-view <target> <activePhase> --raw` if further transcript inspection is needed.
 
 ```route-arg

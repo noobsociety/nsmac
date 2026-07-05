@@ -18,4 +18,4 @@ Route multi-agent scaffold workflows through one namespace.
 - **Route:** `install` -> [agent/install](install/index.md); `patch` -> [agent/patch](patch/index.md); `upgrade` -> [agent/upgrade](upgrade/index.md).
 - **Parameters:** `<install | patch | upgrade>` — required route selector.
 - **Examples:** `(agent install)`, `(agent patch)`, `(agent upgrade)`.
-- **Boundary:** `(agent install)` copies scaffold templates from `~/.cursor/platform/templates/` into the repo root only. `(agent patch)` edits `REPOSITORY.md` only. `(agent upgrade)` compares installed scaffold files against the current templates and, after user confirmation, writes the accepted set all-or-nothing. Each command does not write to `~/.cursor/` or modify agent settings JSON.
+- **Boundary:** `(agent install)` copies scaffold templates from `~/nsmac/platform/templates/` into the repo root only. `(agent patch)` edits `REPOSITORY.md` only. `(agent upgrade)` compares installed scaffold files against the current templates and, after user confirmation, writes the accepted set all-or-nothing. Each command does not write to `~/nsmac/` or modify agent settings JSON.

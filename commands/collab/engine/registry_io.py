@@ -478,7 +478,7 @@ def capture_registry_project(data: dict) -> None:
 def root_project_id() -> str | None:
     identity_path = ROOT / '.collab.json'
     if not identity_path.exists():
-        return None
+        return ROOT.name
     try:
         data = json.loads(identity_path.read_text())
     except json.JSONDecodeError:

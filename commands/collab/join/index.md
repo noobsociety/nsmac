@@ -34,7 +34,7 @@ Register one joinable participant in the active collaboration record from comman
 - **Model drift:** When a session spans a model upgrade, the registry retains the at-join value. Retaining the at-join value is accepted behavior, not a defect.
 - **Helper enforcement boundary:** The helper enforces presence, the exact `unknown` token, and whitespace stripping. The precedence preference (model ID over harness name) is an agent obligation; the helper cannot verify which tier an agent chose.
 - **Pending reviewer display:** When `reviewerRole` is set in the registry but that role is not yet in `participants`, the transcript **Reviewer** section marks the role as `(pending)`. The `(pending)` state is registry-owned — derived from `reviewerRole` not being in `participants` — not from transcript prose. Once the reviewer joins via `(collab join)`, the `(pending)` label is replaced with the active reviewer notice.
-- **Pending-reviewer speak gate:** A pending `reviewerRole` blocks all participant speaks. `speak-state` aborts before turn-order checks when `reviewerRole` is set and absent from `participants`. The reviewer must join via `(collab join --role <reviewer>)` or be cleared via `(collab set reviewer --clear)` before any participant may contribute.
+- **Pending-reviewer speak gate:** A pending `reviewerRole` blocks all participant speaks. `speak-state` aborts before turn-order checks when `reviewerRole` is set and absent from `participants`. The reviewer must join via `(collab join --role <reviewer>)` or the moderator must clear the assignment via `(collab unset reviewer)` before any participant may contribute.
 - **Role data boundary:** Joinable role JSON files live under `commands/collab/reference/roles/` as shared command-owned data, not route playbooks.
 - **Section-targeting convention:** A `render-*` helper owns exactly one transcript section identified by its visible heading, takes registry state and role JSON as its only inputs, and fails before any write when input validation fails.
 - **`render-participants` boundary:** `render-participants` is a repair and diagnostics subcommand. Do not call it in route prose; the normal join path uses `join-participants`.
@@ -46,5 +46,5 @@ Register one joinable participant in the active collaboration record from comman
 
 ```route-arg
 dispatch: (collab join --role <role>)
-param: name=--role; required=required; placeholder=<role>; class=dynamic; source=commands/collab/engine/registry.py roles
+param: name=--role; required=required; placeholder=<role>; class=dynamic; source=platform/tooling/roles.py roles
 ```

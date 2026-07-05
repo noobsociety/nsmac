@@ -40,10 +40,8 @@ from commands.collab.engine.participants import (
 from commands.collab.engine.phase_lifecycle import lifecycle_status_notice
 from commands.collab.engine.registry_constants import (
     ALLOWED_EXECUTION_STATUSES,
-    ALLOWED_TERMINALS,
     ALLOWED_VALIDATION_SCOPES,
     CALLER_DECLINED_AGENT_ID,
-    DEFAULT_TERMINAL,
 )
 from commands.collab.engine.registry_io import load_registry, registry_lock, resolve_collab, save_registry
 from commands.collab.engine.transcript_readers import (
@@ -55,22 +53,9 @@ from commands.collab.engine.transcript_readers import (
 )
 
 
-def terminal_value(entry: dict) -> str:
-    if 'terminal' in entry:
-        terminal = entry['terminal']
-        if isinstance(terminal, str) and terminal in ALLOWED_TERMINALS:
-            return terminal
-    if entry.get('createdAt') is None:
-        return DEFAULT_TERMINAL
-    die(f'registry: collab terminal must be one of {sorted(ALLOWED_TERMINALS)}')
-
-
 def seal_terminal(entry: dict) -> bool:
-    return terminal_value(entry) == 'seal'
-
-
-def issue_terminal(entry: dict) -> bool:
-    return terminal_value(entry) == 'issue'
+    del entry
+    return True
 
 
 @dataclass(frozen=True)
@@ -323,13 +308,7 @@ def record_execution_state(
             callbacks.invalidate_verification_seal(entry, f'execution changed for {role}')
             callbacks.write_seal_verdict_companion(path, entry)
         closed = False
-        if issue_terminal(entry) and entry['activePhase'] == 'Completion':
-            if auto_close and callbacks.close_eligible_after_execution(entry, assigned_roles):
-                entry['status'] = 'closed'
-                closed = True
-                if data.get('activeCollabId') == entry['id']:
-                    data['activeCollabId'] = None
-        elif seal_terminal(entry) and reviewer_backed(entry) and entry['activePhase'] == 'Completion':
+        if seal_terminal(entry) and reviewer_backed(entry) and entry['activePhase'] == 'Completion':
             if callbacks.close_eligible_after_execution(entry, assigned_roles):
                 if auto_close:
                     entry['status'] = 'closed'

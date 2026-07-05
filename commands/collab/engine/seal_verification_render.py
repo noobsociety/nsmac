@@ -2,7 +2,7 @@
 
 Owns: participant-verify rendering, assessment/seal rendering,
       reviewer-findings blocks, summary/history rendering, seal writing,
-      verdict recording, and the legacy seal dispatch shim.
+      and verdict recording.
 
 Does not own: stale-seal trigger decisions, participant verification state,
               verdict validation, content-integrity gates, phase lifecycle
@@ -15,8 +15,7 @@ Naming convention
   *_state(entry, ...)   -- pure registry-entry accessor; no I/O or side effects.
   *_state(path, ...)    -- CLI-callable reader; loads registry from path.
   seal_write(...)       -- writes the immutable verification seal snapshot.
-  record_verdict(...)   -- records the assessment verdict and terminal mutation.
-  render_seal(...)      -- legacy dispatch shim for old seal-render callers.
+  record_verdict(...)   -- records the assessment verdict.
 """
 
 from __future__ import annotations
@@ -73,14 +72,9 @@ from commands.collab.engine.errors import die
 
 from commands.collab.engine.registry_constants import (
     ACTIVE_PARTICIPANT_VERIFICATION_STAGES,
-    ALLOWED_CAP_EXITS,
     ALLOWED_COMPLETION_SUBSTATES,
-    ALLOWED_PARTICIPANT_VERIFICATION_STAGES,
     ALLOWED_VERDICT_OUTCOMES,
-    ALLOWED_VERIFICATION_SUBSTATES,
     CONTENT_ONLY_GUARD,
-    DEFAULT_VERIFICATION_CAP,
-    PHASES,
 )
 
 from commands.collab.engine.digests import (
@@ -106,9 +100,7 @@ from commands.collab.engine.execution import (
 from commands.collab.engine.git_repo import work_repo_root
 
 from commands.collab.engine.normalizers import (
-    assert_one_line_nonempty,
     format_timestamp,
-    normalize_restore_target,
     normalize_touched_paths,
 )
 
@@ -116,7 +108,6 @@ from commands.collab.engine.participants import (
     assert_caller_role,
     effective_turn_order,
     has_participant,
-    normalize_turn_order_for_phase,
     participant_agent_id,
     reviewer_backed,
     reviewer_role,
@@ -125,16 +116,46 @@ from commands.collab.engine.participants import (
 
 from commands.collab.engine.phase_lifecycle import lifecycle_status_notice, print_notice_diagnostic
 
-from commands.collab.engine.registry_io import load_registry, registry_lock, registry_revision, resolve_collab, save_registry
+from commands.collab.engine.registry_io import (
+    commit_registry_and_transcript,
+    load_registry,
+    registry_lock,
+    registry_revision,
+    resolve_collab,
+    save_registry,
+)
 
 from commands.collab.engine.transcript_render import (
     print_header_overwrite,
     render_managed_header_text,
     rendered_collapsible_block,
 )
-from commands.collab.engine.seal_verification_logic import *  # noqa: F403
-
-_commit_registry_and_transcript: Callable[[Path, dict, Path, str], None] | None = None
+from commands.collab.engine.seal_verification_logic import (
+    all_participant_verification_completed,
+    assert_chartered_deliverables_covered,
+    assert_verification_execution_ready,
+    build_verdict,
+    clear_verdict,
+    completion_state,
+    die_content_drift_persisted,
+    ensure_legacy_content_digest,
+    first_pending_participant_verification_role,
+    invalidate_seal_on_content_drift,
+    invalidate_seal_on_full_body_drift,
+    parse_verdict_evidence,
+    participant_verification_enabled,
+    participant_verification_inactive_message,
+    participant_verification_incomplete,
+    participant_verification_role_state,
+    participant_verification_roles,
+    record_verification_round_for_execution,
+    seal_snapshot,
+    sync_participant_verification_review_substate,
+    verification_review_substate,
+    verification_state,
+    verification_substate,
+    write_seal_verdict_companion,
+)
 
 _next_line_for_state: Callable[[dict], str] | None = None
 
@@ -142,24 +163,12 @@ _print_post_action_advisories: Callable[[dict, str | None, str | None, dict | No
 
 def configure_registry_facade(
     *,
-    commit_registry_and_transcript: Callable[[Path, dict, Path, str], None],
     next_line_for_state: Callable[[dict], str],
     print_post_action_advisories: Callable[[dict, str | None, str | None, dict | None, str], None],
 ) -> None:
-    global _commit_registry_and_transcript, _next_line_for_state, _print_post_action_advisories
-    _commit_registry_and_transcript = commit_registry_and_transcript
+    global _next_line_for_state, _print_post_action_advisories
     _next_line_for_state = next_line_for_state
     _print_post_action_advisories = print_post_action_advisories
-
-def commit_registry_and_transcript(
-    registry_path: Path,
-    data: dict,
-    transcript_path: Path,
-    transcript_text: str,
-) -> None:
-    if _commit_registry_and_transcript is None:
-        die('seal verification engine is not configured: commit callback missing')
-    _commit_registry_and_transcript(registry_path, data, transcript_path, transcript_text)
 
 def next_line_for_state(entry: dict) -> str:
     if _next_line_for_state is None:
@@ -384,10 +393,7 @@ def participant_verify_render(
                 'participant verification turn lock is not active; '
                 f'run participant-verify-state first for role {role}'
             )
-        cap = verification['cap']
         attempts = role_state.get('attempts', 0)
-        if attempts >= cap:
-            die(f'participant verification attempt cap reached for {role}: {attempts}/{cap}')
         assert_touched_paths_inside_handoff(entry, role, normalized_touched_paths)
         rendered_timestamp = timestamp or format_timestamp()
         execution_state = entry.get('execution', {}).get(role, {})
@@ -573,37 +579,14 @@ def assessment_notice(verdict: dict) -> dict | None:
         'message': f'Assessment verdict recorded; restore target is {target}.',
     }
 
-def verdict_args_present(
-    outcome: str | None,
-    restore_target: str | None,
-    restore_reason: str | None,
-    evidence: str | None,
-    failure_category: str | None,
-    null_result: bool,
-) -> bool:
-    return any([
-        outcome is not None,
-        restore_target is not None,
-        restore_reason is not None,
-        evidence is not None,
-        failure_category is not None,
-        null_result,
-    ])
-
 def seal_write(
     path: Path,
     target: str,
     role: str,
     observed_revision: int,
-    cap_exit: str | None = None,
-    restore_reason: str | None = None,
-    evidence: str | None = None,
-    failure_category: str | None = None,
     emit_json: bool = False,
     caller_role: str | None = None,
 ) -> int:
-    if cap_exit is not None and cap_exit not in ALLOWED_CAP_EXITS:
-        die(f'invalid cap-exit value {cap_exit}; must be one of: reopen-action-plan, reopen-handoff, follow-up-collab, archive')
     with registry_lock(path):
         data = load_registry(path)
         entry = resolve_collab(data, target)
@@ -612,8 +595,6 @@ def seal_write(
             die('record is closed')
         if entry['activePhase'] != 'Completion':
             die(f'{collab_dispatch("seal verification")} is valid only in the Completion phase')
-        if entry.get('terminal') == 'issue':
-            die(f'seal verification is not used for issue-terminal collabs; close with {collab_dispatch("export-issues")}')
         live_revision = registry_revision(data)
         if observed_revision != live_revision:
             die(
@@ -631,18 +612,6 @@ def seal_write(
             die(f'Completion.verification sub-state is not active; current sub-state: {verification_substate(entry)}')
         verification = verification_state(entry)
         review_substate = verification_review_substate(entry)
-        follow_up_args_present = any([restore_reason is not None, evidence is not None, failure_category is not None])
-        follow_up: dict | None = None
-        if cap_exit == 'follow-up-collab':
-            if not restore_reason or evidence is None or not failure_category:
-                die('follow-up-collab cap-exit requires --restore-reason, --evidence, and --failure-category')
-            follow_up = {
-                'restoreReason': restore_reason,
-                'evidence': parse_verdict_evidence(evidence),
-                'failureCategory': failure_category,
-            }
-        elif cap_exit is not None and follow_up_args_present:
-            die('cap-exit metadata is only valid with --cap-exit follow-up-collab')
         transcript_path = transcript_path_for_entry(entry)
         if not transcript_path.exists():
             die(f'transcript missing: {transcript_path}')
@@ -667,38 +636,27 @@ def seal_write(
         assert_no_execution_agent_conflation(entry)
         advisory = execution_scope_advisory(entry)
         rounds = verification['rounds']
-        cap = verification['cap']
         if rounds == 0:
             die('zero verification rounds; at least one reviewer-executor paired event is required before sealing')
-        if cap_exit is None and rounds >= cap:
-            die(
-                'round cap reached; reissue with --cap-exit reopen-action-plan, '
-                '--cap-exit reopen-handoff, --cap-exit follow-up-collab, or --cap-exit archive'
-            )
         clear_verdict(entry)
-        seal = seal_snapshot(entry, observed_revision, role, transcript, cap_exit, follow_up)
+        seal = seal_snapshot(entry, observed_revision, role, transcript)
         entry['verificationSeal'] = seal
-        notice = apply_cap_exit(entry, data, cap_exit)
+        verification['subState'] = 'assessment'
+        notice = {
+            'notice': 'assessment',
+            'transition': 'Completion.verification.seal->Completion.verification.assessment',
+            'message': 'Verification seal recorded; reviewer assessment required.',
+        }
         number = next_completion_history_number(transcript)
-        scope_label = 'cap-exit' if cap_exit else 'seal'
         seal_line = (
             f"{number}. **{role}:** sealed {format_timestamp()} \u2014 verification passed; "
-            f"{scope_label}; {len(seal['touchedPaths'])} paths."
+            f"seal; {len(seal['touchedPaths'])} paths."
         )
         rendered = append_completion_history_line(transcript, seal_line)
         rendered, header_changed = render_managed_header_text(rendered, entry, DEFAULT_ROLES_DIR)
         if advisory:
             print(advisory)
-        next_line = (
-            f'NEXT: Run {collab_dispatch("seal verification")} for role {role} with --outcome <success|incomplete|failed>.'
-            if cap_exit is None
-            else (
-                'NEXT: Open a follow-up collab '
-                f'{json.dumps(follow_up, sort_keys=True, separators=(",", ":"))}.'
-                if cap_exit == 'follow-up-collab'
-                else next_line_for_state(entry)
-            )
-        )
+        next_line = f'NEXT: Run {collab_dispatch("seal verification")} for role {role} with --outcome <success|incomplete|failed>.'
         write_seal_verdict_companion(path, entry)
 
         print_header_overwrite(header_changed)
@@ -730,8 +688,6 @@ def record_verdict(
             die('record is closed')
         if entry['activePhase'] != 'Completion':
             die(f'{collab_dispatch("seal verification")} is valid only in the Completion phase')
-        if entry.get('terminal') == 'issue':
-            die(f'seal verification is not used for issue-terminal collabs; close with {collab_dispatch("export-issues")}')
         live_revision = registry_revision(data)
         if observed_revision != live_revision:
             die(
@@ -815,57 +771,3 @@ def record_verdict(
     print(entry['status'])
     print_notice_diagnostic(notice, emit_json)
     return 0
-
-def render_seal(
-    path: Path,
-    target: str,
-    role: str,
-    observed_revision: int,
-    cap_exit: str | None = None,
-    outcome: str | None = None,
-    restore_target: str | None = None,
-    restore_reason: str | None = None,
-    evidence: str | None = None,
-    failure_category: str | None = None,
-    null_result: bool = False,
-    emit_json: bool = False,
-    caller_role: str | None = None,
-) -> int:
-    assessment_args_present = (
-        outcome is not None
-        or restore_target is not None
-        or null_result
-        or (
-            cap_exit is None
-            and verdict_args_present(outcome, restore_target, restore_reason, evidence, failure_category, null_result)
-        )
-    )
-    if assessment_args_present:
-        if cap_exit is not None:
-            die('verification assessment cannot mutate seal cap-exit; omit --cap-exit when writing a verdict')
-        return record_verdict(
-            path,
-            target,
-            role,
-            observed_revision,
-            outcome,
-            restore_target,
-            restore_reason,
-            evidence,
-            failure_category,
-            null_result,
-            emit_json,
-            caller_role,
-        )
-    return seal_write(
-        path,
-        target,
-        role,
-        observed_revision,
-        cap_exit,
-        restore_reason,
-        evidence,
-        failure_category,
-        emit_json,
-        caller_role,
-    )

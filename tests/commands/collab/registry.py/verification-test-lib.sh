@@ -25,7 +25,7 @@ registry_path() {
 init_reviewer_target() {
   local title="$1"
   local slug="$2"
-  "$ROOT/commands/collab/engine/registry.py" init --agent-id codex --reviewer pa --no-participant-verification "$title" >/dev/null
+  "$ROOT/commands/collab/engine/registry.py" init --agent-id codex --reviewer pa "$title" >/dev/null
   "$ROOT/commands/collab/engine/registry.py" join-participants "$RUN_DATE-$slug" pe --agent-id gpt >/dev/null
   "$ROOT/commands/collab/engine/registry.py" join-participants "$RUN_DATE-$slug" pa --agent-id opus >/dev/null
   "$ROOT/commands/collab/engine/registry.py" set "$RUN_DATE-$slug" turn-order pe --caller-role mod >/dev/null
@@ -71,35 +71,25 @@ seed_paired_verification_round() {
   local rounds="${2:-1}"
   local registry
   registry="$(registry_path)"
-  python3 - "$slug" "$rounds" "$registry" <<'PY'
+  python3 - "$ROOT" "$slug" "$rounds" "$registry" <<'PY'
 import json
 import sys
 from pathlib import Path
 
-slug, rounds, registry = sys.argv[1:4]
+root, slug, rounds, registry = sys.argv[1:5]
+sys.path.insert(0, root)
+from commands.collab.engine import registry as R
+
 path = Path(registry)
 data = json.loads(path.read_text())
 entry = next(item for item in data['collabs'] if item['slug'] == slug or item['id'] == slug)
-entries = []
-for role, state in sorted(entry.get('execution', {}).items()):
-    row = {
-        'role': role,
-        'entryId': state.get('entryId') or f"{role}-execution",
-        'status': state.get('status'),
-        'date': state.get('date'),
-        'validationResult': state.get('validationResult'),
-        'validationScope': state.get('validationScope'),
-        'touchedPaths': list(state.get('touchedPaths', [])),
-    }
-    if state.get('agentId'):
-        row['agentId'] = state.get('agentId')
-    entries.append(row)
-import base64
-signature = base64.urlsafe_b64encode(
-    json.dumps(entries, sort_keys=True, separators=(',', ':')).encode()
-).decode().rstrip('=')
-entry.setdefault('verification', {})['rounds'] = int(rounds)
-entry['verification']['pairedExecutionSignature'] = signature
+verification = entry.setdefault('verification', {})
+verification['rounds'] = int(rounds)
+verification['pairedExecutionSignature'] = R.execution_signature(entry)
+for role in R.participant_verification_roles(entry):
+    state = R.participant_verification_role_state(entry, role)
+    state['stage'] = 'completed'
+    state['executionSignature'] = R.participant_execution_signature(entry, role)
 path.write_text(json.dumps(data, indent=2) + '\n')
 PY
 }
@@ -109,22 +99,10 @@ seal_target() {
   shift || true
   local state
   local revision
-  python3 - "$target" "$(registry_path)" <<'PY'
-import json
-import sys
-from pathlib import Path
-
-target, registry = sys.argv[1:3]
-path = Path(registry)
-data = json.loads(path.read_text())
-entry = next(item for item in data['collabs'] if item['id'] == target)
-entry.setdefault('verification', {})['cap'] = 2
-path.write_text(json.dumps(data, indent=2) + '\n')
-PY
   seed_paired_verification_round "$target"
   state="$("$ROOT/commands/collab/engine/registry.py" seal-state "$target" pa)"
   revision="$(read_json_field registryRevision <<<"$state")"
-  "$ROOT/commands/collab/engine/registry.py" seal-render "$target" pa --observed-revision "$revision" --caller-role pa "$@" >/dev/null
+  "$ROOT/commands/collab/engine/registry.py" seal-write "$target" pa --observed-revision "$revision" --caller-role pa "$@" >/dev/null
 }
 
 start_assessment() {
