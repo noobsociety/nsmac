@@ -14,38 +14,7 @@ cd "$TMPDIR"
 export COLLAB_STATE_HOME="$TMPDIR/state-home"
 printf '{"projectId":"test-seal-content-drift-fixture","label":"test"}\n' > .collab.json
 
-RUN_DATE="$(date +%Y-%m-%d)"
-
-read_json_field() {
-  python3 -c 'import json,sys; data=json.load(sys.stdin); print(data["'"$1"'"])'
-}
-
-seed_round() {
-  local slug="$1"
-  python3 - "$ROOT" "$REGISTRY" "$slug" <<'PY'
-import json
-import sys
-from pathlib import Path
-
-root = sys.argv[1]
-path = Path(sys.argv[2])
-target = sys.argv[3]
-sys.path.insert(0, root)
-from commands.collab.engine import registry as R
-
-data = json.loads(path.read_text())
-entry = next(item for item in data['collabs'] if item['id'] == target)
-verification = entry.setdefault('verification', {})
-verification['rounds'] = 1
-verification['subState'] = 'seal'
-verification['pairedExecutionSignature'] = R.execution_signature(entry)
-for role in R.participant_verification_roles(entry):
-    state = R.participant_verification_role_state(entry, role)
-    state['stage'] = 'completed'
-    state['executionSignature'] = R.participant_execution_signature(entry, role)
-path.write_text(json.dumps(data, indent=2) + '\n')
-PY
-}
+source "$ROOT/tests/commands/collab/registry.py/verification-test-lib.sh"
 
 WORK="$TMPDIR/work"
 mkdir -p "$WORK"
@@ -74,7 +43,7 @@ REGISTRY="$("$ROOT/commands/collab/engine/registry.py" registry-path)"
   --touched-path deliverable.txt \
   --caller-role pe >/dev/null
 
-seed_round "$TARGET"
+seed_paired_verification_round "$TARGET" 1 seal
 seal_state="$("$ROOT/commands/collab/engine/registry.py" seal-state "$TARGET" pa)"
 seal_revision="$(read_json_field registryRevision <<<"$seal_state")"
 "$ROOT/commands/collab/engine/registry.py" seal-write "$TARGET" pa \

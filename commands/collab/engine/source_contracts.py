@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""Source-contract validation command: validate that the registry loads cleanly (no stale lock) and that the required source-contract anchors are present across the flag-taxonomy, seal-verification, invariants, and planned-route reference documents under the config root; aggregates lower-tier leaves (config_paths, errors, planned_routes, registry_io). Does not own registry persistence, phase mutation, or any write path."""
+"""Source-contract validation command: validate that the registry loads cleanly (no stale lock) and that the required source-contract anchors are present across the flag-taxonomy, seal-verification, and invariants reference documents under the config root; aggregates lower-tier leaves (config_paths, errors, registry_io). Does not own registry persistence, phase mutation, or any write path."""
 from __future__ import annotations
 
 from pathlib import Path
 
 from commands.collab.engine.config_paths import DEFAULT_CONFIG_ROOT, DEFAULT_FLAG_TAXONOMY_PATH
 from commands.collab.engine.errors import die
-from commands.collab.engine.planned_routes import validate_planned_route_prerequisites
 from commands.collab.engine.registry_io import load_registry, stale_registry_lock_message
 
 
@@ -32,7 +31,6 @@ def validate_source_contracts() -> None:
     invariants = DEFAULT_CONFIG_ROOT / 'commands/collab/reference/invariants.md'
     require_source_text(invariants, 'Rollback triggers', 'rollback trigger section')
     require_source_text(invariants, 'Observation backlog', 'observation backlog section')
-    validate_planned_route_prerequisites(DEFAULT_CONFIG_ROOT)
 
 
 def validate_command(path: Path) -> int:

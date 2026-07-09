@@ -4,7 +4,7 @@
 
 **Slash:** (reference only — not an invocable route)
 **Prose dispatch:** (reference only — not an invocable route)
-**Search phrases:** registry state, state root resolution, project identity, user-scope collab state root, resolve_default_registry_path
+**Search phrases:** registry state, state root resolution, project identity, user-scope collab state root, resolve_default_registry_path, collab project identity contract, collab repo marker schema, projectId binding rules
 
 ## Steps
 
@@ -30,6 +30,35 @@ Load-time, before any registry read. Fires on every registry-loading command.
 ### State-root resolution
 
 The state root is `$HOME/.collabs/<projectId>/` by default, or the path from the `COLLAB_STATE_HOME` environment variable when set. The `projectId` is a readable, collision-safe slug seeded once at `init` time and recorded in `.collab.json`. The marker is never changed after creation; `projectId` rebinding to a different state root is a hard rejection.
+
+The user-scope collab state root is deliberately non-XDG because records are user-browsed, repo-independent operational state. The `$HOME` expansion happens at runtime; the absolute path is not stored in the repo. `COLLAB_STATE_HOME` is a test-isolation hook, not a supported production configuration surface. Repo-local `.collabs/` state has been retired; new records are created only under the user-scope collab state root, and the resolver reads no repo-local fallback.
+
+| Path under state root | Description |
+| --- | --- |
+| `registry.json` | Registry backing all collab routes. |
+| `records/` | Transcript files (`*.md`). |
+| `label` | Non-authoritative plain-text projection of the project label; updated on each resolver invocation when the content differs from `.collab.json`. |
+
+### Project identity file
+
+`.collab.json` is placed at the repository root and tracked in version control.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `projectId` | string | Readable, collision-safe slug. Seeded once at init; never re-derived from the live directory, path, basename, remote, or worktree; never changed on rename/move/fork. |
+| `label` | string | Human-readable project name; used for display only, not resolution. |
+| `state.mode` | string | Worktree sharing mode: `"shared"` (default) or `"isolated"`. |
+| `state.isolation` | string | Isolation opt-in policy: `"opt-in"` means isolation requires explicit configuration per worktree. |
+
+A renamed or forked repository carries the same `projectId` and resolves to the same state root.
+
+**Slug generation:** At `init`, the `projectId` is derived from the project label (or directory name when no label is given) by lowercasing, replacing non-alphanumeric runs with hyphens, stripping leading and trailing hyphens, and padding to at least 4 characters. When the preferred slug is already occupied by another project's state-root directory, a deterministic 8-character suffix — the sha256 of the project's absolute path, truncated — is appended (e.g., `noobsociety-com-3f4a1b2c`). The suffix is reproducible: the same project root always produces the same disambiguator. If that slot is also taken, a numeric ordinal follows (`-2`, `-3`, …).
+
+### Worktree behavior
+
+The default mode is `"shared"`: all worktrees of a repository resolve to the same state root and share `registry.json` and `records/`. A worktree may opt into isolation explicitly (`state.mode: "isolated"`); no per-worktree root is created automatically. The isolation opt-in is scoped to the worktree configuration and does not change the identity file.
+
+**Label projection:** The `label` field is display metadata only. The helper projects it from `.collab.json` into registry project metadata during writes, uses the identity-file value for list display when available, and synchronizes the state root's `label` file whenever the resolver runs. Updating `label` never changes `projectId` or the resolved path.
 
 ### Abort family
 

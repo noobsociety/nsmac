@@ -25,14 +25,14 @@ Permanently remove a collab record from the registry and disk. The operation is 
    If the user does not type the exact proceed token, stop without any change.
 4. Remove the collab entry from the registry entirely.
 5. Clear `activeCollabId` when it points at the deleted collab.
-6. Delete the transcript file from disk.
-7. Stop after registry removal and transcript deletion.
+6. Delete the transcript file and its contribution store file from disk.
+7. Stop after registry removal, transcript deletion, and contribution store deletion.
 
 ## Notes
 
 - **Parameters:** target collab slug, id, or numeric `#N` as the first token after `delete`; when absent, resolved per **Registry targeting** in **Notes**.
 - **Registry targeting:** Resolve the target collab from the first token after the route, falling back to `activeCollabId` when absent. The resolution algorithm and abort contract are owned by **Target resolution** in [`platform/standards/route-invariants.md`](../../../platform/standards/route-invariants.md); this route does not restate them.
-- **Destructive by default:** `delete` is always a hard delete — it removes both the registry entry and the transcript file. For non-destructive deactivation, use `(collab archive)` instead.
+- **Destructive by default:** `delete` is always a hard delete — it removes the registry entry, the transcript file, and the transcript's contribution store file. For non-destructive deactivation, use `(collab archive)` instead.
 - **Confirmation required:** Always show the target details before presenting the gate. Never skip the gate prompt. Gate contract: `platform/standards/command-argument.md`.
 
 ```route-arg

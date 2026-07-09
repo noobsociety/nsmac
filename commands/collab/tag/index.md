@@ -27,7 +27,7 @@ Create or preview the local git tag for a collaboration record.
 
 ```route-arg
 dispatch: (collab tag [<target>] [--tag <name>] [--confirm] [--push])
-param: name=target; required=optional; placeholder=<target>; class=type; rule=collab slug, id, or numeric #N; default=derived:activeCollabId
+param: name=<target>; required=optional; placeholder=<target>; class=type; rule=collab slug, id, or numeric #N; default=derived:activeCollabId
 param: name=--tag; required=optional; placeholder=<name>; class=type; rule=git tag name; default=derived:collab/<slug>
 param: name=--confirm; required=optional; placeholder=--confirm; class=literal; values=present; default=literal:false
 param: name=--push; required=optional; placeholder=--push; class=literal; values=present; default=literal:false

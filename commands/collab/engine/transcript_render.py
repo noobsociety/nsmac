@@ -2,20 +2,24 @@
 
 Owns: header scaffolding, Table of Contents management (including
       insert_toc_entry), participant table rendering, all <details> block
-      construction via rendered_collapsible_block (single <details> owner;
-      registry.py routes its participant-verify, reviewer-findings,
-      revision-history, and retracted-content blocks here), contribution-block
+      construction via rendered_collapsible_block (single <details> owner:
+      no caller constructs a <details> block outside this module;
+      participant-verify, reviewer-findings, revision-history, and
+      retracted-content blocks all route through it), contribution-block
       rendering (excerpt and full body handling), the managed Phase Summary
       block (sentinel-bounded insert/replace), and effort-override banners.
 
 Does not own: registry state, phase lifecycle decisions, participant roster
               management, write-path dispatch, or CLI entry-point logic.
-              This module is imported by commands.collab.engine.registry only.
+              Imported directly by multiple engine command/render modules;
+              commands.collab.engine.registry is a thin lazy-compatibility
+              facade over registry_core and does not import this module
+              directly.
 
 Naming convention
-  rendered_*  -- pure function; produces a single self-contained rendered
-                 artifact (string or line-list) representing one named thing;
-                 no I/O or side effects.
+  rendered_*  -- produces a single self-contained rendered artifact (string
+                 or line-list) representing one named thing; no writes or
+                 other side effects (some read role metadata via roles_dir).
   render_*    -- assembles, transforms, or drives a larger rendering operation;
                  may return complex types or a complete document; may be pure
                  but its scope is broader than a single named artifact.

@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Contract: platform/tooling/topology-validator-contract.md
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"

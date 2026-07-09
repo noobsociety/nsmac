@@ -33,8 +33,8 @@ fi
 grep -Fq 'TODO(install)' platform/templates/AGENTS.md || fail "AGENTS template lacks TODO(install)"
 grep -Fq 'TODO(patch)' platform/templates/REPOSITORY.md || fail "REPOSITORY template lacks TODO(patch)"
 
-if grep -R 'TODO(agent)' commands/agent platform/templates tests/specs/templates.md commands/commands.md >/dev/null; then
-  grep -R 'TODO(agent)' commands/agent platform/templates tests/specs/templates.md commands/commands.md >&2
+if grep -R 'TODO(agent)' commands/agent platform/templates commands/commands.md >/dev/null; then
+  grep -R 'TODO(agent)' commands/agent platform/templates commands/commands.md >&2
   fail "agent route contract still references TODO(agent)"
 fi
 

@@ -8,12 +8,9 @@ The hybrid namespace advisory coverage decision and denylist extension paths are
 
 `platform/data/command-advisory-policy.json` -> `requiredNamespaces` declares
 which namespaces must have an advisory file. The required set is `["agent",
-"collab", "quality"]`. Advisory files are resolved from two locations:
-`platform/data/advisories/<namespace>.json` (central) or
-`commands/<namespace>/data/<namespace>.json` (per-slice). The validator
-checks both; a namespace needs exactly one to satisfy coverage. Use the
-per-slice location when the namespace has its own `commands/<ns>/data/`
-directory (e.g. `commands/collab/data/collab.json`).
+"collab"]`. Advisory files live in one per-slice location:
+`commands/<namespace>/data/<namespace>.json` (e.g.
+`commands/collab/data/collab.json`, `commands/agent/data/agent.json`).
 
 The following namespaces are explicitly exempt from advisory coverage.
 Exemption reasons are authoritative in
@@ -21,16 +18,13 @@ Exemption reasons are authoritative in
 
 | Namespace | Advisory file | Decision | Reason |
 |---|---|---|---|
-| `doc` | none | exempt | Documentation rewrite routes are artifact-specific and intentionally exempt from caller recommendations. |
-| `git` | none | exempt | Git workflow routes depend on repository and issue state, so caller recommendations remain policy-exempt. |
+| `help` | none | exempt | Route lookup renders existing playbooks as a thin pass-through; no capability or effort tier applies. |
 | `test` | none | exempt | Test harness dispatch is a maintainer QA surface and remains policy-exempt from caller recommendations. |
 
 To add a namespace to required coverage: add it to `requiredNamespaces`
 in `platform/data/command-advisory-policy.json` and create its advisory
-at either `platform/data/advisories/<namespace>.json` or
-`commands/<namespace>/data/<namespace>.json`, conforming to
-`platform/data/command-advisory.schema.json`. Prefer the per-slice
-location when the namespace has a `commands/<namespace>/data/` directory.
+at `commands/<namespace>/data/<namespace>.json`, conforming to
+`platform/data/command-advisory.schema.json`.
 
 To add an explicit exemption: add a `"<namespace>": "<reason>"` entry
 to `namespaceCoverageExemptions` in `platform/data/command-advisory-policy.json`.

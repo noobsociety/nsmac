@@ -121,7 +121,7 @@ from pathlib import Path
 
 root = Path(sys.argv[1])
 paths = [
-    root / 'commands/collab/reference/workflow-models.md',
+    root / 'commands/collab/reference/verification.md',
     root / 'commands/collab/init/index.md',
     root / 'commands/collab/reference/glossary.md',
 ]

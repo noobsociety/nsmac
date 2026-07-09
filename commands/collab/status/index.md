@@ -18,7 +18,7 @@ Show the current workflow state of a collaboration record — not the registry `
 - **Parameters:** target collab slug, id, or numeric `#N` as the first token after `status`; when absent, resolved per **Registry targeting** in **Notes**.
 - **Registry targeting:** Resolve the target collab from the first token after the route, falling back to `activeCollabId` when absent. The resolution algorithm and abort contract are owned by **Target resolution** in [`platform/standards/route-invariants.md`](../../../platform/standards/route-invariants.md); this route does not restate them.
 - **Naming disambiguation:** This route's name (`status`) reuses the same word as the registry field `status` (`open` / `closed` / `archived`). The route shows workflow state; the field records lifecycle state. To filter by lifecycle state, use `(collab list --status <open|closed|archived>)`.
-- **Output shape:** Structured key-value display. Includes: `id`, `slug`, `title`, `status` (lifecycle), `activePhase`, `completionSubState` (when in Completion), `turnOrder`, `reviewerRole`, `reviewerMode`, `revision` (write-guard counter), `uncheckedAssignedItemsByRole` (when in Completion), and participant rows. Example:
+- **Output shape:** Structured key-value display. Includes: `id`, `slug`, `title`, `status` (lifecycle), `activePhase`, `completionSubState` (when in Completion for a reviewer-backed collab), `turnOrder`, `reviewerRole`, `reviewerMode` (when a reviewer is set), `revision` (write-guard counter), `uncheckedAssignedItemsByRole` (when in Completion for a reviewer-backed collab), and participant rows. Example:
 
   ```
   id:           a13dba4ca8714205b217dca31da96eee
@@ -26,9 +26,12 @@ Show the current workflow state of a collaboration record — not the registry `
   title:        Collab State Observability
   status:       open
   activePhase:  Completion.execution
+  completionSubState: execution
   turnOrder:    tw, pe
-  reviewer:     pa (last-in-convergent-phases)
+  reviewerRole: pa
+  reviewerMode: last-in-convergent-phases
   revision:     2423
+  uncheckedAssignedItemsByRole: {"pe": 1, "tw": 0}
   participants: tw (claude-sonnet-4-6), pe (codex), pa (opus)
   ```
 

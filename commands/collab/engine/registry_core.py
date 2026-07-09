@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Shared collab registry helper.
 
-Import model: bare sibling imports inside ``commands/collab/engine/`` are intentional;
-external callers invoke via ``commands.collab.engine.*`` module imports or the argv interface.
+Import model: intra-engine imports are fully qualified (``commands.collab.engine.X``); the
+sole bare import is ``roles``, resolved from ``platform/tooling/`` via the ``COMMAND_SYSTEM_DIR``
+sys.path insert below. External callers invoke via ``commands.collab.engine.*`` module imports
+or the argv interface.
 """
 from __future__ import annotations
 
@@ -41,7 +43,6 @@ from commands.collab.engine.transcript_readers import (
     unchecked_assigned_item_count,
     unchecked_assigned_items_by_role,
 )
-from commands.collab.engine.planned_routes import validate_planned_route_prerequisites
 from commands.collab.engine.registry_validation import validate_registry as validate_registry_data
 from commands.collab.engine.effort import (
     audit_effort_matrix,
@@ -509,7 +510,7 @@ def participant_verify_render(
     timestamp: str | None = None,
     caller_role: str | None = None,
 ) -> int:
-    # Permanent facade-pair: registry.py owns CLI dispatch for both wrappers by design.
+    # Permanent facade-pair: registry.py owns CLI dispatch by design.
     # This wrapper delegates; the render implementation owns round recording.
     return _seal_verification_render.participant_verify_render(
         path,

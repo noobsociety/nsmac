@@ -30,7 +30,7 @@ Anchor convention: each ABORT in `<route>.md` must carry a stable id anchor `<!-
 
 Maintainer check: `git grep -rn 'agent-honor-system' commands/collab/` shows every agent-honor-system clause. Any undocumented ABORT that has neither a helper check nor this marker is a defect.
 
-For the audit inventory of current agent-honor-system clauses, see [`honor-system-audit.md`](honor-system-audit.md).
+The primary drift detector for agent-honor-system clauses is the P9 coverage gate (`platform/tooling/coverage-gate.sh`): a clause whose ABORT anchor gains a matching P9 test — proof the helper now enforces the path — fails the gate with `stale agent-honor-system marker(s)` until the marker is removed, and missing-test detection is gate-enforced the same way; the `git grep` sweep above is the inventory backstop. When promoting a previously honor-system path to helper enforcement, add its P9 test and remove the marker in the same change. A known coverage limit: when a registered role never joins a phase, its absence is indistinguishable from silence — the protocol has no signal for deliberate non-participation; if repeated silent non-participation from a registered role is observed, reopen this limit with evidence.
 
 Maintainer check: `git grep -rnP '(?<![A-Za-z0-9_])(mod|pa|pe|tw)(?![A-Za-z0-9_])' -- '*.md' '*rule file'` is the broad review sweep for role-key prose drift. Every prose match must either be covered by the documented carve-outs in `platform/tooling/audit-role-prose.sh` or rewritten to function-bound prose. The pattern covers the live role keys under `commands/collab/reference/roles/` — the human moderator and the joinable participant roles. Update the pattern when the role roster changes.
 
@@ -146,9 +146,9 @@ Codified from the reviewer's path-(a) decision in collab #36 (`2c14a36`). The ru
 
 Follow-up collabs are reserved for newly discovered scope; original-collab incomplete/failed verdicts must use `restoreTarget` `action-plan` or `handoff`.
 
-**15. rewrite-speak turn-order enforcement**
+**15. rewrite-speak turn-order discipline (agent-honor-system)**
 
-`(collab rewrite speak)` rejects when (a) the active phase has a reopen pointer newer than the rewriting role's existing block AND (b) the calling role is not the current expectedRole; stale blocks must wait their turn or be retracted via `(collab retract speak)` before the rewrite.
+When the active phase carries a reopen pointer newer than the rewriting role's existing block and the calling role is not the current `expectedRole`, the stale block waits its turn or is retracted via `(collab retract speak)` before the rewrite. This clause is agent-honor-system, not helper-enforced: `rewrite-speak-render` performs no reopen-pointer or `expectedRole` comparison — rewrite is contribution-scoped (see [`rewrite-speak.md`](../rewrite-speak/index.md)) — and the reopen pointer written by `(collab reopen)` (`insert_reopen_pointer`, `commands/collab/engine/seal_verification_render.py`) is a reader-facing transcript marker that no gate reads back. Promoting this clause to helper enforcement lands the check and its P9 test in the same change and removes this marker, per Invariant #1.
 
 **16. Reviewer findings must cite evidence anchors**
 
@@ -167,6 +167,16 @@ A seal verdict of `success` is rejected unless every item in the collab's `chart
 For source-decomposition work, a chartered path alone is not a completion proof. The Action Plan must pair the path with a measurable content assertion — for example a symbol-placement audit, local-definition ceiling, byte-identical render gate, or dispatch-only check — so the seal can verify that the extraction changed the intended ownership boundary rather than only touching the named file.
 
 **Reopen carry-forward caveat:** Reopen carry-forward coverage is content-validated against `HEAD`; a carried chartered path that is removed or whose content has drifted is dropped from the coverage aggregate, so a name-only carry cannot mask a reverted deliverable. See Invariant #21 for the full carry-forward rule and `reopenCoverage` lifecycle.
+
+**Block format:** When the moderator's Audit contribution declares explicit delivery commitments, it includes a `charteredDeliverables:` block immediately after the scope description. The label appears on its own line as a paragraph — not inside a heading or code block — followed by a bulleted list; each bullet begins with the path or artifact name, then a colon and a short change description:
+
+```
+charteredDeliverables:
+- commands/collab/reference/invariants.md: add Invariant #16
+- commands/collab/init/index.md: add charteredDeliverables schema note
+```
+
+Do not paraphrase or summarize; each artifact description must be specific enough for the reviewer to match it against an `execution.<role>.touchedPaths` entry at seal time. The field is optional (Invariant #19); the coverage gate is a no-op for absent or empty lists.
 
 **18. Item tags required; `[defer]` rejected**
 

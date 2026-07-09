@@ -1,5 +1,5 @@
 """Phase sequencing and lifecycle notices; does not own registry mutations, rendering, or sealing."""
-# Tests: phase-advance sequencing, restore-target validation, reopen from non-success verdict,
+# Tests: phase-advance sequencing, transition notices, discussion-turn advisory,
 #        close and archive transitions, structured notice message shapes.
 from __future__ import annotations
 

@@ -14,7 +14,7 @@ Document the gate policy that decides when a collaboration needs a reviewer judg
 3. Resolve the reviewer from registry `reviewerRole` when set; otherwise apply the **Reviewer fallback** in **Notes**.
 4. If a trigger fires and no safe assignee exists, pause the collab as gate-blocked instead of advancing.
 5. Do not mutate registry state from this documentation-only route.
-6. To list available joinable roles, call `commands/collab/engine/registry.py roles` from the repository root. `registry.py roles` reads every file under `commands/collab/reference/roles/` and outputs one participant-row per role.
+6. To list available joinable roles, call `commands/collab/engine/registry.py roles` from the repository root. `registry.py roles` reads every file under `commands/collab/reference/roles/` and outputs one participant-row for each joinable role, skipping any role file marked non-joinable.
 
 ## Notes
 
@@ -63,7 +63,7 @@ These items were previously deferred here and later implemented or superseded. T
 |---|---|
 | Join/speak registry + transcript transaction | Resolved by `commands/collab/engine/registry.py` `commit_registry_and_transcript`, which writes registry and transcript together with rollback on known write failures. Provenance only — the helper resolution is the record; no executable test asserts the rollback path. |
 | Participant-table render helper | Resolved by `commands/collab/engine/registry.py render-participants` and `join-participants`, which rebuild participant rows from registry state. Provenance only — no executable test asserts the render-participants stale-row replacement in isolation. |
-| Tombstone-style contribution retract | Resolved by `commands/collab/engine/registry.py retract-speak`; the helper-owned shape is specified by `commands/collab/retract-speak/index.md` and `commands/collab/reference/contribution-annex.md`. Provenance only — the retained manifest no longer carries a dedicated retract/full-body flow test. |
+| Tombstone-style contribution retract | Resolved by `commands/collab/engine/registry.py retract-speak`; the helper-owned shape is specified by `commands/collab/retract-speak/index.md` and `commands/collab/reference/contribution-budget.md`. Provenance only — the retained suite no longer carries a dedicated retract/full-body flow test. |
 
 **Deferred structural items (trigger-based backlog):**
 

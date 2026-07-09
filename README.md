@@ -160,6 +160,7 @@ Run focused checks only when working on a narrow surface, then finish with the r
 ```bash
 ./platform/tooling/audit.sh
 ./platform/tooling/sync-commands-catalog.sh --check
+./platform/tooling/sync-roles-roster.sh --check
 ./tests/run.sh
 ```
 

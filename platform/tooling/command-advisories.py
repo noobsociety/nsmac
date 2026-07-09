@@ -381,19 +381,14 @@ def load_catalog(
     runtime_refs = runtime_policy_refs(runtime_policy)
     advisory_policy = load_advisory_policy(data_dir / "command-advisory-policy.json")
 
-    advisories_dir = data_dir / "advisories"
     namespace_files: dict[str, Path] = {}
-    if advisories_dir.exists():
-        namespace_files.update({path.stem: path for path in sorted(advisories_dir.glob("*.json"))})
     for path in sorted(commands_dir.glob("*/data/*.json")):
         namespace = path.parent.parent.name
         if path.stem != namespace:
             continue
-        if namespace in namespace_files:
-            raise AdvisoryError(f"duplicate advisory namespace source for {namespace}: {namespace_files[namespace]} and {path}")
         namespace_files[namespace] = path
     if not namespace_files:
-        raise AdvisoryError(f"no advisory namespace files found in {advisories_dir} or commands/*/data")
+        raise AdvisoryError("no advisory namespace files found in commands/*/data")
     required_namespaces = advisory_policy.required_namespaces
     coverage_exemptions = advisory_policy.namespace_coverage_exemptions
     known_namespaces = set(routes) | public_namespaces

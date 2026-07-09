@@ -6,7 +6,7 @@ The document maps the `~/nsmac` platform for readers who need to navigate the sy
 
 | Audience | Start here | Then read |
 |----------|------------|-----------|
-| **Moderator** — runs `init`, `advance`, `close` | [`commands/commands.md`](../commands/commands.md) · `(collab init / advance / close)` routes | [`commands/collab/reference/workflow-models.md`](../commands/collab/reference/workflow-models.md), [`commands/collab/reference/phase-admissibility.md`](../commands/collab/reference/phase-admissibility.md) |
+| **Moderator** — runs `init`, `advance`, `close` | [`commands/commands.md`](../commands/commands.md) · `(collab init / advance / close)` routes | [`commands/collab/reference/verification.md`](../commands/collab/reference/verification.md), [`commands/collab/reference/phase-admissibility.md`](../commands/collab/reference/phase-admissibility.md) |
 | **Participant agent** — contributes `speak`, `run plan`, `participant verify` | [`AGENTS.md`](../AGENTS.md) → [`commands/commands.md`](../commands/commands.md) | [`commands/collab/reference/invariants.md`](../commands/collab/reference/invariants.md), [`commands/collab/reference/phase-admissibility.md`](../commands/collab/reference/phase-admissibility.md), [`commands/collab/reference/agent-effort.md`](../commands/collab/reference/agent-effort.md) |
 | **Reviewer** — issues `seal verification`, emits verdict | [`commands/collab/reference/verification.md`](../commands/collab/reference/verification.md) | [`commands/collab/reference/invariants.md`](../commands/collab/reference/invariants.md) §17–21, [`commands/collab/seal-verification/index.md`](../commands/collab/seal-verification/index.md) |
 | **System maintainer** — changes routes, helpers, or tooling | [`REPOSITORY.md`](../REPOSITORY.md) | [`platform/standards/doctrine.md`](standards/doctrine.md), [`commands/collab/reference/invariants.md`](../commands/collab/reference/invariants.md), [`commands/collab/engine/registry.py`](../commands/collab/engine/registry.py) |
@@ -41,7 +41,7 @@ The lifecycle schema describes the valid states the registry can hold and how tr
 
 - [`registry.schema.json`](../registry.schema.json) — reference/projection-only schema; parity-gated against the live validator (see [doctrine: schema posture](standards/doctrine.md#schema-posture))
 - [`commands/collab/reference/registry.md`](../commands/collab/reference/registry.md) — registry field schema and field ownership
-- [`commands/collab/reference/workflow-models.md`](../commands/collab/reference/workflow-models.md) — current reviewer-seal close model
+- [`commands/collab/reference/verification.md`](../commands/collab/reference/verification.md) — current reviewer-seal close model and `Completion.verification` semantics
 
 ## Command grammar
 
@@ -69,14 +69,14 @@ contract lives.
 
 | Area | Sources |
 | --- | --- |
-| Command naming and arguments | [`command-convention.md`](standards/command-convention.md), [`command-grammar.md`](standards/command-grammar.md), [`command-default.md`](standards/command-default.md), [`command-argument.md`](standards/command-argument.md) |
+| Command naming and arguments | [`command-convention.md`](standards/command-convention.md), [`command-default.md`](standards/command-default.md), [`command-argument.md`](standards/command-argument.md) |
 | Command playbook quality | [`command-standard.md`](standards/command-standard.md), [`playbook-discipline.md`](standards/playbook-discipline.md), [`route-invariants.md`](standards/route-invariants.md), [`route-sufficiency.md`](standards/route-sufficiency.md) |
 | Runtime and host boundaries | [`runtime-contract.md`](standards/runtime-contract.md), [`framework-boundaries.md`](standards/framework-boundaries.md), [`host-integration.md`](standards/host-integration.md) |
 | Roles, flags, and helper subcommands | [`role-standard.md`](standards/role-standard.md), [`flag-taxonomy.md`](standards/flag-taxonomy.md), [`helper-subcommands.md`](standards/helper-subcommands.md), [`commands/collab/reference/anchor-convention.md`](../commands/collab/reference/anchor-convention.md) |
 | Writing and publication style | [`style-guide.md`](standards/style-guide.md), [`document-standard.md`](standards/document-standard.md), [`author-voice.md`](standards/author-voice.md), [`devblog-discipline.md`](standards/devblog-discipline.md), [`markdown-workflow.md`](standards/markdown-workflow.md), [`git-convention.md`](standards/git-convention.md) |
 | Collab engine and route references | [`engine-architecture.md`](../commands/collab/reference/engine-architecture.md), [`helper-output.md`](../commands/collab/reference/helper-output.md), [`tag-release-charter.md`](../commands/collab/reference/tag-release-charter.md), [`commands/collab/data/README.md`](../commands/collab/data/README.md) |
-| Templates and QA specs | [`platform/templates/AGENTS.md`](templates/AGENTS.md), [`platform/templates/CLAUDE.md`](templates/CLAUDE.md), [`platform/templates/REPOSITORY.md`](templates/REPOSITORY.md), [`tests/specs/generated.md`](../tests/specs/generated.md), [`tests/specs/roles.md`](../tests/specs/roles.md), [`tests/specs/settings.md`](../tests/specs/settings.md), [`tests/specs/templates.md`](../tests/specs/templates.md), [`tests/specs/tests.md`](../tests/specs/tests.md), [`tests/suites/README.md`](../tests/suites/README.md) |
-| Tooling contracts | [`advisory-coverage-policy.md`](tooling/advisory-coverage-policy.md), [`flag-scope-validator-contract.md`](tooling/flag-scope-validator-contract.md), [`placement-audit-contract.md`](tooling/placement-audit-contract.md), [`topology-validator-contract.md`](tooling/topology-validator-contract.md), [`coverage-gate-migration.md`](tooling/coverage-gate-migration.md), [`migrate-collab-state-dirs.md`](tooling/migrate-collab-state-dirs.md) |
+| Templates and QA specs | [`platform/templates/AGENTS.md`](templates/AGENTS.md), [`platform/templates/CLAUDE.md`](templates/CLAUDE.md), [`platform/templates/REPOSITORY.md`](templates/REPOSITORY.md), [`tests/specs/roles.md`](../tests/specs/roles.md), [`tests/specs/tests.md`](../tests/specs/tests.md) |
+| Tooling contracts | [`advisory-coverage-policy.md`](tooling/advisory-coverage-policy.md), [`migrate-collab-state-dirs.md`](tooling/migrate-collab-state-dirs.md) |
 
 ## Generated mirrors
 

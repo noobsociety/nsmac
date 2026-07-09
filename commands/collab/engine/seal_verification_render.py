@@ -9,11 +9,11 @@ Does not own: stale-seal trigger decisions, participant verification state,
               sequencing, participant roster management, non-seal transcript
               rendering, or CLI dispatch. This module calls the logic module
               explicitly and is imported directly by registry_core.py for CLI
-              dispatch; seal_verification.py re-exports it for compatibility.
+              dispatch; engine leaves import the concrete split modules directly.
 
 Naming convention
   *_state(entry, ...)   -- pure registry-entry accessor; no I/O or side effects.
-  *_state(path, ...)    -- CLI-callable reader; loads registry from path.
+  *_state(path, ...)    -- CLI-callable reader; loads registry from path and persists normalized state.
   seal_write(...)       -- writes the immutable verification seal snapshot.
   record_verdict(...)   -- records the assessment verdict.
 """

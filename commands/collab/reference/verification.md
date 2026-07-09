@@ -6,7 +6,7 @@ Standalone reference for `Completion.verification` sub-state semantics. Loaded b
 
 **Slash:** (reference only — not an invocable route)
 **Prose dispatch:** (reference only — not an invocable route)
-**Search phrases:** collab verification semantics, Completion.verification, verification round, seal object, stale seal, assessment flags, verdict outcome, restoreTarget, restoreReason, evidence, failureCategory, nullResult
+**Search phrases:** collab verification semantics, Completion.verification, verification round, seal object, stale seal, assessment flags, verdict outcome, restoreTarget, restoreReason, evidence, failureCategory, nullResult, workflow model, close gate, reviewer seal
 
 ## Sub-states
 
@@ -81,14 +81,17 @@ A verification round is a paired-event unit. The round is recorded when the last
 
 ```
 verificationSeal = {
-  observedRevision: integer,
-  executionEntries: object[],
-  validationScopes: string[],
-  touchedPaths:    string[],
-  contentDigest:   string,
-  pathDigests:     { "<path>": { mode: string, blob: string } },
-  sealedAt:        ISO-8601,
-  sealedBy:        string
+  observedRevision:    integer,
+  executionEntries:    object[],
+  validationScopes:    string[],
+  touchedPaths:        string[],
+  contentDigest:       string,
+  pathDigests:         { "<path>": { mode: string, blob: string } },
+  sealedAt:            ISO-8601,
+  sealedBy:            string,
+  executionSignature:  string,
+  fullBodySignature:   string,
+  stale:               boolean
 }
 ```
 
@@ -119,7 +122,7 @@ Only the `reviewerRole` participant may author the seal or verdict. Non-reviewer
 
 ## Auto-close
 
-For reviewer-backed collabs, auto-close from `(collab run plan)` alone is removed. Close fires only when all assigned `execution.<role>` entries are `completed`, a current non-stale `verificationSeal` exists, and the reviewer records `verdict.outcome == "success"`. All three conditions must hold simultaneously.
+For reviewer-backed collabs, auto-close from `(collab run plan)` alone is removed. Close fires only when all assigned `execution.<role>` entries are `completed`, all assigned participant-verification passes are complete, a current non-stale `verificationSeal` exists, and the reviewer records `verdict.outcome == "success"`. All conditions must hold simultaneously. Non-reviewer-backed collabs close after every non-moderator assigned role has a completed `execution` entry; the seal and verdict requirements apply to reviewer-backed collabs only.
 
 ## Time-of-close attestation
 
@@ -129,7 +132,7 @@ The seal model governs two distinct time domains:
 
 **Post-close exemption:** `closed` and `archived` records are not re-validated after close. History rewrites (amend, rebase, squash) that preserve the content of touched paths do not affect the sealed digest and are expected artifacts in immutable records — not live defects. The state at seal time is the authoritative attestation.
 
-For remediation guidance when `workRepo` binding or reachability issues surface during execution or seal, see [`workRepo-remediation-index.md`](workRepo-remediation-index.md).
+**`workRepo` remediation:** When `workRepo` binding or reachability issues surface during execution or seal, bind or recover the work tree with `(collab set) <target> work-repo <path>` for open records; the helper aborts loudly when `workRepo` is unbound rather than silently falling back for external-project collabs. Seal git-state diagnostics name the failure class precisely — missing `workRepo` binding, touched paths not found under the bound repo, or commit not found in the bound repo — each with its own recovery hint. For completed records, `repair-execution-provenance` atomically updates the bound `workRepo`, recorded commits, content digests, and the recomputed `pairedExecutionSignature`, so the repaired record passes future seal verification without re-executing the original work. The `workRepo` field schema lives in [`registry.md`](registry.md).
 
 ## Operator guidance: participant verify inactive
 
@@ -159,4 +162,3 @@ When `(collab reopen)` resets participant verification, `reset_participant_verif
 - [`show-policy.md`](../show-policy/index.md) — gate policy and phase-presence overview
 - [`agent-effort.md`](agent-effort.md) — effort matrix row for `Completion.verification`
 - [`show-verdict.md`](../show-verdict/index.md) — invocable route for verdict introspection over collab metadata; surfaces `outcome`, `restoreTarget`, `evidence`, `failureCategory`, and `nullResult` without requiring direct registry JSON access
-- [`workRepo-remediation-index.md`](workRepo-remediation-index.md) — durable R1–R7 remediation items for `workRepo` binding and reachability failures

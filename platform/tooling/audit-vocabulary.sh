@@ -93,17 +93,21 @@ def heading_anchors(text: str) -> set[str]:
     return anchors
 
 
-# F-MSG parity: the operator-guidance prose lives in verification.md; seal_verification.py
-# emits only terse runtime pointers into it. Assert every verification.md#<anchor> referenced
-# from the engine resolves to a real heading so the pointer can never silently dangle.
-seal_text = read(root / "commands/collab/engine/seal_verification.py")
+# F-MSG parity: the operator-guidance prose lives in verification.md; the seal engine
+# modules emit only terse runtime pointers into it. Assert every verification.md#<anchor>
+# referenced from the engine resolves to a real heading so the pointer can never silently dangle.
 verification_anchors = heading_anchors(verification_text)
-for anchor in sorted(set(re.findall(r"verification\.md#([\w-]+)", seal_text))):
-    if anchor not in verification_anchors:
-        failures.append(
-            f"commands/collab/engine/seal_verification.py: dangling ref "
-            f"`verification.md#{anchor}` (no matching heading in verification.md)"
-        )
+for seal_module in (
+    "commands/collab/engine/seal_verification_logic.py",
+    "commands/collab/engine/seal_verification_render.py",
+):
+    seal_text = read(root / seal_module)
+    for anchor in sorted(set(re.findall(r"verification\.md#([\w-]+)", seal_text))):
+        if anchor not in verification_anchors:
+            failures.append(
+                f"{seal_module}: dangling ref "
+                f"`verification.md#{anchor}` (no matching heading in verification.md)"
+            )
 
 if failures:
     for failure in failures:

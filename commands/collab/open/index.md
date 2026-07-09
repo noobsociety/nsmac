@@ -11,12 +11,10 @@ Reopen a closed collaboration record in the registry when additional discussion 
 
 1. Read [invariants.md](../../../commands/collab/reference/invariants.md) before executing; call the relevant helper fresh and do not trust prior reads from conversation context (Invariant #4). Resolve the target collab with **Registry targeting** in **Notes**.
 2. Read the resolved registry and the resolved transcript path. If either is unreadable, **ABORT**: record unreadable; name the path.
-3. If the registry status is `open`, report that the record is already open and stop.
-4. If the collab is archived, **ABORT**: archived records must be restored before reopening.
-5. Call `commands/collab/engine/registry.py open <target>` to update the registry status to `open`.
-6. Update the Status cell in the transcript state table from `closed` to `open`.
-7. Set `activeCollabId` to the reopened collab id.
-8. Stop after updating registry and transcript.
+3. If the collab is archived, **ABORT**: archived records must be restored before reopening.
+4. If the registry status is `open`, report that the record is already open and stop.
+5. Call `commands/collab/engine/registry.py open <target>`. The helper updates the registry status to `open`, sets `activeCollabId` to the reopened collab id, and renders the transcript state table from the resulting registry state in the same write.
+6. Stop after updating registry and transcript.
 
 ## Notes
 

@@ -1,4 +1,4 @@
-"""Git subprocess reads: head commit, execution commits, content-at-ref; does not own seal policy."""
+"""Git subprocess reads: head commit, execution commits, commit-changed paths; does not own seal policy."""
 # Tests: head-commit resolution, execution-commits-for-paths mapping, staged/unstaged path
 #        detection, work-repo root enclosure check, deletion-path identification.
 from __future__ import annotations

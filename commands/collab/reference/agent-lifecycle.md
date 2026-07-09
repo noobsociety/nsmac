@@ -39,10 +39,7 @@ Effort changes per phase per role as defined in `agent-effort.md` and `agent-mod
 
 ## `Completion.verification`
 
-`Completion.verification` has two ordered sub-phases:
-
-1. **`verification.seal`** — Reviewer calls `(collab seal verification)`; mechanical execution-truth check. Run at the current effort level for `Completion.verification` (`xhigh` for the reviewer role).
-2. **`verification.assessment`** — Reviewer evaluates goal achievement and records a verdict. Opens after a successful seal and re-enters when the seal becomes stale.
+The two ordered sub-phases (`verification.seal`, then `verification.assessment`) and their transitions are owned by [`verification.md`](verification.md). Lifecycle timing: both are reviewer turns; run them at the `Completion.verification` effort level (`xhigh` for the reviewer role).
 
 ## Subagents
 

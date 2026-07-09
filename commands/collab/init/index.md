@@ -6,7 +6,7 @@ Create a moderated collaboration record under the user-scope collab state root.
 
 ## Trigger
 
-**Dispatch:** `(collab init "<name>" [--reviewer <role>] [--work-repo <path>] [--open])` - routing-only command form; not a shell command.
+**Dispatch:** `(collab init "<name>" [--reviewer <role>] [--work-repo <path>] [--open])` — routing-only command form; not a shell command.
 **Search phrases:** collab init, create collaboration record, start moderated discussion
 
 ## Steps
@@ -15,7 +15,7 @@ Create a moderated collaboration record under the user-scope collab state root.
 
 1. Read [invariants.md](../../../commands/collab/reference/invariants.md) before executing; call the helper fresh and do not trust prior reads from conversation context (Invariant #4).
 2. Capture the full remaining text after `(collab init)` as `"<name>"` and extract only the optional `--reviewer <role>`, `--work-repo <path>`, and `--open` flags. Strip recognized flags and values from `"<name>"` before processing; treat the rest as the title source.
-3. If `"<name>"` is missing after trimming whitespace, **ABORT**: `"<name>"` is required. If `--reviewer` is present but its value is missing or not a valid role key, **ABORT**: `--reviewer` requires a role key.
+3. If `"<name>"` is missing after trimming whitespace, **ABORT**: `<name>` is required. If `--reviewer` is present but its value is missing or not a valid role key, **ABORT**: `--reviewer` requires a role key.
 4. Declare the active runtime harness identity as `--agent-id <agentId>` before invoking the helper. Use the precedence in [init-helper-spec](../../../commands/collab/reference/init-helper-spec.md). If the harness does not expose a usable identity, pass the literal `unknown`.
 5. Call `commands/collab/engine/registry.py init --agent-id <agentId> [--reviewer <role>] [--work-repo <path>] [--open] <name>`. The helper owns strict flag parsing, title normalization, local-date resolution, slug derivation, sequence selection, moderator `agentId` capture, reviewer metadata, verification metadata, transcript rendering, contribution store initialization, atomic registry/artifact replacement, and optional browser-open.
 6. Display the helper's first output line, which is the resolved transcript path `records/YYYY-MM-DD-<slug>.md` inside the state root. If `--open` is present, display the `OPEN:` advisory line when present; opener failure is non-fatal and does not roll back the registry write.
@@ -32,8 +32,8 @@ Create a moderated collaboration record under the user-scope collab state root.
 | 3 | Resolve local date and derive slug | Abort before any write |
 | 4 | Assign sequence number - next from insertion order; never reused after hard delete | Abort before any write |
 | 5 | Register moderator participant from the active harness `agentId` | Abort before any write |
-| 6 | Apply reviewer metadata when `--reviewer` is supplied | Abort before any write |
-| 7 | Resolve `workRepo` from `--work-repo` or the enclosing git work tree | Abort before any write |
+| 6 | Resolve `workRepo` from `--work-repo` or the enclosing git work tree | Abort before any write |
+| 7 | Apply reviewer metadata when `--reviewer` is supplied | Abort before any write |
 | 8 | Seed reviewer-backed verification state as `rounds=0`, `subState="participant"`, and `participants={}` | Abort before any write |
 | 9 | Atomic registry/artifact replacement - append collab entry, write transcript, write contribution store, set `activeCollabId` | All-or-nothing; partial writes roll back |
 

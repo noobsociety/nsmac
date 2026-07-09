@@ -35,20 +35,9 @@ The document explains what effort levels mean, how to interpret the phase-role m
 
 ## Phase-role matrix
 
-The matrix is rendered from `agent-effort.json`. The helper's `EFFORT:` advisory output and `audit-effort-matrix` check read the same JSON source.
+The matrix values live in `agent-effort.json`; the helper's `EFFORT:` advisory output and the `audit-effort-matrix` check read the same JSON source. The human-readable rendering is the generated projection in [`agent-model.md`](agent-model.md) § Per-speak-turn effort — the one rendering drift-checked by `audit-effort-matrix`.
 
-| Phase | mod | tw | pe | pa |
-|---|---|---|---|---|
-| Audit | low | medium | medium | xhigh |
-| Discussion | low | medium | high | high *(optional)* |
-| Conclusion | low | medium | medium | xhigh |
-| Action Plan | low | medium | high | — |
-| Handoff | low | high | xhigh | — |
-| Completion | low | high | high | xhigh *(reviewer gate; execution sub-state)* |
-| Completion.verification | low | high | high | xhigh *(reviewer seal; mandatory-declaration turn)* |
-| Completion.verification.participant | low | xhigh | xhigh | — |
-
-**`—`** means the role is not on the turn-order roster for that phase by default. Optional admission is available via `reviewerOptionalPhases` in the registry (defaults to `["Discussion"]`; extended via `(collab set) reviewer-optional-phases`); when admitted to a non-Discussion phase, the effort level is `xhigh`. Implemented by `reviewer_optional_phases` in `commands/collab/engine/registry.py`.
+**`—`** in that projection means the role is not on the turn-order roster for that phase by default. Optional admission is available via `reviewerOptionalPhases` in the registry (defaults to `["Discussion"]`; extended via `(collab set) reviewer-optional-phases`); when admitted to a non-Discussion phase, the effort level is `xhigh`. Implemented by `reviewer_optional_phases` in `commands/collab/engine/registry.py`.
 
 Roles that exist in `commands/collab/reference/roles/` but are absent from this advisory matrix receive the helper's open-roster fallback: `medium`. The open-roster fallback keeps join and speak advisories non-blocking for newly added roles while preserving explicit matrix values for the curated roles.
 

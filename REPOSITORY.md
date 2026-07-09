@@ -17,12 +17,10 @@ Only the source plane is authoritative. Runtime planes are derived execution con
 Authority is strict and ordered:
 
 1. Repo-owned executable checks and scripts:
-   - `./tests/run.sh` — the repository gate; runs `platform/tooling/audit.sh` then the retained test manifest (`tests/suites/full.txt`)
-   - `./platform/tooling/audit.sh` — aggregate structural/content audit
+   - `./tests/run.sh` — the repository gate; runs `platform/tooling/audit.sh` then every `tests/**/*.test.sh`
+   - `./platform/tooling/audit.sh` — aggregate structural/content audit (includes the context-gate declaration check)
    - `./platform/tooling/sync-commands-catalog.sh --check` — verifies the generated command roster in `commands/commands.md`
-   - `./platform/tooling/sync-framework-boundaries.sh --check` — verifies framework boundary declarations
    - `./platform/tooling/sync-roles-roster.sh --check` — verifies the roles roster
-   - `./platform/tooling/sync-context-gate.sh --check` — verifies context-gate declarations
 2. Repo-owned source files and policy documents:
    - `commands/` — command catalog, router and route playbooks, and namespace engine helpers (e.g. `commands/collab/engine/*.py`)
    - `platform/standards/` — cross-route policy documents
@@ -33,7 +31,7 @@ Authority is strict and ordered:
    - `tests/` — shell and Markdown-facing QA harness sources
    - `REPOSITORY.md`, `AGENTS.md`, `CLAUDE.md`, `README.md` — root contract and adapter documents
 3. Derived runtime or generated outputs:
-   - `generated/` (`command-reference.md`, `collab-lifecycle.md`, `registry-cli.md`, `content-invariants.tsv`) — produced by platform tooling from source inputs
+   - `generated/` (`command-reference.md`, `registry-cli.md`) — produced by platform tooling from source inputs
    - The generated command roster block inside `commands/commands.md`, produced by `platform/tooling/sync-commands-catalog.sh`
    - `$HOME/.collabs/<projectId>/` — live collaboration runtime records/transcripts (untracked, projected from local `.collab.json`)
 
@@ -59,9 +57,7 @@ Deepest dependency chain: route playbook (`commands/<namespace>/<route>/index.md
 ./tests/run.sh
 ./platform/tooling/audit.sh
 ./platform/tooling/sync-commands-catalog.sh --check
-./platform/tooling/sync-framework-boundaries.sh --check
 ./platform/tooling/sync-roles-roster.sh --check
-./platform/tooling/sync-context-gate.sh --check
 ```
 
 ### Runtime mode (required if the repo projects runtime state)

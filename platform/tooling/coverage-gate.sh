@@ -16,8 +16,6 @@ from pathlib import Path
 COLLAB_COMMAND_ROOT = Path("commands/collab")
 BEHAVIOR_SMOKE_TEST = "real-record-behavior-smoke"
 
-# Migration provenance: see platform/tooling/coverage-gate-migration.md.
-
 
 @dataclass(frozen=True)
 class AbortClause:

@@ -162,7 +162,7 @@ One sentence — purpose of the route and when to use it.
 - Namespace router links may target route playbooks or backing files in the same namespace slice, `../platform/standards/*.md`, fragment-only anchors, and optional `https://` / `http://` context links.
 - Route playbook links may target sibling route playbooks, same-namespace `reference/`, `engine/`, or `data/` backing files, `../../../platform/standards/*.md`, fragment-only anchors, and optional `https://` / `http://` context links.
 - Required authority for command behavior may come only from command files, same-namespace backing files under `commands/<ns>/{reference,engine,data}/`, shared role JSON under `commands/collab/reference/roles/`, or cross-namespace contracts under `platform/standards/`.
-- `commands/test/index.md` may also require `~/nsmac/tests/specs/commands.md`, `~/nsmac/tests/specs/core.md`, `~/nsmac/tests/specs/roles.md`, `~/nsmac/tests/specs/settings.md`, `~/nsmac/tests/specs/tests.md`, and `REPOSITORY.md` at repo root.
+- `commands/test/index.md` may also require `~/nsmac/tests/specs/commands.md`, `~/nsmac/tests/specs/core.md`, `~/nsmac/tests/specs/roles.md`, `~/nsmac/tests/specs/tests.md`, and `REPOSITORY.md` at repo root.
 - External URLs are optional context only and never required authorities.
 - **Authority direction:** `platform/standards/` files may cross-reference other `platform/standards/` files freely; they must not cite a `commands/` route path as the sole authority for a rule. Inline the rule text in the standard instead — the route becomes a consumer of the rule, not its source.
 
@@ -177,4 +177,4 @@ One sentence — purpose of the route and when to use it.
 - [Document standard](document-standard.md) — minimal command template and other shapes.
 - [Context engineering](context-management.md) — phases, precision, context budget.
 - [Author voice](author-voice.md) — register for personal-account exceptions.
-- [Command grammar](command-grammar.md) — spaced public verbs vs. hyphenated filesystem names.
+- [Naming](command-convention.md) — naming policy, reserved forms, and spaced public verbs vs. hyphenated filesystem names.

@@ -42,14 +42,14 @@ A `verificationSeal` was recorded at revision 18 for `collab-render-seal-facade-
 Running `(collab diff collab-render-seal-facade-boundary)` after the post-seal commit:
 
 ```
-seal drift (1 path):
+collab diff: collab-render-seal-facade-boundary
+seal drift (1 paths):
   commands/collab/engine/transcript_render.py
     recorded blob: a3f8c1d…  mode: 100644
     current  blob: 7b2e09f…  mode: 100644
-
+    status: changed
 content mismatch (0 contributions):
   (none)
-
 metadata mismatch (0 fields):
   (none)
 ```
@@ -59,10 +59,11 @@ The recorded blob matches the digest in `verificationSeal.pathDigests`; the curr
 **Deleted-path variant:** If a touched path is deleted after the seal:
 
 ```
-seal drift (1 path):
+seal drift (1 paths):
   commands/collab/engine/transcript_render.py
     recorded blob: a3f8c1d…  mode: 100644
     current  blob: (deleted)  mode: 000000
+    status: deleted
 ```
 
 ```route-arg

@@ -30,24 +30,10 @@ This requirement is a read-only dependency for tag-route documentation.
 
 ## Open system decision
 
-`charteredDeliverables` is a moderator-owned Audit-phase declaration. A later
-Action Plan item can correctly name a new deliverable, but the seal-time
-`charteredDeliverables` gate cannot enforce that deliverable unless the Audit
-block already declared it. This file records that workflow gap for a
-moderator/system decision; narrative docs must continue to describe the current
-behavior as "Audit-only charter coverage" until that decision lands. It does
-not self-charter new deliverables.
-
-Engine-level options to decide:
-
-- **Late-charter amendment:** add a sanctioned moderator route or seal-time
-  mechanism for amending `charteredDeliverables` after Audit when the record
-  explicitly reopens or records the amendment provenance.
-- **Action-Plan coverage substitute:** define a sanctioned seal-time coverage
-  rule that treats checked `[precondition]` / `[execute]` Action Plan items
-  plus execution `touchedPaths` as the binding coverage surface when Audit had
-  no enforceable `charteredDeliverables` block.
-
-Neither option is adopted. The required follow-up is a code-level policy
-decision plus synchronized updates to `invariants.md`, `verification.md`, and
-this reference.
+`charteredDeliverables` is a moderator-owned Audit-phase declaration; the
+seal-time coverage gate cannot enforce a deliverable the Audit block did not
+declare. That workflow gap awaits a moderator/system decision. Until a
+code-level policy decision lands (with synchronized updates to
+`invariants.md`, `verification.md`, and this reference), narrative docs must
+continue to describe the current behavior as "Audit-only charter coverage",
+and this file does not self-charter new deliverables.

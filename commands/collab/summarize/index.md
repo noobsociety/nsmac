@@ -16,7 +16,7 @@ Write or refresh the managed per-phase summary inside the canonical collab trans
 3. Resolve the active phase from registry `activePhase`. If missing or unknown, **ABORT**: active phase missing in metadata.
 <!-- abort: summarize-no-contributions -->
 4. Read all phase sections in the transcript. If every phase is empty or has no contributions, **ABORT**: no contributions to summarize; name the target.
-5. Call `commands/collab/engine/registry.py summarize <target>` to write or refresh the managed `## Phase Summary` block near the top of `records/<slug>.md`. The helper owns idempotent replacement and writes through the canonical transcript path only.
+5. Call `commands/collab/engine/registry.py summarize <target>` to write or refresh the managed `## Phase Summary` block near the top of `records/<id>.md`. The helper owns idempotent replacement; see **Mutation** in **Notes** for the full write scope.
 6. Report the transcript path emitted by the helper. Stop.
 
 ## Notes
@@ -24,7 +24,7 @@ Write or refresh the managed per-phase summary inside the canonical collab trans
 - **Parameters:** target collab slug, id, or numeric `#N` as the first token after `summarize`; when absent, resolved per **Registry targeting** in **Notes**.
 <!-- abort: summarize-registry-target-unavailable -->
 - **Registry targeting:** Resolve the target collab from the first token after the route, falling back to `activeCollabId` when absent. The resolution algorithm and abort contract are owned by **Target resolution** in [`platform/standards/route-invariants.md`](../../../platform/standards/route-invariants.md); this route does not restate them.
-- **Mutation:** The route mutates the canonical transcript only; it writes no other files.
+- **Mutation:** The route writes the transcript's managed `## Phase Summary` block via the shared two-file commit helper (`commit_registry_and_transcript`), which also rewrites `registry.json` and bumps the write-guard `revision` counter on every call, even though summarize changes no registry field value.
 - **Scope:** Summarizes all phases in the record into one managed top-of-file section. The close helper owns the structural Completion summary emitted at close time.
 - **Post-state resume signal:** rerun `commands/collab/engine/registry.py transcript-view <target> <activePhase> --raw` if further transcript inspection is needed.
 

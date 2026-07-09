@@ -130,7 +130,7 @@ tracked = subprocess.run(['git', 'ls-files', '-z'], check=True, stdout=subproces
 canonical = 'user-scope ' + 'collab ' + 'state root'
 checks = [
     ('retired marker filename', '.collab-project' + '.json', set(), False),
-    ('retired repo-local stub path', '.collabs/project' + '.json', {'commands/collab/reference/identity-contract.md'}, False),
+    ('retired repo-local stub path', '.collabs/project' + '.json', set(), False),
     ('retired collab phrase', 'global ' + 'home', {'commands/collab/reference/glossary.md'}, False),
     ('forbidden substitute for user-scope collab state root', 'state ' + 'directory', {'commands/collab/reference/glossary.md'}, False),
     ('forbidden substitute for user-scope collab state root', 'resolved state ' + 'directory', {'commands/collab/reference/glossary.md'}, False),
@@ -291,10 +291,62 @@ check_tracked_source_boundary() {
   ((bad == 0)) && ok "tracked files stay inside the source boundary" || true
 }
 
+check_context_gate() {
+  local status=0
+  python3 - "$ROOT" <<'PY' || status=$?
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+canonical = root / "platform/standards/context-gate.md"
+failures: list[str] = []
+
+if not canonical.exists():
+    failures.append("FAIL: missing platform/standards/context-gate.md")
+
+if failures:
+    print("\n".join(failures), file=sys.stderr)
+    sys.exit(1)
+
+canonical_text = canonical.read_text()
+
+if canonical_text.startswith("---"):
+    failures.append("FAIL: platform/standards/context-gate.md must not carry frontmatter")
+
+
+critical_prefixes = (
+    "Never ",
+    "Do not ",
+    "Stop immediately",
+)
+
+# Real assertion (not a source-vs-source tautology): the canonical gate must
+# retain at least one critical directive. Stripping every `Never`/`Do not`/
+# `Stop immediately` line now fails the gate instead of passing vacuously.
+directive_lines = [
+    line.strip()
+    for line in canonical_text.splitlines()
+    if line.strip().startswith(critical_prefixes)
+]
+if not directive_lines:
+    failures.append(
+        "FAIL: context-gate canonical source carries no critical directive "
+        "(expected at least one `Never`/`Do not`/`Stop immediately` line)"
+    )
+
+if failures:
+    print("\n".join(failures), file=sys.stderr)
+    sys.exit(1)
+
+print("OK: context-gate canonical source present with critical directives")
+PY
+  ((status == 0)) || failures=$((failures + 1))
+}
+
 check_generated_freshness() {
-  platform/tooling/sync-context-gate.sh --check || failures=$((failures + 1))
   platform/tooling/sync-commands-catalog.sh --check || failures=$((failures + 1))
-  platform/tooling/sync-framework-boundaries.sh --check || failures=$((failures + 1))
   platform/tooling/sync-roles-roster.sh --check || failures=$((failures + 1))
   python3 platform/tooling/command-advisories.py --check || failures=$((failures + 1))
   python3 platform/tooling/roles.py validate || failures=$((failures + 1))
@@ -308,7 +360,6 @@ check_generated_freshness() {
   python3 platform/tooling/audit-retired-systems.py || failures=$((failures + 1))
   platform/tooling/audit-flag-scope.sh || failures=$((failures + 1))
   platform/tooling/audit-placement.sh || failures=$((failures + 1))
-  commands/collab/engine/lifecycle-doc.py --check || failures=$((failures + 1))
   platform/tooling/coverage-gate.sh || failures=$((failures + 1))
   platform/tooling/audit-role-prose.sh || failures=$((failures + 1))
 }
@@ -318,7 +369,7 @@ check_generated_boundary() {
   while IFS= read -r path; do
     [[ -n "$path" ]] || continue
     case "$path" in
-      generated/command-reference.md|generated/collab-lifecycle.md|generated/content-invariants.tsv|generated/registry-cli.md) ;;
+      generated/command-reference.md|generated/registry-cli.md) ;;
       *)
         printf 'FAIL: unexpected generated artifact: %s\n' "$path" >&2
         bad=1
@@ -508,7 +559,7 @@ assert calls_name(seal_participant_verify_render, 'record_verification_round_for
 )
 assert not calls_name(registry_core_participant_verify_render, 'record_verification_round_for_execution'), (
     'registry_core.py participant_verify_render facade must not call '
-    'record_verification_round_for_execution; seal_verification.py owns the recorder call'
+    'record_verification_round_for_execution; seal_verification_render.py owns the recorder call'
 )
 for function_name, function in [
     ('seal_write', seal_write),
@@ -570,6 +621,39 @@ assert not leaked, (
 PY
   ((status == 0)) || failures=$((failures + 1))
   ((status == 0)) && ok "speak-time contribution validation stays outside registry.py facade" || true
+}
+
+check_engine_module_roster() {
+  local status=0
+  python3 - <<'PY' || status=$?
+from __future__ import annotations
+
+import re
+import sys
+from pathlib import Path
+
+doc = Path('commands/collab/reference/engine-architecture.md')
+engine = Path('commands/collab/engine')
+
+documented = set(re.findall(r'^\| `([a-z_][a-z_0-9]*\.py)` \|', doc.read_text(), re.M))
+# registry.py is the executable facade: described in prose, deliberately not a roster row.
+actual = {path.name for path in engine.glob('*.py')} - {'registry.py'}
+
+failures: list[str] = []
+undocumented = sorted(actual - documented)
+if undocumented:
+    failures.append('engine modules missing from the architecture roster: ' + ', '.join(undocumented))
+stale = sorted(documented - actual)
+if stale:
+    failures.append('architecture roster lists nonexistent engine modules: ' + ', '.join(stale))
+
+if failures:
+    for failure in failures:
+        print(f'FAIL: {failure}', file=sys.stderr)
+    sys.exit(1)
+print('OK: engine module roster matches engine-architecture.md')
+PY
+  ((status == 0)) || failures=$((failures + 1))
 }
 
 check_route_arg_defaults() {
@@ -717,12 +801,6 @@ failures.extend(assert_equal(
     expected_joinable_roles,
 ))
 
-settings_spec = (ROOT / "tests/specs/settings.md").read_text(encoding="utf-8")
-if (ROOT / "settings").exists():
-    failures.append("settings.md declares no tracked settings, but settings/ exists")
-if "Tracked user-settings source files under `settings/`: none." not in settings_spec:
-    failures.append("settings.md must declare an empty tracked settings roster")
-
 if failures:
     for failure in failures:
         print(f"FAIL: {failure}", file=sys.stderr)
@@ -750,6 +828,8 @@ check_collab_registry_lock
 check_public_dispatch_surface
 check_verification_round_call_sites
 check_contribution_validation_placement
+check_engine_module_roster
+check_context_gate
 check_generated_freshness
 check_generated_boundary
 check_deleted_path_references

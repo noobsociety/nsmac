@@ -780,12 +780,11 @@ def test_speak_commands_lifecycle_handler_isolated() -> None:
 
 
 def test_seal_verdict_companion() -> None:
-    from commands.collab.engine import seal_verification as sv
+    from commands.collab.engine import seal_verification_logic as sv
+    from commands.collab.engine.seal_verification_render import seal_write
 
-    assert 'build_seal_verdict_companion' in sv.__all__
-    assert 'seal_write' in sv.__all__
-    assert 'Path' not in sv.__all__
-    assert 'Callable' not in sv.__all__
+    assert callable(sv.build_seal_verdict_companion)
+    assert callable(seal_write)
 
     entry = {
         'id': '2026-06-10-verdict-test',

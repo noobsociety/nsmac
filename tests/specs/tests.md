@@ -5,8 +5,8 @@ Deterministic QA for harness docs in `~/nsmac/tests/specs/*.md`.
 ## Procedure
 
 1. Load every `*.md` under `~/nsmac/tests/specs/`.
-2. Validate each top-level directory under `~/nsmac/` has one same-name harness file in `~/nsmac/tests/specs/`.
-3. Validate every harness filename maps to either a top-level `~/nsmac/` directory or an explicit non-`~/nsmac` projection harness.
+2. Validate the roster below is exact.
+3. Validate each harness file names the source surface it covers (`commands/`, `platform/standards/`, `commands/collab/reference/roles/`, or the harness itself).
 4. Validate each harness file has one H1 and is <= 250 lines.
 5. Validate no harness file points outside `~/nsmac/` or repository-level authorities.
 
@@ -17,12 +17,9 @@ Harness files under `~/nsmac/tests/specs/`:
 - `commands.md`
 - `core.md`
 - `roles.md`
-- `generated.md`
-- `settings.md`
-- `templates.md`
 - `tests.md`
 
-**Note — intentionally internal harness specs:** `generated.md`, `templates.md`, and `tests.md` are not exposed as `(test <target>)` routing targets. They are internal harness specifications covered by the full suite, not dispatched through the `(test)` command.
+**Note — intentionally internal harness spec:** `tests.md` is not exposed as a `(test <target>)` routing target. It is an internal harness specification covered by the full suite, not dispatched through the `(test)` command. Generated artifacts and templates need no Markdown harness: `generated/` is covered by the audit's generated-freshness and generated-boundary checks, and `platform/templates/` by `tests/platform/agent/fresh-repo-scaffold.test.sh` and `tests/platform/agent/agent-routes-contract.test.sh`.
 
 ## Principle
 
@@ -31,7 +28,6 @@ Add a test only when a source behavior requires executable proof; prefer shell-l
 ## Suite size
 
 `tests/run.sh` reports the live test count and elapsed seconds at execution time. Keep source behavior coverage intact; do not encode old run snapshots or quota plans in this spec.
-The retained manifest is described in [`tests/suites/README.md`](../suites/README.md).
 
 ## Layer ownership
 

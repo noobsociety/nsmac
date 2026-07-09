@@ -155,6 +155,10 @@ def reference_exists(pattern: str) -> bool:
     return True
 
 
+# Documented overlap: for bare repo-relative backticked paths in the root
+# contract docs, audit-doc-paths.py also fires. This half is kept because it
+# additionally normalizes `~/nsmac/`-prefixed spans, which doc-paths skips via
+# EXTERNAL_PREFIXES; removing either half would lose one side of that coverage.
 def outbound_contract_failures() -> list[str]:
     failures: list[str] = []
     for rel in ROOT_CONTRACT_DOCS:

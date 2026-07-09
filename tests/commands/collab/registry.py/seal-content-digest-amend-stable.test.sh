@@ -9,38 +9,7 @@ cd "$TMPDIR"
 export COLLAB_STATE_HOME="$TMPDIR/state-home"
 printf '{"projectId":"test-seal-content-digest-fixture","label":"test"}\n' > .collab.json
 
-RUN_DATE="$(date +%Y-%m-%d)"
-
-read_json_field() {
-  python3 -c 'import json,sys; data=json.load(sys.stdin); print(data["'"$1"'"])'
-}
-
-seed_round() {
-  local slug="$1"
-  python3 - "$ROOT" "$REGISTRY" "$slug" <<'PY'
-import json
-import sys
-from pathlib import Path
-
-root = sys.argv[1]
-path = Path(sys.argv[2])
-target = sys.argv[3]
-sys.path.insert(0, root)
-from commands.collab.engine import registry as R
-
-data = json.loads(path.read_text())
-entry = next(item for item in data['collabs'] if item['id'] == target)
-verification = entry.setdefault('verification', {})
-verification['rounds'] = 1
-verification['subState'] = 'seal'
-verification['pairedExecutionSignature'] = R.execution_signature(entry)
-for role in R.participant_verification_roles(entry):
-    state = R.participant_verification_role_state(entry, role)
-    state['stage'] = 'completed'
-    state['executionSignature'] = R.participant_execution_signature(entry, role)
-path.write_text(json.dumps(data, indent=2) + '\n')
-PY
-}
+source "$ROOT/tests/commands/collab/registry.py/verification-test-lib.sh"
 
 REGISTRY="$("$ROOT/commands/collab/engine/registry.py" registry-path)"
 
@@ -78,7 +47,7 @@ TARGET="$RUN_DATE-seal-content-digest-empty-paths"
   --agent-id codex \
   --caller-role pe >/dev/null
 
-seed_round "$TARGET"
+seed_paired_verification_round "$TARGET" 1 seal
 state="$("$ROOT/commands/collab/engine/registry.py" seal-state "$TARGET" pa)"
 revision="$(read_json_field registryRevision <<<"$state")"
 "$ROOT/commands/collab/engine/registry.py" seal-write "$TARGET" pa --observed-revision "$revision" --caller-role pa >/dev/null
@@ -116,7 +85,7 @@ AMEND_TARGET="$RUN_DATE-seal-content-digest-amend-stable"
   --agent-id codex \
   --touched-path deliverable.txt \
   --caller-role pe >/dev/null
-seed_round "$AMEND_TARGET"
+seed_paired_verification_round "$AMEND_TARGET" 1 seal
 amend_state="$("$ROOT/commands/collab/engine/registry.py" seal-state "$AMEND_TARGET" pa)"
 amend_revision="$(read_json_field registryRevision <<<"$amend_state")"
 "$ROOT/commands/collab/engine/registry.py" seal-write "$AMEND_TARGET" pa --observed-revision "$amend_revision" --caller-role pa >/dev/null
@@ -154,7 +123,7 @@ DELETE_TARGET="$RUN_DATE-seal-content-digest-committed-deletion"
   --agent-id codex \
   --touched-path deleted.txt \
   --caller-role pe >/dev/null
-seed_round "$DELETE_TARGET"
+seed_paired_verification_round "$DELETE_TARGET" 1 seal
 delete_state="$("$ROOT/commands/collab/engine/registry.py" seal-state "$DELETE_TARGET" pa)"
 delete_revision="$(read_json_field registryRevision <<<"$delete_state")"
 "$ROOT/commands/collab/engine/registry.py" seal-write "$DELETE_TARGET" pa --observed-revision "$delete_revision" --caller-role pa >/dev/null

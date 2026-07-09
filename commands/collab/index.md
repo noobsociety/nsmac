@@ -4,7 +4,7 @@ Route moderated collaboration-record workflows through one namespace.
 
 ## Trigger
 
-**Dispatch:** `(collab <init | join | speak | retract speak | rewrite speak | advance | restore | set | unset | list | activate | open | reopen | close | remove participant | archive | delete | diff | run plan | summarize | commit | issue | tag | rewrite execution | participant verify | show policy | show flags | show verdict | seal verification | log | status>)` - routing-only command form; not a shell command.
+**Dispatch:** `(collab <init | join | speak | retract speak | rewrite speak | advance | restore | set | unset | list | activate | open | reopen | close | remove participant | archive | delete | diff | run plan | summarize | commit | issue | tag | rewrite execution | participant verify | show policy | show flags | show verdict | seal verification | log | status>)` — routing-only command form; not a shell command.
 **Search phrases:** collab workflow, collaboration record, moderated agent discussion
 
 ## Steps

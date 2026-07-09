@@ -12,7 +12,7 @@ Command argument contract for command routes. Routes adopt named flags by declar
 
 ## `route-flag` block schema
 
-Every route that supports or explicitly rejects a named flag must carry a fenced `route-flag` block. The block is machine-readable and validated by `platform/tooling/audit-flag-scope.sh` (eligibility schema declared below; cross-scope override declarations governed by [`platform/tooling/flag-scope-validator-contract.md`](../tooling/flag-scope-validator-contract.md)).
+Every route that supports or explicitly rejects a named flag must carry a fenced `route-flag` block. The block is machine-readable and validated by `platform/tooling/audit-flag-scope.sh` (eligibility schema declared below; the validator also enforces cross-scope override declarations).
 
 **Required fields**
 
@@ -196,14 +196,15 @@ Required keys:
 | `name` | Flag or positional name | Flag names begin with `--`; positionals use angle-bracket form |
 | `required` | `required` or `optional` | Whether the parameter must be supplied by the caller |
 | `placeholder` | Literal token or `<placeholder>` | Example token shown in route signatures |
-| `class` | `type` or `dynamic` | `type` — a literal or enumerated value; `dynamic` — resolved at runtime from an external source |
-| `rule` | Prose or `<type> flag` | Short constraint description |
+| `class` | `type`, `literal`, or `dynamic` | `type` — a value described by `rule`; `literal` — a closed token set enumerated by `values`; `dynamic` — resolved at runtime from an external source |
+| `rule` | Prose or `<type> flag` | Short constraint description; rows with `class=literal` declare `values` in place of `rule` |
 
 Optional keys:
 
 | Key | Allowed values | Description |
 |-----|----------------|-------------|
-| `source` | Command path | Required when `class=dynamic`; identifies the helper that provides the allowed value set |
+| `source` | Command path | Identifies the helper that provides the allowed value set; `class=dynamic` rows carry `source` or a `rule` naming the runtime source |
+| `values` | Pipe-delimited tokens | Required when `class=literal`; the closed set of accepted tokens, declared in place of `rule` |
 | `requires` | Flag name | Declares a prerequisite flag; the parameter is only valid when the named flag is also present |
 | `default` | `literal:<v>`, `derived:<source>`, or `none` | Default behavior when the parameter is omitted; required on every `required=optional` row |
 
@@ -219,7 +220,8 @@ Optional keys:
 
 - `required=required` rows must not carry a `default=` key.
 - `required=optional` rows must carry a `default=` key.
-- `class=dynamic` rows must carry a `source=` key.
+- `class=dynamic` rows carry a `source=` key or a `rule=` naming the runtime source of valid values.
+- `class=literal` rows must carry a `values=` key.
 - `default=none` on a `required=optional` row means bare invocation of that parameter triggers the abort-with-contextual-help policy.
 
 **Example**

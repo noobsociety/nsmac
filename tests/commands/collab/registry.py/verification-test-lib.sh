@@ -69,14 +69,15 @@ complete_execution() {
 seed_paired_verification_round() {
   local slug="$1"
   local rounds="${2:-1}"
+  local sub_state="${3:-}"
   local registry
   registry="$(registry_path)"
-  python3 - "$ROOT" "$slug" "$rounds" "$registry" <<'PY'
+  python3 - "$ROOT" "$slug" "$rounds" "$registry" "$sub_state" <<'PY'
 import json
 import sys
 from pathlib import Path
 
-root, slug, rounds, registry = sys.argv[1:5]
+root, slug, rounds, registry, sub_state = sys.argv[1:6]
 sys.path.insert(0, root)
 from commands.collab.engine import registry as R
 
@@ -85,6 +86,8 @@ data = json.loads(path.read_text())
 entry = next(item for item in data['collabs'] if item['slug'] == slug or item['id'] == slug)
 verification = entry.setdefault('verification', {})
 verification['rounds'] = int(rounds)
+if sub_state:
+    verification['subState'] = sub_state
 verification['pairedExecutionSignature'] = R.execution_signature(entry)
 for role in R.participant_verification_roles(entry):
     state = R.participant_verification_role_state(entry, role)

@@ -169,7 +169,7 @@ Examples: `commands/agent/install/index.md`, `commands/collab/join/index.md`
 |---------------|--------------------------------------------|---------------------------------------------------------------------------------------------------|
 |Standard docs  |SCREAMING_SNAKE                             |`AGENTS.md`, `README.md`, `MANUAL.md` (when the project ships one)                                 |
 |Playbook docs  |SCREAMING_SNAKE                             |`VISION.md`, `PHASES.md`, role docs as the project names them                                      |
-|Reference docs |kebab-case                                  |`AUDIT-meta.md` (filename at repository discretion)                                              |
+|Reference docs |kebab-case                                  |`engine-architecture.md` (filename at repository discretion)                                     |
 |Skills         |`SKILL.md` inside named folder              |Host-assigned path under the editor’s skills directory (not part of the `platform/standards/` canon tree)             |
 |Devblog entries|`{n}-{slug}.md`                             |`1-week.md`, `0-foreword.md` (position 0 is reserved for the foreword; slug is fixed as `foreword`)|
 |Course notes   |`notes-{variant}-{course}.md`               |`notes-full-domain-driven-design.md`                                                               |

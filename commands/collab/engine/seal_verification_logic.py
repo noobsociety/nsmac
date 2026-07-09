@@ -8,13 +8,13 @@ Owns: seal state reads, completion-cycle state, stale-seal triggers,
 Does not own: participant-verify rendering, assessment rendering, seal rendering,
               verdict/seal write entry points, registry persistence, phase
               lifecycle sequencing, participant roster management, non-seal
-              transcript rendering, or CLI dispatch. The compatibility facade
-              in seal_verification.py re-exports this module for existing engine
-              leaves; registry_core.py imports it directly for its seal facade.
+              transcript rendering, or CLI dispatch. Engine leaves import the
+              concrete split modules directly; registry_core.py imports this
+              module directly for its seal facade.
 
 Naming convention
   *_state(entry, ...)   -- pure registry-entry accessor; no I/O or side effects.
-  *_state(path, ...)    -- CLI-callable reader; loads registry from path.
+  *_state(path, ...)    -- CLI-callable reader; loads registry from path and persists normalized state.
   invalidate_*(entry)   -- mutates entry in-place; no registry write (caller
                            holds the write lock).
   assert_*(...)         -- guard; calls die() on violation; pure read path.

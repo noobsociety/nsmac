@@ -15,8 +15,8 @@ Render the route playbook for the named command route so agents can look up disp
 
 ## Notes
 
-- **Parameters:** `<route>` — required; the command namespace and optional route name to display; e.g., `collab init`, `collab run plan`, `doc write readme`, `collab` (namespace-only).
-- **Route path mapping:** A qualified multi-token route (e.g., `collab run plan`) maps `<namespace>` to the first token and `<route-path>` to the hyphenated remainder: `commands/<namespace>/<route-path>/index.md`. A single-token route (e.g., `collab`) resolves to the namespace router: `commands/<namespace>/index.md`. Multi-word route selectors always use the hyphenated form on disk — see `platform/standards/command-grammar.md`.
+- **Parameters:** `<route>` — required; the command namespace and optional route name to display; e.g., `collab init`, `collab run plan`, `agent install`, `collab` (namespace-only).
+- **Route path mapping:** A qualified multi-token route (e.g., `collab run plan`) maps `<namespace>` to the first token and `<route-path>` to the hyphenated remainder: `commands/<namespace>/<route-path>/index.md`. A single-token route (e.g., `collab`) resolves to the namespace router: `commands/<namespace>/index.md`. Multi-word route selectors always use the hyphenated form on disk — see `platform/standards/command-convention.md`.
 - **No help schema:** This route renders existing route playbooks as-is. It does not maintain a separate help-content surface or duplicate content from the route files.
 
 ```route-arg

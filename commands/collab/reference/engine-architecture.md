@@ -23,7 +23,7 @@ The executable facade owns no domain behavior. `registry_parser.py` owns CLI arg
 
 ### Module roster
 
-Implementation modules in `commands/collab/engine/` (plus the executable facade `registry.py` and the generated-doc helper `lifecycle-doc.py`):
+Implementation modules in `commands/collab/engine/` (plus the executable facade `registry.py`):
 
 | Module | Owns | Does not own |
 | --- | --- | --- |
@@ -31,7 +31,7 @@ Implementation modules in `commands/collab/engine/` (plus the executable facade 
 | `registry_constants.py` | registry lifecycle vocabulary and policy constants | state I/O |
 | `config_paths.py` | default configuration-path resolution: resolve the command config root (honoring the `COMMAND_CONFIG_ROOT` override) and derive the default roles-dir, effort-defaults, agent-model, and flag-taxonomy paths; a standalone leaf with no engine dependencies that self-resolves the repository root | the executable sys.path bootstrap, any config-file reading |
 | `flag_taxonomy.py` | flag-taxonomy spec reader: parse the flag-taxonomy reference markdown (per-command headings and pipe-delimited flag rows) and project it into a class-grouped inventory (advisory / helper-enforced / generator-derived), rejecting unknown flag classes; owns the sole-use flag-row pattern and aggregates lower-tier leaves (config_paths, errors) | registry persistence, phase mutation, any write path |
-| `source_contracts.py` | source-contract validation command: validate that the registry loads cleanly (no stale lock) and that required source-contract anchors are present across the flag-taxonomy, seal-verification, invariants, and planned-route reference documents under the config root; aggregates lower-tier leaves (config_paths, errors, planned_routes, registry_io) | registry persistence, phase mutation, any write path |
+| `source_contracts.py` | source-contract validation command: validate that the registry loads cleanly (no stale lock) and that required source-contract anchors are present across the flag-taxonomy, seal-verification, and invariants reference documents under the config root; aggregates lower-tier leaves (config_paths, errors, registry_io) | registry persistence, phase mutation, any write path |
 | `help_command.py` | help-route command: resolve a `(help <namespace> <route...>)` token list to its `commands/<namespace>/.../index.md` reference document under the repository root, reject malformed tokens and any path escaping the commands tree, and print the document; aggregates lower-tier leaves (config_paths, errors) | route dispatch, registry persistence, any write path |
 | `browser.py` | browser launch: open a URI in the system browser via an injectable opener, capturing any failure (raised exception or falsey "no browser" return) as a human-readable string; a standalone leaf with no engine dependencies | URI construction, registry persistence, any write path |
 | `render_commands.py` | transcript render/view/summarize command handlers: re-render the managed header and persist it (`render-status`, `render-participants`), replace the managed phase summary (`summarize`), and emit a single phase section read-only (`transcript-view`) | the two-file commit implementation (`registry_io`), header rendering, summary replacement |
@@ -49,12 +49,11 @@ Implementation modules in `commands/collab/engine/` (plus the executable facade 
 | `registry_dispatch.py` | table-driven subcommand dispatch and registry-path resolution | parser shape, command behavior, registry schema validation |
 | `registry_core.py` | compatibility exports, facade configuration, the participant-verification render facade, the `validate_registry` wrapper, and the narrow orchestration wrappers (`record_execution`/`advance_phase`) | executable bootstrap, parser shape, dispatch ladder, commit primitive ownership, extracted domain ownership, any command body with extractable domain logic |
 | `registry_io.py` | registry persistence, schema validation hook, locking, resolution, revision events, and registry/transcript commit primitives | phase or lifecycle decisions |
-| `planned_routes.py` | route prerequisite validation hook | phase mutation |
 | `transcript_readers.py` | transcript phase parsing, contribution-block extraction, transcript-path resolution and per-entry reads | rendering or writes |
 | `normalizers.py` | slug/title/path/scope normalization | state, I/O |
 | `digests.py` | content/path digest computation and signatures | git policy |
 | `handoff_shape.py` | handoff writeScope/validationCommands schema | lifecycle |
-| `git_repo.py` | git subprocess reads: head, commits, content-at-ref | seal policy |
+| `git_repo.py` | git subprocess reads: head, commits, commit-changed paths | seal policy |
 | `participants.py` | participant roster, reviewer wiring, turn-order helpers | phase mutation |
 | `phase_lifecycle.py` | phase sequencing, phase advancement, and lifecycle notices | registry mutation, rendering |
 | `speak_state.py` | speak-eligibility state model: per-entry speak-state dict and the read-only next-command, next-line, policy-blocker, and phase-summary projections over it | registry persistence, phase mutation, rendering |
@@ -64,8 +63,8 @@ Implementation modules in `commands/collab/engine/` (plus the executable facade 
 | `restore_inputs.py` | restore-input readers: validate/parse the restore event-index argument and locate a deep-copied historical collab entry by id within a pre-restore registry snapshot | restore-command orchestration, registry persistence, revision-event writing |
 | `init_inputs.py` | init-command input reader: parse the raw `init` argv token stream into a validated `(title, agent id, reviewer, open-requested, work-repo)` tuple, rejecting duplicate/unknown flags and missing flag values; owns the sole-use role-key pattern and aggregates lower-tier leaves (errors, normalizers) | init-command orchestration, registry persistence, phase mutation, any write path |
 | `query_commands.py` | read-only CLI query/projection command handlers: load and project a single read view (registry path, role roster rows, reviewer/handoff state, timestamps, summary role), print it, and return an exit code; aggregates lower-tier domain leaves (roles, participants, handoff_shape, registry_io, normalizers, transcript_readers) | registry persistence, phase mutation, any write path |
-| `inspection_commands.py` | read-only inspection/report command handlers: list collabs, project the revision-event log, render a single-entry status view, compute drift, and audit closed collabs — load and project a multi-entry or transcript-derived read view, print it, and return an exit code; aggregates lower-tier domain leaves (registry_io, registry_state, registry_constants, normalizers, transcript_readers, participants, seal_verification, contribution_store, diff, execution, effort) | registry persistence, phase mutation, any write path |
-| `post_execution.py` | post-execution lifecycle projections: given an entry and its assigned roles, compute close-eligibility after execution and the next-line guidance string after execution - read-only projections over reviewer verification and seal state, injected into `execution.py` as callbacks; aggregates lower-tier leaves (dispatch_forms, participants, seal_verification, speak_state) | registry persistence, phase mutation, any write path |
+| `inspection_commands.py` | read-only inspection/report command handlers: list collabs, project the revision-event log, render a single-entry status view, compute drift, and audit closed collabs — load and project a multi-entry or transcript-derived read view, print it, and return an exit code; aggregates lower-tier domain leaves (registry_io, registry_state, registry_constants, normalizers, transcript_readers, participants, seal_verification_logic, contribution_store, diff, execution, effort) | registry persistence, phase mutation, any write path |
+| `post_execution.py` | post-execution lifecycle projections: given an entry and its assigned roles, compute close-eligibility after execution and the next-line guidance string after execution - read-only projections over reviewer verification and seal state, injected into `execution.py` as callbacks; aggregates lower-tier leaves (dispatch_forms, participants, seal_verification_logic, speak_state) | registry persistence, phase mutation, any write path |
 | `execution.py` | execution checks, run-plan support, write-scope enforcement, execution state recording | seal |
 | `contribution_store.py` | contribution-store path and shape helpers | registry state, rendering, write path |
 | `contribution_validation.py` | speak-time contribution gates, moderator contribution normalization | rendering, write path |
@@ -74,9 +73,10 @@ Implementation modules in `commands/collab/engine/` (plus the executable facade 
 | `release.py` | tag command behavior: dry-run plans, confirmation gate, clean-worktree checks, annotated-tag creation, and optional push | registry mutation, transcript rendering, collab lifecycle close behavior |
 | `effort.py` | advisory math | schema validation, write path |
 | `transcript_render.py` | managed rendering: header, TOC, all `<details>` blocks, contribution blocks, effort-override banners | registry state, phase lifecycle, write-path dispatch, CLI entry-point logic |
-| `seal_verification.py` | compatibility exports for the split verification boundary; exports module-owned public functions/constants from the concrete logic/render leaves for tests and out-of-tree callers | domain ownership, registry persistence, phase lifecycle, CLI dispatch |
 | `seal_verification_logic.py` | seal state readers, completion and participant-verification state, stale-seal invalidation, content-integrity and git-state gates, verdict construction and validation, chartered-deliverables coverage, and verification restart | participant-verify rendering, assessment/seal rendering, verdict/seal write entry points, registry persistence, CLI dispatch |
 | `seal_verification_render.py` | participant-verify rendering, assessment/seal rendering, reviewer findings, summary/history rendering, and the write entry functions (`participant_verify_render`, `seal_write`, `record_verdict`) that call the logic module explicitly | stale-seal trigger decisions, participant-verification state ownership, verdict validation, content-integrity policy, phase lifecycle, participant roster management |
+
+This table is parity-gated: `platform/tooling/audit.sh` (`check_engine_module_roster`) asserts it lists exactly the modules in `commands/collab/engine/` except the `registry.py` executable facade. Adding, removing, or renaming an engine module requires updating this roster in the same change.
 
 ### Current state
 
@@ -84,7 +84,7 @@ Implementation modules in `commands/collab/engine/` (plus the executable facade 
 
 ### Boundary decisions
 
-**Seal verification (split boundary):** `seal_verification_logic.py` owns verification state, stale-seal triggers, content-integrity gates, verdict construction, and chartered-deliverables coverage. `seal_verification_render.py` owns participant-verify/assessment/seal rendering, summary/history rendering, reviewer-findings blocks, and the write entry functions (`participant_verify_render`, `seal_write`, `record_verdict`) that call the logic module explicitly. `seal_verification.py` is a compatibility facade only; engine leaves import the concrete split modules directly.
+**Seal verification (split boundary):** `seal_verification_logic.py` owns verification state, stale-seal triggers, content-integrity gates, verdict construction, and chartered-deliverables coverage. `seal_verification_render.py` owns participant-verify/assessment/seal rendering, summary/history rendering, reviewer-findings blocks, and the write entry functions (`participant_verify_render`, `seal_write`, `record_verdict`) that call the logic module explicitly. Engine leaves import the concrete split modules directly.
 
 **`transcript_render.py` (kept whole — managed-rendering boundary):** Header scaffolding, TOC management, and all `<details>` block construction share the `rendered_collapsible_block` primitive and the single-owner invariant: no caller constructs a `<details>` block outside this module. Splitting prematurely would compromise that invariant. If the module later warrants division, the documented split boundary is: `header_render.py` (header, TOC, `insert_toc_entry`) and `contribution_render.py` (contribution/collapsible-block rendering, excerpt/full-body handling, effort-override banners).
 

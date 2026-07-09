@@ -4,7 +4,7 @@
 
 **Slash:** (reference only — not an invocable route)
 **Prose dispatch:** (reference only — not an invocable route)
-**Search phrases:** collab contribution budget, speak word limit, contribution exemptions
+**Search phrases:** collab contribution budget, speak word limit, contribution exemptions, contribution full body, contribution annex, uncapped audit body, excerpt full body
 
 ## Steps
 
@@ -56,7 +56,11 @@ The helper-owned full-body block has this exact envelope; it must not be hand-au
 </details>
 ```
 
-The `<summary>` label is exactly `Full contribution` — the single named element. The helper places the block immediately after the excerpt body, before the closing `</details>` of the contribution block. All bytes inside this block are excluded from the word count. The helper rejects any hand-authored `<details>` or `</details>` control line inside the excerpt surface. The helper also rejects any `<details>` or `</details>` control line inside the full-body content supplied via `--full-body-file`; the helper owns the envelope and content must not nest additional control lines.
+The `<summary>` label is exactly `Full contribution` — the single named element. The canonical block is recognized only when a `<details>` line is immediately followed by `<summary>Full contribution</summary>`. The helper places the block immediately after the excerpt body, before the closing `</details>` of the contribution block. All bytes inside this block are excluded from the word count. The helper rejects any hand-authored `<details>` or `</details>` control line inside the excerpt surface. The helper also rejects any `<details>` or `</details>` control line inside the full-body content supplied via `--full-body-file`; the helper owns the envelope and content must not nest additional control lines.
+
+**Rewrite and retract:** Rewrite replaces the active excerpt and the active full body together; the prior active region, including any managed full body, moves into revision history. Retract tombstones the active contribution and preserves the prior active region, including any managed full body, under retracted content.
+
+**Seal binding:** Verification seals bind the exact managed full-body blocks in the transcript through a full-body signature. If those bytes change after sealing while the excerpt is unchanged, the existing seal becomes stale and must be reissued before a success verdict can close the record.
 
 ## Count method
 
