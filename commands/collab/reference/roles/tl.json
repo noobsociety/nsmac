@@ -1,0 +1,15 @@
+{
+  "key": "tl",
+  "displayName": "Technical Lead",
+  "concerns": [
+    "alignment",
+    "delegation",
+    "continuity",
+    "intent",
+    "orchestration"
+  ],
+  "dimensions": [
+    "strategy",
+    "delivery"
+  ]
+}

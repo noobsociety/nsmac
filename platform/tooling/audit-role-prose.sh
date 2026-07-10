@@ -49,7 +49,7 @@ from pathlib import Path
 root = Path(sys.argv[1]).resolve()
 requested = [Path(value) for value in sys.argv[2:]]
 
-ROLE_KEY_RE = re.compile(r"(?<![A-Za-z0-9_])(mod|pa|pe|tw)(?![A-Za-z0-9_])")
+ROLE_KEY_RE = re.compile(r"(?<![A-Za-z0-9_])(mod|pa|pe|tl|tw)(?![A-Za-z0-9_])")
 FENCE_RE = re.compile(r"^\s*(`{3,}|~{3,})")
 HEADING_RE = re.compile(r"^\s{0,3}(#{1,6})\s+(.*)$")
 INLINE_CODE_RE = re.compile(r"`([^`]*)`")

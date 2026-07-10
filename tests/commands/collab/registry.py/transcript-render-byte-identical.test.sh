@@ -153,8 +153,8 @@ Registry-backed collab state is authoritative. Metadata below mirrors `$HOME/.co
 | # | Key | Role | Agent | Responsibilities |
 |---|-----|------|-------|------------------|
 | 1 | mod | Moderator | codex | scope; sequencing; framing; pacing; integrity |
-| 2 | tw | Technical Writer | sonnet | clarity; conciseness; accuracy; developer experience |
-| 3 | pe | Platform Engineer | codex | effectiveness; efficiency; completeness; optimization |
+| 2 | tw | Technical Writer | sonnet | clarity; conciseness; accuracy; developer experience; voice |
+| 3 | pe | Platform Engineer | codex | effectiveness; efficiency; completeness; optimization; correctness; evidence; adversarial testing; failure analysis; recoverability |
 
 **Prohibitions**
 

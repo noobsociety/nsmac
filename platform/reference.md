@@ -53,7 +53,7 @@ All collab commands are dispatched through the `~/nsmac` routing system.
 
 ## Roles
 
-- [`platform/standards/role-standard.md`](standards/role-standard.md) — joinable-role definitions (mod, tw, pe, pa)
+- [`platform/standards/role-standard.md`](standards/role-standard.md) — joinable-role definitions and generated roster
 - [`commands/collab/reference/agent-effort.md`](../commands/collab/reference/agent-effort.md) — per-phase effort expectations by role
 - [`commands/collab/reference/agent-model.md`](../commands/collab/reference/agent-model.md) — agent identity and capability model
 

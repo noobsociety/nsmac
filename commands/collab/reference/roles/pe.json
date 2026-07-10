@@ -5,9 +5,17 @@
     "effectiveness",
     "efficiency",
     "completeness",
-    "optimization"
+    "optimization",
+    "correctness",
+    "evidence",
+    "adversarial testing",
+    "failure analysis",
+    "recoverability"
   ],
   "dimensions": [
-    "product"
+    "product",
+    "hygiene",
+    "security",
+    "reliability"
   ]
 }

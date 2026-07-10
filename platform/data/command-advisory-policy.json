@@ -10,9 +10,11 @@
   "modelOrHarnessLeakageTerms": [
     "claude",
     "codex",
+    "fable",
     "gpt",
     "haiku",
     "opus",
+    "sol",
     "sonnet"
   ]
 }

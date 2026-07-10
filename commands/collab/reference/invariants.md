@@ -32,7 +32,7 @@ Maintainer check: `git grep -rn 'agent-honor-system' commands/collab/` shows eve
 
 The primary drift detector for agent-honor-system clauses is the P9 coverage gate (`platform/tooling/coverage-gate.sh`): a clause whose ABORT anchor gains a matching P9 test — proof the helper now enforces the path — fails the gate with `stale agent-honor-system marker(s)` until the marker is removed, and missing-test detection is gate-enforced the same way; the `git grep` sweep above is the inventory backstop. When promoting a previously honor-system path to helper enforcement, add its P9 test and remove the marker in the same change. A known coverage limit: when a registered role never joins a phase, its absence is indistinguishable from silence — the protocol has no signal for deliberate non-participation; if repeated silent non-participation from a registered role is observed, reopen this limit with evidence.
 
-Maintainer check: `git grep -rnP '(?<![A-Za-z0-9_])(mod|pa|pe|tw)(?![A-Za-z0-9_])' -- '*.md' '*rule file'` is the broad review sweep for role-key prose drift. Every prose match must either be covered by the documented carve-outs in `platform/tooling/audit-role-prose.sh` or rewritten to function-bound prose. The pattern covers the live role keys under `commands/collab/reference/roles/` — the human moderator and the joinable participant roles. Update the pattern when the role roster changes.
+Maintainer check: `git grep -rnP '(?<![A-Za-z0-9_])(mod|pa|pe|tl|tw)(?![A-Za-z0-9_])' -- '*.md' '*rule file'` is the broad review sweep for role-key prose drift. Every prose match must either be covered by the documented carve-outs in `platform/tooling/audit-role-prose.sh` or rewritten to function-bound prose. The pattern covers the live role keys under `commands/collab/reference/roles/` — the human moderator and the joinable participant roles. Update the pattern when the role roster changes.
 
 **2. Registry as source of truth; transcript as human ledger**
 
@@ -107,7 +107,7 @@ Each line states a standing rule: an observable event, and the review action it 
 
 Each line is an observation-class rule: no behavior changes until the named event is directly observed — evidence, not transcript memory, is the trigger.
 
-- **Item 10 (`tests/specs/roles.md` generator):** a fifth role added to the roster activates this item.
+- **Item 10 (`tests/specs/roles.md` generator):** a role roster change not covered by `platform/tooling/sync-roles-roster.sh` activates this item.
 - **Item 11 (effort-matrix shape redesign):** a third axis (admission column or `level|null` cells) surfacing during Action Plan drafting activates this item.
 - **Item 12 (cross-project registry federation):** more than one project store in `~/.collabs/` showing observable drift activates this item.
 - **Item 13 (stub retirement observation point):** a coverage assertion confirming stub fallback is unreached on resolution activates this item.

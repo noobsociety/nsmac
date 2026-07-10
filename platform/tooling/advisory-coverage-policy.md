@@ -34,7 +34,7 @@ to `namespaceCoverageExemptions` in `platform/data/command-advisory-policy.json`
 `platform/data/command-advisory-policy.json` -> `modelOrHarnessLeakageTerms`
 lists vocabulary tokens whose presence in advisory content signals a
 model- or harness-specific leak. The current set is `["claude",
-"codex", "gpt", "haiku", "opus", "sonnet"]`.
+"codex", "fable", "gpt", "haiku", "opus", "sol", "sonnet"]`.
 
 To add a new model family token: add the lowercase base name to
 `modelOrHarnessLeakageTerms` in `platform/data/command-advisory-policy.json`.
